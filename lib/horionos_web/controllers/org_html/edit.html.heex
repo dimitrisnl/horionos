@@ -1,0 +1,8 @@
+<.header>
+  Edit Org <%= @org.id %>
+  <:subtitle>Use this form to manage org records in your database.</:subtitle>
+</.header>
+
+<.org_form changeset={@changeset} action={~p"/orgs/#{@org}"} />
+
+<.back navigate={~p"/orgs"}>Back to orgs</.back>

@@ -64,6 +64,8 @@ defmodule HorionosWeb.Router do
   scope "/", HorionosWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    resources "/orgs", OrgController
+
     live_session :require_authenticated_user,
       on_mount: [{HorionosWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit

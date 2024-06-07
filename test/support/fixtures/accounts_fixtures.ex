@@ -28,4 +28,32 @@ defmodule Horionos.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  @doc """
+  Generate a org.
+  """
+  def org_fixture(attrs \\ %{}) do
+    {:ok, org} =
+      attrs
+      |> Enum.into(%{
+        title: "some title"
+      })
+      |> Horionos.Accounts.create_org()
+
+    org
+  end
+
+  @doc """
+  Generate a membership.
+  """
+  def membership_fixture(attrs \\ %{}) do
+    {:ok, membership} =
+      attrs
+      |> Enum.into(%{
+        role: "some role"
+      })
+      |> Horionos.Accounts.create_membership()
+
+    membership
+  end
 end

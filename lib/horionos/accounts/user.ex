@@ -8,6 +8,8 @@ defmodule Horionos.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
 
+    has_many :memberships, Horionos.Accounts.Membership
+
     timestamps(type: :utc_datetime)
   end
 
