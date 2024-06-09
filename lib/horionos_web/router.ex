@@ -17,12 +17,6 @@ defmodule HorionosWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", HorionosWeb do
-    pipe_through :browser
-
-    get "/", PageController, :home
-  end
-
   # Other scopes may use custom stacks.
   # scope "/api", HorionosWeb do
   #   pipe_through :api
@@ -65,6 +59,7 @@ defmodule HorionosWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     resources "/orgs", OrgController
+    get "/", PageController, :home
 
     live_session :require_authenticated_user,
       on_mount: [{HorionosWeb.UserAuth, :ensure_authenticated}] do

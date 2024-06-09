@@ -206,10 +206,17 @@ defmodule HorionosWeb.UserAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must log in to access this page.")
+      |> put_flash_if_not_root
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
       |> halt()
+    end
+  end
+
+  defp put_flash_if_not_root(conn) do
+    case current_path(conn) === "/" do
+      true -> conn
+      false -> conn |> put_flash(:error, "You must log in to access this page.")
     end
   end
 

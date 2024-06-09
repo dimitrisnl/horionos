@@ -542,4 +542,35 @@ defmodule Horionos.Accounts do
   def change_membership(%Membership{} = membership, attrs \\ %{}) do
     Membership.changeset(membership, attrs)
   end
+
+  @doc """
+  Returns the list of memberships for a user.
+
+  ## Examples
+
+      iex> get_user_memberships(user)
+      [%Membership{}, ...]
+
+  """
+  def get_user_memberships(user) do
+    Repo.all(from m in Membership, where: m.user_id == ^user.id)
+  end
+
+  @doc """
+  Checks if the user needs onboarding.
+
+  ## Examples
+
+      iex> user_needs_onboarding?(user_email)
+      true
+
+      iex> user_needs_onboarding?(user_email)
+      false
+
+  """
+  def user_needs_onboarding?(user_email) do
+    get_user_by_email(user_email)
+    |> get_user_memberships()
+    |> Enum.empty?()
+  end
 end
