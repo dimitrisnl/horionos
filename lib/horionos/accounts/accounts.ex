@@ -1,11 +1,9 @@
 defmodule Horionos.Accounts do
-  @moduledoc """
-  The Accounts context.
-  """
+  @moduledoc false
 
   import Ecto.Query, warn: false
-  alias Horionos.Repo
 
+  alias Horionos.Repo
   alias Horionos.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
@@ -22,6 +20,7 @@ defmodule Horionos.Accounts do
       nil
 
   """
+  @spec get_user_by_email(String.t()) :: User.t() | nil
   def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
@@ -38,6 +37,7 @@ defmodule Horionos.Accounts do
       nil
 
   """
+  @spec get_user_by_email_and_password(String.t(), String.t()) :: User.t() | nil
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
@@ -58,6 +58,7 @@ defmodule Horionos.Accounts do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_user!(id :: integer()) :: User.t()
   def get_user!(id), do: Repo.get!(User, id)
 
   ## User registration
@@ -74,6 +75,7 @@ defmodule Horionos.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec register_user(Map.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def register_user(attrs) do
     %User{}
     |> User.registration_changeset(attrs)
@@ -89,6 +91,7 @@ defmodule Horionos.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
+  @spec change_user_registration(User.t(), Map.t()) :: Ecto.Changeset.t()
   def change_user_registration(%User{} = user, attrs \\ %{}) do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
@@ -104,6 +107,7 @@ defmodule Horionos.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
+  @spec change_user_email(User.t(), Map.t()) :: Ecto.Changeset.t()
   def change_user_email(user, attrs \\ %{}) do
     User.email_changeset(user, attrs, validate_email: false)
   end
@@ -121,6 +125,8 @@ defmodule Horionos.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec apply_user_email(User.t(), String.t(), Map.t()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def apply_user_email(user, password, attrs) do
     user
     |> User.email_changeset(attrs)
@@ -134,6 +140,7 @@ defmodule Horionos.Accounts do
   If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
+  @spec update_user_email(User.t(), String.t()) :: :ok | :error
   def update_user_email(user, token) do
     context = "change:#{user.email}"
 
@@ -146,6 +153,7 @@ defmodule Horionos.Accounts do
     end
   end
 
+  @spec user_email_multi(User.t(), String.t(), String.t()) :: Ecto.Multi.t()
   defp user_email_multi(user, email, context) do
     changeset =
       user
@@ -166,6 +174,8 @@ defmodule Horionos.Accounts do
       {:ok, %{to: ..., body: ...}}
 
   """
+  @spec deliver_user_update_email_instructions(User.t(), String.t(), (String.t() -> String.t())) ::
+          {:ok, Map.t()} | {:error, String.t()}
   def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
       when is_function(update_email_url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
@@ -183,6 +193,7 @@ defmodule Horionos.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
+  @spec change_user_password(User.t(), Map.t()) :: Ecto.Changeset.t()
   def change_user_password(user, attrs \\ %{}) do
     User.password_changeset(user, attrs, hash_password: false)
   end
@@ -199,6 +210,8 @@ defmodule Horionos.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec update_user_password(User.t(), String.t(), Map.t()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_user_password(user, password, attrs) do
     changeset =
       user
@@ -220,6 +233,7 @@ defmodule Horionos.Accounts do
   @doc """
   Generates a session token.
   """
+  @spec generate_user_session_token(User.t()) :: String.t()
   def generate_user_session_token(user) do
     {token, user_token} = UserToken.build_session_token(user)
     Repo.insert!(user_token)
@@ -229,6 +243,7 @@ defmodule Horionos.Accounts do
   @doc """
   Gets the user with the given signed token.
   """
+  @spec get_user_by_session_token(String.t()) :: User.t() | nil
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
     Repo.one(query)
@@ -237,6 +252,7 @@ defmodule Horionos.Accounts do
   @doc """
   Deletes the signed token with the given context.
   """
+  @spec delete_user_session_token(String.t()) :: :ok
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
     :ok
@@ -256,6 +272,8 @@ defmodule Horionos.Accounts do
       {:error, :already_confirmed}
 
   """
+  @spec deliver_user_confirmation_instructions(User.t(), (String.t() -> String.t())) ::
+          {:ok, map} | {:error, :already_confirmed}
   def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
     if user.confirmed_at do
@@ -273,6 +291,7 @@ defmodule Horionos.Accounts do
   If the token matches, the user account is marked as confirmed
   and the token is deleted.
   """
+  @spec confirm_user(UserToken.t()) :: {:ok, User.t()} | :error
   def confirm_user(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
          %User{} = user <- Repo.one(query),
@@ -283,6 +302,7 @@ defmodule Horionos.Accounts do
     end
   end
 
+  @spec confirm_user(UserToken.t()) :: {:ok, User.t()} | :error
   defp confirm_user_multi(user) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.confirm_changeset(user))
@@ -300,6 +320,8 @@ defmodule Horionos.Accounts do
       {:ok, %{to: ..., body: ...}}
 
   """
+  @spec deliver_user_reset_password_instructions(User.t(), (String.t() -> String.t())) ::
+          {:ok, map()} | {:error, any()}
   def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
@@ -319,6 +341,7 @@ defmodule Horionos.Accounts do
       nil
 
   """
+  @spec get_user_by_reset_password_token(String.t()) :: User.t() | nil
   def get_user_by_reset_password_token(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
          %User{} = user <- Repo.one(query) do
@@ -340,6 +363,7 @@ defmodule Horionos.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec reset_user_password(User.t(), map) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def reset_user_password(user, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
@@ -349,228 +373,5 @@ defmodule Horionos.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
-  end
-
-  alias Horionos.Accounts.Org
-
-  @doc """
-  Returns the list of orgs.
-
-  ## Examples
-
-      iex> list_orgs()
-      [%Org{}, ...]
-
-  """
-  def list_orgs do
-    Repo.all(Org)
-  end
-
-  @doc """
-  Gets a single org.
-
-  Raises `Ecto.NoResultsError` if the Org does not exist.
-
-  ## Examples
-
-      iex> get_org!(123)
-      %Org{}
-
-      iex> get_org!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_org!(id), do: Repo.get!(Org, id)
-
-  @doc """
-  Creates a org.
-
-  ## Examples
-
-      iex> create_org(%{field: value})
-      {:ok, %Org{}}
-
-      iex> create_org(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_org(attrs \\ %{}) do
-    %Org{}
-    |> Org.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a org.
-
-  ## Examples
-
-      iex> update_org(org, %{field: new_value})
-      {:ok, %Org{}}
-
-      iex> update_org(org, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_org(%Org{} = org, attrs) do
-    org
-    |> Org.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a org.
-
-  ## Examples
-
-      iex> delete_org(org)
-      {:ok, %Org{}}
-
-      iex> delete_org(org)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_org(%Org{} = org) do
-    Repo.delete(org)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking org changes.
-
-  ## Examples
-
-      iex> change_org(org)
-      %Ecto.Changeset{data: %Org{}}
-
-  """
-  def change_org(%Org{} = org, attrs \\ %{}) do
-    Org.changeset(org, attrs)
-  end
-
-  alias Horionos.Accounts.Membership
-
-  @doc """
-  Returns the list of memberships.
-
-  ## Examples
-
-      iex> list_memberships()
-      [%Membership{}, ...]
-
-  """
-  def list_memberships do
-    Repo.all(Membership)
-  end
-
-  @doc """
-  Gets a single membership.
-
-  Raises `Ecto.NoResultsError` if the Membership does not exist.
-
-  ## Examples
-
-      iex> get_membership!(123)
-      %Membership{}
-
-      iex> get_membership!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_membership!(id), do: Repo.get!(Membership, id)
-
-  @doc """
-  Creates a membership.
-
-  ## Examples
-
-      iex> create_membership(%{field: value})
-      {:ok, %Membership{}}
-
-      iex> create_membership(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_membership(attrs \\ %{}) do
-    %Membership{}
-    |> Membership.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a membership.
-
-  ## Examples
-
-      iex> update_membership(membership, %{field: new_value})
-      {:ok, %Membership{}}
-
-      iex> update_membership(membership, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_membership(%Membership{} = membership, attrs) do
-    membership
-    |> Membership.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a membership.
-
-  ## Examples
-
-      iex> delete_membership(membership)
-      {:ok, %Membership{}}
-
-      iex> delete_membership(membership)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_membership(%Membership{} = membership) do
-    Repo.delete(membership)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking membership changes.
-
-  ## Examples
-
-      iex> change_membership(membership)
-      %Ecto.Changeset{data: %Membership{}}
-
-  """
-  def change_membership(%Membership{} = membership, attrs \\ %{}) do
-    Membership.changeset(membership, attrs)
-  end
-
-  @doc """
-  Returns the list of memberships for a user.
-
-  ## Examples
-
-      iex> get_user_memberships(user)
-      [%Membership{}, ...]
-
-  """
-  def get_user_memberships(user) do
-    Repo.all(from m in Membership, where: m.user_id == ^user.id)
-  end
-
-  @doc """
-  Checks if the user needs onboarding.
-
-  ## Examples
-
-      iex> user_needs_onboarding?(user_email)
-      true
-
-      iex> user_needs_onboarding?(user_email)
-      false
-
-  """
-  def user_needs_onboarding?(user_email) do
-    get_user_by_email(user_email)
-    |> get_user_memberships()
-    |> Enum.empty?()
   end
 end

@@ -1,4 +1,6 @@
 defmodule Horionos.Accounts.UserNotifier do
+  @moduledoc false
+
   import Swoosh.Email
 
   alias Horionos.Mailer

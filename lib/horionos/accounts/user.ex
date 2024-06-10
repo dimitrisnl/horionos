@@ -1,6 +1,20 @@
 defmodule Horionos.Accounts.User do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset
+  alias Horionos.Accounts.Password
+
+  @type t :: %__MODULE__{
+          id: integer(),
+          email: String.t(),
+          password: String.t(),
+          hashed_password: String.t(),
+          confirmed_at: NaiveDateTime.t(),
+          memberships: [Horionos.Memberships.Membership.t()],
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
 
   schema "users" do
     field :email, :string
@@ -8,7 +22,7 @@ defmodule Horionos.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
 
-    has_many :memberships, Horionos.Accounts.Membership
+    has_many :memberships, Horionos.Memberships.Membership
 
     timestamps(type: :utc_datetime)
   end
@@ -72,7 +86,7 @@ defmodule Horionos.Accounts.User do
       |> validate_length(:password, max: 72, count: :bytes)
       # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
       # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
+      |> put_change(:hashed_password, Password.hash(password))
       |> delete_change(:password)
     else
       changeset
@@ -82,7 +96,7 @@ defmodule Horionos.Accounts.User do
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset
-      |> unsafe_validate_unique(:email, Horionos.Repo)
+      |> unsafe_validate_unique(:email, Horionos.UnscopedRepo)
       |> unique_constraint(:email)
     else
       changeset
@@ -139,11 +153,11 @@ defmodule Horionos.Accounts.User do
   """
   def valid_password?(%Horionos.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
-    Bcrypt.verify_pass(password, hashed_password)
+    Password.verify(password, hashed_password)
   end
 
   def valid_password?(_, _) do
-    Bcrypt.no_user_verify()
+    Password.hash_and_stub_false()
     false
   end
 

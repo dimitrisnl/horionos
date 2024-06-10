@@ -1,10 +1,23 @@
 defmodule Horionos.Accounts.UserToken do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Query
+
+  alias Horionos.Accounts.User
   alias Horionos.Accounts.UserToken
 
   @hash_algorithm :sha256
   @rand_size 32
+
+  @type t :: %__MODULE__{
+          id: integer(),
+          token: binary(),
+          context: String.t(),
+          sent_to: String.t(),
+          user: User.t(),
+          inserted_at: NaiveDateTime.t()
+        }
 
   # It is very important to keep the reset password token expiry short,
   # since someone with access to the email may take over the account.
@@ -17,7 +30,7 @@ defmodule Horionos.Accounts.UserToken do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
-    belongs_to :user, Horionos.Accounts.User
+    belongs_to :user, User
 
     timestamps(updated_at: false)
   end
