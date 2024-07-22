@@ -1,5 +1,8 @@
 defmodule Horionos.Accounts.UserToken do
-  @moduledoc false
+  @moduledoc """
+  Handles the creation and verification of tokens for various user-related operations
+  such as session management, email confirmation, and password resets.
+  """
 
   use Ecto.Schema
   import Ecto.Query
@@ -9,22 +12,28 @@ defmodule Horionos.Accounts.UserToken do
 
   @hash_algorithm :sha256
   @rand_size 32
+  @reset_password_validity_in_days Application.compile_env(
+                                     :horionos,
+                                     :reset_password_validity_in_days,
+                                     1
+                                   )
+  @confirm_validity_in_days Application.compile_env(:horionos, :confirm_validity_in_days, 7)
+  @change_email_validity_in_days Application.compile_env(
+                                   :horionos,
+                                   :change_email_validity_in_days,
+                                   7
+                                 )
+  @session_validity_in_days Application.compile_env(:horionos, :session_validity_in_days, 60)
 
   @type t :: %__MODULE__{
-          id: integer(),
+          id: integer() | nil,
           token: binary(),
           context: String.t(),
           sent_to: String.t(),
-          user: User.t(),
-          inserted_at: NaiveDateTime.t()
+          user: User.t() | Ecto.Association.NotLoaded.t(),
+          user_id: integer() | nil,
+          inserted_at: NaiveDateTime.t() | nil
         }
-
-  # It is very important to keep the reset password token expiry short,
-  # since someone with access to the email may take over the account.
-  @reset_password_validity_in_days 1
-  @confirm_validity_in_days 7
-  @change_email_validity_in_days 7
-  @session_validity_in_days 60
 
   schema "users_tokens" do
     field :token, :binary
@@ -54,6 +63,8 @@ defmodule Horionos.Accounts.UserToken do
   and devices in the UI and allow users to explicitly expire any
   session they deem invalid.
   """
+  @spec build_session_token(User.t()) :: {binary(), t()}
+  #
   def build_session_token(user) do
     token = :crypto.strong_rand_bytes(@rand_size)
     {token, %UserToken{token: token, context: "session", user_id: user.id}}
@@ -67,6 +78,8 @@ defmodule Horionos.Accounts.UserToken do
   The token is valid if it matches the value in the database and it has
   not expired (after @session_validity_in_days).
   """
+  @spec verify_session_token_query(binary()) :: {:ok, Ecto.Query.t()}
+  #
   def verify_session_token_query(token) do
     query =
       from token in by_token_and_context_query(token, "session"),
@@ -90,21 +103,10 @@ defmodule Horionos.Accounts.UserToken do
   Users can easily adapt the existing code to provide other types of delivery methods,
   for example, by phone numbers.
   """
+  @spec build_email_token(User.t(), String.t()) :: {binary(), t()}
+  #
   def build_email_token(user, context) do
     build_hashed_token(user, context, user.email)
-  end
-
-  defp build_hashed_token(user, context, sent_to) do
-    token = :crypto.strong_rand_bytes(@rand_size)
-    hashed_token = :crypto.hash(@hash_algorithm, token)
-
-    {Base.url_encode64(token, padding: false),
-     %UserToken{
-       token: hashed_token,
-       context: context,
-       sent_to: sent_to,
-       user_id: user.id
-     }}
   end
 
   @doc """
@@ -120,6 +122,8 @@ defmodule Horionos.Accounts.UserToken do
   for resetting the password. For verifying requests to change the email,
   see `verify_change_email_token_query/2`.
   """
+  @spec verify_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
+  #
   def verify_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
@@ -139,9 +143,6 @@ defmodule Horionos.Accounts.UserToken do
     end
   end
 
-  defp days_for_context("confirm"), do: @confirm_validity_in_days
-  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
-
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 
@@ -156,6 +157,8 @@ defmodule Horionos.Accounts.UserToken do
   database and if it has not expired (after @change_email_validity_in_days).
   The context must always start with "change:".
   """
+  @spec verify_change_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
+  #
   def verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
@@ -175,6 +178,8 @@ defmodule Horionos.Accounts.UserToken do
   @doc """
   Returns the token struct for the given token value and context.
   """
+  @spec by_token_and_context_query(binary(), String.t()) :: Ecto.Query.t()
+  #
   def by_token_and_context_query(token, context) do
     from UserToken, where: [token: ^token, context: ^context]
   end
@@ -182,11 +187,31 @@ defmodule Horionos.Accounts.UserToken do
   @doc """
   Gets all tokens for the given user for the given contexts.
   """
+  @spec by_user_and_contexts_query(User.t(), :all | [String.t()]) :: Ecto.Query.t()
+  #
   def by_user_and_contexts_query(user, :all) do
     from t in UserToken, where: t.user_id == ^user.id
   end
 
+  @spec by_user_and_contexts_query(User.t(), [String.t()]) :: Ecto.Query.t()
+  #
   def by_user_and_contexts_query(user, [_ | _] = contexts) do
     from t in UserToken, where: t.user_id == ^user.id and t.context in ^contexts
   end
+
+  defp build_hashed_token(user, context, sent_to) do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    hashed_token = :crypto.hash(@hash_algorithm, token)
+
+    {Base.url_encode64(token, padding: false),
+     %UserToken{
+       token: hashed_token,
+       context: context,
+       sent_to: sent_to,
+       user_id: user.id
+     }}
+  end
+
+  defp days_for_context("confirm"), do: @confirm_validity_in_days
+  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
 end

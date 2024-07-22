@@ -65,6 +65,15 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  config :horionos, Oban,
+    prefix: "oban_jobs_prod",
+    repo: Horionos.Repo,
+    queues: [emails: 10, default: 10],
+    plugins: [
+      {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
+      {Oban.Plugins.Cron, crontab: []}
+    ]
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key
@@ -114,4 +123,14 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+else
+  config :horionos, Oban,
+    prefix: "oban_jobs_#{config_env()}",
+    repo: Horionos.Repo,
+    queues: [emails: 10, default: 10],
+    plugins: [
+      # Shorter pruning time for non-prod
+      {Oban.Plugins.Pruner, max_age: 60 * 60 * 24},
+      {Oban.Plugins.Cron, crontab: []}
+    ]
 end

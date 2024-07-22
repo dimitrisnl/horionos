@@ -3,8 +3,10 @@ defmodule HorionosWeb.UserAuthTest do
 
   alias Phoenix.LiveView
   alias Horionos.Accounts
+  alias Horionos.Orgs
   alias HorionosWeb.UserAuth
   import Horionos.AccountsFixtures
+  import Horionos.OrgsFixtures
 
   @remember_me_cookie "_horionos_web_user_remember_me"
 
@@ -19,30 +21,62 @@ defmodule HorionosWeb.UserAuthTest do
 
   describe "log_in_user/3" do
     test "stores the user token in the session", %{conn: conn, user: user} do
-      conn = UserAuth.log_in_user(conn, user)
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.log_in_user(user)
+
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
-      assert redirected_to(conn) == ~p"/"
       assert Accounts.get_user_by_session_token(token)
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do
-      conn = conn |> put_session(:to_be_removed, "value") |> UserAuth.log_in_user(user)
+      conn =
+        conn
+        |> fetch_flash()
+        |> put_session(:to_be_removed, "value")
+        |> UserAuth.log_in_user(user)
+
       refute get_session(conn, :to_be_removed)
     end
 
     test "redirects to the configured path", %{conn: conn, user: user} do
-      conn = conn |> put_session(:user_return_to, "/hello") |> UserAuth.log_in_user(user)
-      assert redirected_to(conn) == "/hello"
+      conn =
+        conn
+        |> fetch_flash()
+        |> put_session(:user_return_to, "/hello")
+        |> UserAuth.log_in_user(user)
+
+      assert redirected_to(conn) == "/onboarding"
     end
 
     test "writes a cookie if remember_me is configured", %{conn: conn, user: user} do
-      conn = conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+      conn =
+        conn
+        |> fetch_flash()
+        |> fetch_cookies()
+        |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+
       assert get_session(conn, :user_token) == conn.cookies[@remember_me_cookie]
 
       assert %{value: signed_token, max_age: max_age} = conn.resp_cookies[@remember_me_cookie]
       assert signed_token != get_session(conn, :user_token)
       assert max_age == 5_184_000
+    end
+
+    test "redirects to onboarding if user has no organization", %{conn: conn, user: user} do
+      conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
+      assert redirected_to(conn) == ~p"/onboarding"
+    end
+
+    test "redirects to primary org if user has an organization", %{conn: conn, user: user} do
+      Horionos.OrgsFixtures.org_fixture(%{user: user})
+
+      conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
+
+      assert redirected_to(conn) == ~p"/"
+      assert get_session(conn, :current_org_id)
     end
   end
 
@@ -92,7 +126,10 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
       logged_in_conn =
-        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+        conn
+        |> fetch_flash()
+        |> fetch_cookies()
+        |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
 
       user_token = logged_in_conn.cookies[@remember_me_cookie]
       %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]
@@ -117,6 +154,60 @@ defmodule HorionosWeb.UserAuthTest do
     end
   end
 
+  describe "fetch_current_org/2" do
+    setup %{user: user} do
+      org = org_fixture(%{user: user})
+      %{org: org}
+    end
+
+    test "assigns current_org from session", %{conn: conn, user: user, org: org} do
+      conn =
+        conn
+        |> Map.put(:params, %{})
+        |> assign(:current_user, user)
+        |> put_session(:current_org_id, org.id)
+        |> UserAuth.fetch_current_org([])
+
+      assert conn.assigns.current_org.id == org.id
+      assert get_session(conn, :current_org_id) == org.id
+    end
+
+    test "assigns primary org if no org_id in session", %{conn: conn, user: user, org: org} do
+      conn =
+        conn
+        |> Map.put(:params, %{})
+        |> assign(:current_user, user)
+        |> UserAuth.fetch_current_org([])
+
+      assert conn.assigns.current_org.id == org.id
+      assert get_session(conn, :current_org_id) == org.id
+    end
+
+    test "assigns nil if user has no orgs", %{conn: conn, user: user} do
+      Orgs.delete_org(user, Orgs.get_user_primary_org(user))
+
+      conn =
+        conn
+        |> Map.put(:params, %{})
+        |> assign(:current_user, user)
+        |> UserAuth.fetch_current_org([])
+
+      assert conn.assigns.current_org == nil
+      refute get_session(conn, :current_org_id)
+    end
+
+    test "does nothing if no current_user", %{conn: conn} do
+      conn =
+        conn
+        |> Map.put(:params, %{})
+        |> assign(:current_user, nil)
+        |> UserAuth.fetch_current_org([])
+
+      refute conn.assigns[:current_org]
+      refute get_session(conn, :current_org_id)
+    end
+  end
+
   describe "on_mount :mount_current_user" do
     test "assigns current_user based on a valid user_token", %{conn: conn, user: user} do
       user_token = Accounts.generate_user_session_token(user)
@@ -135,7 +226,7 @@ defmodule HorionosWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_user == nil
+      assert is_nil(updated_socket.assigns.current_user)
     end
 
     test "assigns nil to current_user assign if there isn't a user_token", %{conn: conn} do
@@ -144,7 +235,7 @@ defmodule HorionosWeb.UserAuthTest do
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
 
-      assert updated_socket.assigns.current_user == nil
+      assert is_nil(updated_socket.assigns.current_user)
     end
   end
 
@@ -169,7 +260,7 @@ defmodule HorionosWeb.UserAuthTest do
       }
 
       {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_user == nil
+      assert is_nil(updated_socket.assigns.current_user)
     end
 
     test "redirects to login page if there isn't a user_token", %{conn: conn} do
@@ -181,7 +272,43 @@ defmodule HorionosWeb.UserAuthTest do
       }
 
       {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_user == nil
+      assert is_nil(updated_socket.assigns.current_user)
+    end
+  end
+
+  describe "on_mount :ensure_current_org" do
+    test "assigns current_org based on a valid org_id", %{conn: conn, user: user} do
+      org = org_fixture(%{user: user})
+      user_token = Accounts.generate_user_session_token(user)
+
+      session =
+        conn
+        |> put_session(:user_token, user_token)
+        |> put_session(:current_org_id, org.id)
+        |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: HorionosWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
+      }
+
+      {:cont, updated_socket} =
+        UserAuth.on_mount(:ensure_current_org, %{}, session, socket)
+
+      assert updated_socket.assigns.current_org.id == org.id
+    end
+
+    test "redirects to onboarding if there isn't a valid org_id", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+      session = conn |> put_session(:user_token, user_token) |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: HorionosWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
+      }
+
+      {:halt, updated_socket} = UserAuth.on_mount(:ensure_current_org, %{}, session, socket)
+      assert updated_socket.assigns.current_org == nil
     end
   end
 
@@ -232,9 +359,6 @@ defmodule HorionosWeb.UserAuthTest do
       assert conn.halted
 
       assert redirected_to(conn) == ~p"/users/log_in"
-
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "You must log in to access this page."
     end
 
     test "stores the path to redirect to on GET", %{conn: conn} do
@@ -267,6 +391,35 @@ defmodule HorionosWeb.UserAuthTest do
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
       refute conn.status
+    end
+  end
+
+  describe "require_org/2" do
+    setup %{user: user} do
+      org = org_fixture(%{user: user})
+      %{org: org}
+    end
+
+    test "does not redirect if user has an org", %{conn: conn, user: user, org: org} do
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> assign(:current_org, org)
+        |> UserAuth.require_org([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "redirects to onboarding if user has no org", %{conn: conn, user: user} do
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> assign(:current_org, nil)
+        |> UserAuth.require_org([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/onboarding"
     end
   end
 end

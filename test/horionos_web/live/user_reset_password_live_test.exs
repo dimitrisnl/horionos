@@ -39,12 +39,9 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
       result =
         lv
         |> element("#reset_password_form")
-        |> render_change(
-          user: %{"password" => "secret12", "password_confirmation" => "secret123456"}
-        )
+        |> render_submit(user: %{"password" => "secret12"})
 
       assert result =~ "should be at least 12 character"
-      assert result =~ "does not match password"
     end
   end
 
@@ -56,8 +53,7 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
         lv
         |> form("#reset_password_form",
           user: %{
-            "password" => "new valid password",
-            "password_confirmation" => "new valid password"
+            "password" => "new valid password"
           }
         )
         |> render_submit()
@@ -75,15 +71,13 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
         lv
         |> form("#reset_password_form",
           user: %{
-            "password" => "too short",
-            "password_confirmation" => "does not match"
+            "password" => "too short"
           }
         )
         |> render_submit()
 
       assert result =~ "Reset Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
     end
   end
 
@@ -93,7 +87,7 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Log in")|)
+        |> element(~s|a:fl-contains("Log in")|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 
@@ -108,7 +102,7 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Register")|)
+        |> element(~s|a:fl-contains("Register")|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 

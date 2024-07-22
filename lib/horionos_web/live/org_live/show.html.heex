@@ -1,0 +1,45 @@
+<.header>
+  Organization <%= @org.id %>
+  <:subtitle>
+    <.back navigate={~p"/orgs"}>Back to organizations</.back>
+  </:subtitle>
+  <:actions>
+    <div class="flex items-center space-x-4">
+      <.link patch={~p"/orgs/#{@org}/show/edit"} phx-click={JS.push_focus()}>
+        <.button>
+          <:left_icon>
+            <.icon name="hero-pencil-micro" />
+          </:left_icon>
+          Edit
+        </.button>
+      </.link>
+      <.link
+        phx-click={JS.push("delete", value: %{id: @org.id})}
+        data-confirm="Are you sure you want to delete the organization? This action cannot be undone."
+      >
+        <.button intent="destructive">
+          <:left_icon>
+            <.icon name="hero-trash-micro" />
+          </:left_icon>
+          Delete
+        </.button>
+      </.link>
+    </div>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Title"><%= @org.title %></:item>
+</.list>
+
+<.modal :if={@live_action == :edit} id="org-modal" show on_cancel={JS.patch(~p"/orgs/#{@org}")}>
+  <.live_component
+    module={HorionosWeb.OrgLive.FormComponent}
+    id={@org.id}
+    title={@page_title}
+    action={@live_action}
+    org={@org}
+    current_user={@current_user}
+    patch={~p"/orgs/#{@org}"}
+  />
+</.modal>

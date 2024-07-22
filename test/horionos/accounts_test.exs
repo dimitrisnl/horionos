@@ -2,9 +2,9 @@ defmodule Horionos.AccountsTest do
   use Horionos.DataCase
 
   alias Horionos.Accounts
+  alias Horionos.Accounts.{User, UserToken}
 
   import Horionos.AccountsFixtures
-  alias Horionos.Accounts.{User, UserToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -13,6 +13,7 @@ defmodule Horionos.AccountsTest do
 
     test "returns the user if the email exists" do
       %{id: id} = user = user_fixture()
+
       assert %User{id: ^id} = Accounts.get_user_by_email(user.email)
     end
   end
@@ -32,19 +33,6 @@ defmodule Horionos.AccountsTest do
 
       assert %User{id: ^id} =
                Accounts.get_user_by_email_and_password(user.email, valid_user_password())
-    end
-  end
-
-  describe "get_user!/1" do
-    test "raises if id is invalid" do
-      assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
-      end
-    end
-
-    test "returns the user with the given id" do
-      %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Accounts.get_user!(user.id)
     end
   end
 
@@ -170,11 +158,12 @@ defmodule Horionos.AccountsTest do
       email = unique_user_email()
       {:ok, user} = Accounts.apply_user_email(user, valid_user_password(), %{email: email})
       assert user.email == email
-      assert Accounts.get_user!(user.id).email != email
+
+      assert is_nil(Accounts.get_user_by_email(email))
     end
   end
 
-  describe "deliver_user_update_email_instructions/3" do
+  describe "deliver_update_email_instructions/3" do
     setup do
       %{user: user_fixture()}
     end
@@ -503,114 +492,6 @@ defmodule Horionos.AccountsTest do
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
-    end
-  end
-
-  describe "orgs" do
-    alias Horionos.Accounts.Org
-
-    import Horionos.AccountsFixtures
-
-    @invalid_attrs %{title: nil}
-
-    test "list_orgs/0 returns all orgs" do
-      org = org_fixture()
-      assert Accounts.list_orgs() == [org]
-    end
-
-    test "get_org!/1 returns the org with given id" do
-      org = org_fixture()
-      assert Accounts.get_org!(org.id) == org
-    end
-
-    test "create_org/1 with valid data creates a org" do
-      valid_attrs = %{title: "some title"}
-
-      assert {:ok, %Org{} = org} = Accounts.create_org(valid_attrs)
-      assert org.title == "some title"
-    end
-
-    test "create_org/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_org(@invalid_attrs)
-    end
-
-    test "update_org/2 with valid data updates the org" do
-      org = org_fixture()
-      update_attrs = %{title: "some updated title"}
-
-      assert {:ok, %Org{} = org} = Accounts.update_org(org, update_attrs)
-      assert org.title == "some updated title"
-    end
-
-    test "update_org/2 with invalid data returns error changeset" do
-      org = org_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_org(org, @invalid_attrs)
-      assert org == Accounts.get_org!(org.id)
-    end
-
-    test "delete_org/1 deletes the org" do
-      org = org_fixture()
-      assert {:ok, %Org{}} = Accounts.delete_org(org)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_org!(org.id) end
-    end
-
-    test "change_org/1 returns a org changeset" do
-      org = org_fixture()
-      assert %Ecto.Changeset{} = Accounts.change_org(org)
-    end
-  end
-
-  describe "memberships" do
-    alias Horionos.Accounts.Membership
-
-    import Horionos.AccountsFixtures
-
-    @invalid_attrs %{role: nil}
-
-    test "list_memberships/0 returns all memberships" do
-      membership = membership_fixture()
-      assert Accounts.list_memberships() == [membership]
-    end
-
-    test "get_membership!/1 returns the membership with given id" do
-      membership = membership_fixture()
-      assert Accounts.get_membership!(membership.id) == membership
-    end
-
-    test "create_membership/1 with valid data creates a membership" do
-      valid_attrs = %{role: "some role"}
-
-      assert {:ok, %Membership{} = membership} = Accounts.create_membership(valid_attrs)
-      assert membership.role == "some role"
-    end
-
-    test "create_membership/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_membership(@invalid_attrs)
-    end
-
-    test "update_membership/2 with valid data updates the membership" do
-      membership = membership_fixture()
-      update_attrs = %{role: "some updated role"}
-
-      assert {:ok, %Membership{} = membership} = Accounts.update_membership(membership, update_attrs)
-      assert membership.role == "some updated role"
-    end
-
-    test "update_membership/2 with invalid data returns error changeset" do
-      membership = membership_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_membership(membership, @invalid_attrs)
-      assert membership == Accounts.get_membership!(membership.id)
-    end
-
-    test "delete_membership/1 deletes the membership" do
-      membership = membership_fixture()
-      assert {:ok, %Membership{}} = Accounts.delete_membership(membership)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_membership!(membership.id) end
-    end
-
-    test "change_membership/1 returns a membership changeset" do
-      membership = membership_fixture()
-      assert %Ecto.Changeset{} = Accounts.change_membership(membership)
     end
   end
 end

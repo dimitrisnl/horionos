@@ -1,81 +1,83 @@
 defmodule Horionos.Accounts.UserNotifier do
-  @moduledoc false
+  @moduledoc """
+  Handles sending notification emails to users.
+  """
 
-  import Swoosh.Email
+  alias Horionos.Workers.EmailWorker
 
-  alias Horionos.Mailer
+  require Logger
 
-  # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
-    email =
-      new()
-      |> to(recipient)
-      |> from({"Horionos", "contact@example.com"})
-      |> subject(subject)
-      |> text_body(body)
+  @from_email Application.compile_env(:horionos, :from_email, "contact@horionos.com")
+  @from_name Application.compile_env(:horionos, :from_name, "Horionos")
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
+  @doc """
+  Prepares and queues an email for delivery using Oban.
+  """
+  @spec deliver(String.t(), String.t(), String.t(), map()) :: {:ok, map()} | {:error, term()}
+  #
+  def deliver(recipient, subject, template, assigns) do
+    email_params = %{
+      to: recipient,
+      from: %{name: @from_name, email: @from_email},
+      subject: subject,
+      template: template,
+      assigns: assigns
+    }
+
+    case enqueue_email_job(email_params) do
+      {:ok, _job} ->
+        {:ok, email_params}
+
+      {:error, reason} ->
+        Logger.error("Failed to enqueue email job: #{reason}")
+        {:error, reason}
     end
   end
 
   @doc """
   Deliver instructions to confirm account.
   """
+  @spec deliver_confirmation_instructions(%Horionos.Accounts.User{}, String.t()) ::
+          {:ok, map()} | {:error, term()}
+  #
   def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can confirm your account by visiting the URL below:
-
-    #{url}
-
-    If you didn't create an account with us, please ignore this.
-
-    ==============================
-    """)
+    deliver(user.email, "Confirmation instructions", "confirmation_instructions.txt", %{
+      url: url,
+      email: user.email
+    })
   end
 
   @doc """
   Deliver instructions to reset a user password.
   """
+  @spec deliver_reset_password_instructions(%Horionos.Accounts.User{}, String.t()) ::
+          {:ok, map()} | {:error, term()}
+  #
   def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
-
-    ==============================
-
-    Hi #{user.email},
-
-    You can reset your password by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
+    deliver(user.email, "Reset password instructions", "reset_password_instructions.txt", %{
+      url: url,
+      email: user.email
+    })
   end
 
   @doc """
   Deliver instructions to update a user email.
   """
+  @spec deliver_update_email_instructions(%Horionos.Accounts.User{}, String.t()) ::
+          {:ok, map()} | {:error, term()}
+  #
   def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+    deliver(user.email, "Update email instructions", "update_email_instructions.txt", %{
+      url: url,
+      email: user.email
+    })
+  end
 
-    ==============================
-
-    Hi #{user.email},
-
-    You can change your email by visiting the URL below:
-
-    #{url}
-
-    If you didn't request this change, please ignore this.
-
-    ==============================
-    """)
+  @spec enqueue_email_job(map()) :: {:ok, map()} | {:error, term()}
+  #
+  defp enqueue_email_job(email_params) do
+    %{email_params: email_params}
+    |> EmailWorker.new()
+    |> Oban.insert()
   end
 end

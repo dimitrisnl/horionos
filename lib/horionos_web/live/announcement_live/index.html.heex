@@ -1,0 +1,75 @@
+<.header>
+  Announcements
+  <:subtitle>All your announcements in one place</:subtitle>
+  <:actions :if={Enum.count(@streams.announcements) > 0}>
+    <.link patch={~p"/announcements/new"}>
+      <.button>
+        <:left_icon>
+          <.icon name="hero-plus-micro" />
+        </:left_icon>
+        New Announcement
+      </.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  :if={Enum.count(@streams.announcements) > 0}
+  id="announcements"
+  rows={@streams.announcements}
+  row_click={fn {_id, announcement} -> JS.navigate(~p"/announcements/#{announcement}") end}
+>
+  <:col :let={{_id, announcement}} label="Title"><%= announcement.title %></:col>
+  <:col :let={{_id, announcement}} label="Body"><%= announcement.body %></:col>
+  <:action :let={{_id, announcement}}>
+    <div class="sr-only">
+      <.link navigate={~p"/announcements/#{announcement}"}>Show</.link>
+    </div>
+    <.link patch={~p"/announcements/#{announcement}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, announcement}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: announcement.id}) |> hide("##{id}")}
+      data-confirm="Are you sure you want to delete this announcement? This action cannot be undone."
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<div
+  :if={Enum.count(@streams.announcements) == 0}
+  class="mt-12 rounded-lg border border-dashed p-12 text-center"
+>
+  <.icon name="hero-megaphone" class="h-12 w-12 text-gray-400" />
+  <h3 class="mt-2 text-sm font-semibold text-gray-900">No Announcements</h3>
+  <p class="mt-1 text-sm text-gray-500">Get started by creating a new one.</p>
+  <div class="mt-6">
+    <.link patch={~p"/announcements/new"}>
+      <.button class="mx-auto">
+        <:left_icon>
+          <.icon name="hero-plus-micro" />
+        </:left_icon>
+        New Announcement
+      </.button>
+    </.link>
+  </div>
+</div>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="announcement-modal"
+  show
+  on_cancel={JS.patch(~p"/announcements")}
+>
+  <.live_component
+    module={HorionosWeb.AnnouncementLive.FormComponent}
+    id={@announcement.id || :new}
+    title={@page_title}
+    action={@live_action}
+    announcement={@announcement}
+    current_user={@current_user}
+    current_org={@current_org}
+    patch={~p"/announcements"}
+  />
+</.modal>

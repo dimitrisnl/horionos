@@ -1,15 +1,23 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
 # General application configuration
 import Config
 
 config :horionos,
   ecto_repos: [Horionos.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # Emails
+  from_email: "contact@horionos.com",
+  from_name: "Horionos",
+  # Tokens
+  reset_password_validity_in_days: 1,
+  confirm_validity_in_days: 7,
+  change_email_validity_in_days: 7,
+  session_validity_in_days: 60
+
+# Oban configuration
+config :horionos, Oban,
+  repo: Horionos.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [emails: 10, default: 10]
 
 # Configures the endpoint
 config :horionos, HorionosWeb.Endpoint,

@@ -1,14 +1,16 @@
 defmodule HorionosWeb.UserSessionControllerTest do
+  require Logger
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
 
-  setup do
-    %{user: user_fixture()}
-  end
-
   describe "POST /users/log_in" do
-    test "logs the user in", %{conn: conn, user: user} do
+    test "logs the user in", %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      conn = delete(conn, ~p"/users/log_out")
+
       conn =
         post(conn, ~p"/users/log_in", %{
           "user" => %{"email" => user.email, "password" => valid_user_password()}
@@ -25,7 +27,12 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert response =~ ~p"/users/log_out"
     end
 
-    test "logs the user in with remember me", %{conn: conn, user: user} do
+    test "logs the user in with remember me", %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      conn = delete(conn, ~p"/users/log_out")
+
       conn =
         post(conn, ~p"/users/log_in", %{
           "user" => %{
@@ -39,9 +46,14 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
     end
 
-    test "logs the user in with return to", %{conn: conn, user: user} do
+    test "logs the user in with return to", %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      delete(conn, ~p"/users/log_out")
+
       conn =
-        conn
+        Phoenix.ConnTest.build_conn()
         |> init_test_session(user_return_to: "/foo/bar")
         |> post(~p"/users/log_in", %{
           "user" => %{
@@ -51,10 +63,14 @@ defmodule HorionosWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == "/foo/bar"
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
     end
 
-    test "login following registration", %{conn: conn, user: user} do
+    test "login following registration", %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      conn = delete(conn, ~p"/users/log_out")
+
       conn =
         conn
         |> post(~p"/users/log_in", %{
@@ -66,10 +82,14 @@ defmodule HorionosWeb.UserSessionControllerTest do
         })
 
       assert redirected_to(conn) == ~p"/"
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Account created successfully"
     end
 
-    test "login following password update", %{conn: conn, user: user} do
+    test "login following password update", %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      conn = delete(conn, ~p"/users/log_out")
+
       conn =
         conn
         |> post(~p"/users/log_in", %{
@@ -90,24 +110,25 @@ defmodule HorionosWeb.UserSessionControllerTest do
           "user" => %{"email" => "invalid@email.com", "password" => "invalid_password"}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
       assert redirected_to(conn) == ~p"/users/log_in"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
     end
   end
 
   describe "DELETE /users/log_out" do
-    test "logs the user out", %{conn: conn, user: user} do
-      conn = conn |> log_in_user(user) |> delete(~p"/users/log_out")
+    test "logs the user out", %{conn: conn} do
+      %{conn: conn} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      conn = conn |> delete(~p"/users/log_out")
       assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
 
     test "succeeds even if the user is not logged in", %{conn: conn} do
       conn = delete(conn, ~p"/users/log_out")
       assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
   end
 end

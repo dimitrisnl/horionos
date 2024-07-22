@@ -1,20 +1,15 @@
 defmodule Horionos.Accounts.User do
-  @moduledoc false
+  @moduledoc """
+  Schema and changeset functions for User accounts.
+  """
 
   use Ecto.Schema
   import Ecto.Changeset
+
   alias Horionos.Accounts.Password
 
-  @type t :: %__MODULE__{
-          id: integer(),
-          email: String.t(),
-          password: String.t(),
-          hashed_password: String.t(),
-          confirmed_at: NaiveDateTime.t(),
-          memberships: [Horionos.Memberships.Membership.t()],
-          inserted_at: NaiveDateTime.t(),
-          updated_at: NaiveDateTime.t()
-        }
+  # Prevent password leaks in logs
+  @derive {Inspect, except: [:password, :hashed_password]}
 
   schema "users" do
     field :email, :string
@@ -22,10 +17,21 @@ defmodule Horionos.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
 
-    has_many :memberships, Horionos.Memberships.Membership
+    has_many :memberships, Horionos.Orgs.Membership
 
     timestamps(type: :utc_datetime)
   end
+
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          email: String.t() | nil,
+          password: String.t() | nil,
+          hashed_password: String.t() | nil,
+          confirmed_at: NaiveDateTime.t() | nil,
+          memberships: [Horionos.Orgs.Membership.t() | Ecto.Association.NotLoaded.t()] | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
 
   @doc """
   A user changeset for registration.
@@ -49,7 +55,13 @@ defmodule Horionos.Accounts.User do
       using this changeset for validations on a LiveView form before
       submitting the form), this option can be set to `false`.
       Defaults to `true`.
+
+  ## Returns
+
+  A changeset with the validated data.
   """
+  @spec registration_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   def registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password])
@@ -57,57 +69,13 @@ defmodule Horionos.Accounts.User do
     |> validate_password(opts)
   end
 
-  defp validate_email(changeset, opts) do
-    changeset
-    |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
-    |> maybe_validate_unique_email(opts)
-  end
-
-  defp validate_password(changeset, opts) do
-    changeset
-    |> validate_required([:password])
-    |> validate_length(:password, min: 12, max: 72)
-    # Examples of additional password validation:
-    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
-    |> maybe_hash_password(opts)
-  end
-
-  defp maybe_hash_password(changeset, opts) do
-    hash_password? = Keyword.get(opts, :hash_password, true)
-    password = get_change(changeset, :password)
-
-    if hash_password? && password && changeset.valid? do
-      changeset
-      # If using Bcrypt, then further validate it is at most 72 bytes long
-      |> validate_length(:password, max: 72, count: :bytes)
-      # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
-      # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Password.hash(password))
-      |> delete_change(:password)
-    else
-      changeset
-    end
-  end
-
-  defp maybe_validate_unique_email(changeset, opts) do
-    if Keyword.get(opts, :validate_email, true) do
-      changeset
-      |> unsafe_validate_unique(:email, Horionos.UnscopedRepo)
-      |> unique_constraint(:email)
-    else
-      changeset
-    end
-  end
-
   @doc """
   A user changeset for changing the email.
 
   It requires the email to change otherwise an error is added.
   """
+  @spec email_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   def email_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email])
@@ -130,6 +98,8 @@ defmodule Horionos.Accounts.User do
       validations on a LiveView form), this option can be set to `false`.
       Defaults to `true`.
   """
+  @spec password_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   def password_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:password])
@@ -140,6 +110,8 @@ defmodule Horionos.Accounts.User do
   @doc """
   Confirms the account by setting `confirmed_at`.
   """
+  @spec confirm_changeset(t) :: Ecto.Changeset.t()
+  #
   def confirm_changeset(user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     change(user, confirmed_at: now)
@@ -151,6 +123,8 @@ defmodule Horionos.Accounts.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
+  @spec valid_password?(%Horionos.Accounts.User{}, String.t()) :: boolean()
+  #
   def valid_password?(%Horionos.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Password.verify(password, hashed_password)
@@ -164,11 +138,66 @@ defmodule Horionos.Accounts.User do
   @doc """
   Validates the current password otherwise adds an error to the changeset.
   """
+  @spec validate_current_password(Ecto.Changeset.t(), String.t()) :: Ecto.Changeset.t()
+  #
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do
       changeset
     else
       add_error(changeset, :current_password, "is not valid")
+    end
+  end
+
+  ## Private functions
+
+  @spec validate_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
+  defp validate_email(changeset, opts) do
+    changeset
+    |> validate_required([:email])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_length(:email, max: 160)
+    |> maybe_validate_unique_email(opts)
+  end
+
+  @spec validate_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
+  defp validate_password(changeset, opts) do
+    changeset
+    |> validate_required([:password])
+    |> validate_length(:password, min: 12, max: 72)
+    # Examples of additional password validation:
+    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
+    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
+    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> maybe_hash_password(opts)
+  end
+
+  @spec maybe_hash_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
+  defp maybe_hash_password(changeset, opts) do
+    hash_password? = Keyword.get(opts, :hash_password, true)
+    password = get_change(changeset, :password)
+
+    if hash_password? && password && changeset.valid? do
+      changeset
+      |> validate_length(:password, max: 72, count: :bytes)
+      |> Password.hash_password()
+      |> delete_change(:password)
+    else
+      changeset
+    end
+  end
+
+  @spec maybe_validate_unique_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
+  defp maybe_validate_unique_email(changeset, opts) do
+    if Keyword.get(opts, :validate_email, true) do
+      changeset
+      |> unsafe_validate_unique(:email, Horionos.Repo)
+      |> unique_constraint(:email)
+    else
+      changeset
     end
   end
 end

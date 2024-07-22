@@ -6,11 +6,12 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = {
+  darkMode: "class",
   content: ["./js/**/*.js", "../lib/horionos_web.ex", "../lib/horionos_web/**/*.*ex"],
   theme: {
     extend: {
       colors: {
-        brand: "#86211d",
+        brand: "#2563eb",
       },
     },
   },

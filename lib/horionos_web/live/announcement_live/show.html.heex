@@ -1,0 +1,52 @@
+<.header>
+  Announcement <%= @announcement.id %>
+  <:subtitle>
+    <.back navigate={~p"/announcements"}>Back to announcements</.back>
+  </:subtitle>
+  <:actions>
+    <div class="flex items-center space-x-4">
+      <.link patch={~p"/announcements/#{@announcement}/show/edit"} phx-click={JS.push_focus()}>
+        <.button>
+          <:left_icon>
+            <.icon name="hero-pencil-micro" />
+          </:left_icon>
+          Edit
+        </.button>
+      </.link>
+      <.link
+        phx-click={JS.push("delete", value: %{id: @announcement.id})}
+        data-confirm="Are you sure you want to delete this announcement? This action cannot be undone."
+      >
+        <.button intent="destructive">
+          <:left_icon>
+            <.icon name="hero-trash-micro" />
+          </:left_icon>
+          Delete
+        </.button>
+      </.link>
+    </div>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Title"><%= @announcement.title %></:item>
+  <:item title="Body"><%= @announcement.body %></:item>
+</.list>
+
+<.modal
+  :if={@live_action == :edit}
+  id="announcement-modal"
+  show
+  on_cancel={JS.patch(~p"/announcements/#{@announcement}")}
+>
+  <.live_component
+    module={HorionosWeb.AnnouncementLive.FormComponent}
+    id={@announcement.id}
+    title={@page_title}
+    action={@live_action}
+    announcement={@announcement}
+    current_user={@current_user}
+    current_org={@current_org}
+    patch={~p"/announcements/#{@announcement}"}
+  />
+</.modal>

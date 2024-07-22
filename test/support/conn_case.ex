@@ -36,17 +36,41 @@ defmodule HorionosWeb.ConnCase do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 
+  import Plug.Conn
+
   @doc """
-  Setup helper that registers and logs in users.
+  Setup helper that registers and logs in users, and optionally creates an organization for them.
 
       setup :register_and_log_in_user
 
-  It stores an updated connection and a registered user in the
-  test context.
+  It stores an updated connection, a registered user, and optionally the user's organization in the
+  test context. Use the `create_org` tag to control whether an organization is created.
   """
-  def register_and_log_in_user(%{conn: conn}) do
-    user = Horionos.AccountsFixtures.user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+  def register_and_log_in_user(context) do
+    %{conn: conn} = context
+    create_org = Map.get(context, :create_org, false)
+    user_attrs = Map.get(context, :user_attrs, %{})
+
+    user = Horionos.AccountsFixtures.user_fixture(user_attrs)
+
+    conn = log_in_user(conn, user)
+
+    result = %{conn: conn, user: user}
+
+    if create_org do
+      org = Horionos.OrgsFixtures.org_fixture(%{user: user})
+
+      conn =
+        conn
+        |> put_session(:current_org_id, org.id)
+        |> assign(:current_org, org)
+
+      result
+      |> Map.put(:org, org)
+      |> Map.put(:conn, conn)
+    else
+      result
+    end
   end
 
   @doc """
@@ -60,5 +84,29 @@ defmodule HorionosWeb.ConnCase do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
+  end
+
+  def log_in_and_onboard_user(conn, user) do
+    conn = log_in_user(conn, user)
+    org = Horionos.OrgsFixtures.org_fixture(%{user: user})
+
+    conn =
+      conn
+      |> put_session(:current_org_id, org.id)
+      |> assign(:current_org, org)
+
+    conn
+  end
+
+  def extract_user_token(fun) do
+    {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    [_, token | _] = String.split(captured_email.assigns.url, "[TOKEN]")
+    token
+  end
+
+  def assign_org(conn, org) do
+    conn
+    |> Plug.Conn.assign(:current_org, org)
+    |> Plug.Conn.put_session(:current_org_id, org.id)
   end
 end
