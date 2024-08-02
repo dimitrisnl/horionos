@@ -1,4 +1,4 @@
-defmodule HorionosWeb.UserConfirmationLiveTest do
+defmodule HorionosWeb.AuthLive.UserConfirmationLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -11,10 +11,10 @@ defmodule HorionosWeb.UserConfirmationLiveTest do
     %{user: user_fixture()}
   end
 
-  describe "Confirm user" do
+  describe "Confirmation page" do
     test "renders confirmation page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/confirm/some-token")
-      assert html =~ "Confirm Account"
+      assert html =~ "Confirm your email address"
     end
 
     test "confirms the given token once", %{conn: conn, user: user} do
@@ -29,12 +29,12 @@ defmodule HorionosWeb.UserConfirmationLiveTest do
         lv
         |> form("#confirmation_form")
         |> render_submit()
-        |> follow_redirect(conn, "/")
+        |> follow_redirect(conn, "/users/log_in")
 
       assert {:ok, conn} = result
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "User confirmed successfully"
+               "Your account has been confirmed successfully"
 
       assert Accounts.get_user!(user.id).confirmed_at
       refute get_session(conn, :user_token)
@@ -47,17 +47,17 @@ defmodule HorionosWeb.UserConfirmationLiveTest do
         lv
         |> form("#confirmation_form")
         |> render_submit()
-        |> follow_redirect(conn, "/")
+        |> follow_redirect(conn, ~p"/")
 
       assert {:ok, conn} = result
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "The confirmation link is invalid or has expired"
 
       # when logged in
       conn =
         build_conn()
-        |> log_in_user(user)
+        |> log_in_and_onboard_user(user)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
 
@@ -81,7 +81,7 @@ defmodule HorionosWeb.UserConfirmationLiveTest do
         |> follow_redirect(conn, ~p"/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "The confirmation link is invalid or has expired"
 
       refute Accounts.get_user!(user.id).confirmed_at
     end

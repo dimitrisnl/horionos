@@ -11,24 +11,11 @@ defmodule HorionosWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug :fetch_current_org
   end
-
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", HorionosWeb do
-  #   pipe_through :api
-  # end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:horionos, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
@@ -39,35 +26,61 @@ defmodule HorionosWeb.Router do
     end
   end
 
-  ## Authentication routes
-
+  ### Only for unauthenticated users
   scope "/", HorionosWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{HorionosWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/users/register", AuthLive.UserRegistrationLive, :new
+      live "/users/log_in", AuthLive.UserLoginLive, :new
+      live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", AuthLive.UserResetPasswordLive, :edit
     end
 
     post "/users/log_in", UserSessionController, :create
   end
 
+  # Onboarding scope. Authenticated but not onboarded users (missing org)
   scope "/", HorionosWeb do
     pipe_through [:browser, :require_authenticated_user]
 
-    resources "/orgs", OrgController
-    get "/", PageController, :home
-
-    live_session :require_authenticated_user,
+    live_session :onboarding,
       on_mount: [{HorionosWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/onboarding", OnboardingLive, :onboarding
     end
   end
 
+  ### Authenticated routes, with an Organization in scope
+  scope "/", HorionosWeb do
+    pipe_through [:browser, :require_authenticated_user, :require_org]
+
+    post "/org/select", OrgSessionController, :update
+
+    live_session :authenticated_with_org,
+      on_mount: [
+        {HorionosWeb.UserAuth, :ensure_authenticated},
+        {HorionosWeb.UserAuth, :ensure_current_org}
+      ] do
+      live "/", DashboardLive, :home
+      live "/users/settings", UserSettingsLive.Index, :edit
+      live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
+
+      live "/orgs", OrgLive.Index, :index
+      live "/orgs/new", OrgLive.Index, :new
+      live "/orgs/:id/edit", OrgLive.Index, :edit
+      live "/orgs/:id", OrgLive.Show, :show
+      live "/orgs/:id/show/edit", OrgLive.Show, :edit
+
+      live "/announcements", AnnouncementLive.Index, :index
+      live "/announcements/new", AnnouncementLive.Index, :new
+      live "/announcements/:id/edit", AnnouncementLive.Index, :edit
+      live "/announcements/:id", AnnouncementLive.Show, :show
+      live "/announcements/:id/show/edit", AnnouncementLive.Show, :edit
+    end
+  end
+
+  ### Both authenticated and unauthenticated routes
   scope "/", HorionosWeb do
     pipe_through [:browser]
 
@@ -75,8 +88,8 @@ defmodule HorionosWeb.Router do
 
     live_session :current_user,
       on_mount: [{HorionosWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
+      live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
     end
   end
 end

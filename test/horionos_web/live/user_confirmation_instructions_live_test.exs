@@ -1,4 +1,4 @@
-defmodule HorionosWeb.UserConfirmationInstructionsLiveTest do
+defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -7,24 +7,23 @@ defmodule HorionosWeb.UserConfirmationInstructionsLiveTest do
   alias Horionos.Accounts
   alias Horionos.Repo
 
-  setup do
-    %{user: user_fixture()}
-  end
-
   describe "Resend confirmation" do
     test "renders the resend confirmation page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/confirm")
       assert html =~ "Resend confirmation instructions"
+      assert html =~ "Email"
     end
 
-    test "sends a new confirmation token", %{conn: conn, user: user} do
+    test "sends a new confirmation token", %{conn: conn} do
+      user = user_fixture(%{confirmed_at: nil})
+
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
       {:ok, conn} =
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
@@ -32,8 +31,8 @@ defmodule HorionosWeb.UserConfirmationInstructionsLiveTest do
       assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
     end
 
-    test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
-      Repo.update!(Accounts.User.confirm_changeset(user))
+    test "does not send confirmation token if user is confirmed", %{conn: conn} do
+      user = user_fixture(%{confirmed_at: ~N[2022-01-01 00:00:00]})
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
@@ -41,12 +40,13 @@ defmodule HorionosWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      refute Repo.get_by(Accounts.UserToken, user_id: user.id)
+      user_email = user.email
+      refute_received {:email, %{to: [^user_email]}}
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do
@@ -56,7 +56,7 @@ defmodule HorionosWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"

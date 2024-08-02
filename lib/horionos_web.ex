@@ -84,7 +84,10 @@ defmodule HorionosWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
+      import HorionosWeb.JSHelpers
       import HorionosWeb.CoreComponents
+      import HorionosWeb.FormComponents
+      import HorionosWeb.FlashComponents
       import HorionosWeb.Gettext
 
       # Shortcut for generating JS commands

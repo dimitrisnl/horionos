@@ -1,5 +1,7 @@
 defmodule Horionos.Application do
-  @moduledoc false
+  @moduledoc """
+  OTP Application specification for Horionos
+  """
 
   use Application
 
@@ -10,11 +12,9 @@ defmodule Horionos.Application do
       Horionos.Repo,
       {DNSCluster, query: Application.get_env(:horionos, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Horionos.PubSub},
-      # Start the Finch HTTP client for sending emails
       {Finch, name: Horionos.Finch},
-      # Start a worker by calling: Horionos.Worker.start_link(arg)
-      # {Horionos.Worker, arg},
-      # Start to serve requests, typically the last entry
+      {Oban, Application.fetch_env!(:horionos, Oban)},
+      Horionos.Services.RateLimiter,
       HorionosWeb.Endpoint
     ]
 

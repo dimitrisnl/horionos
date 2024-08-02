@@ -1,0 +1,25 @@
+<div class="min-h-svh relative isolate">
+  <header class="px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between py-3 text-sm">
+      <div class="flex h-16 shrink-0 items-center">
+        <.brand_icon />
+        <h1 class="ml-3 text-lg font-bold leading-6 text-gray-900">Horionos</h1>
+      </div>
+      <ul class="text-md relative z-10 flex items-center justify-end gap-4 px-4 sm:px-6 lg:px-8">
+        <li>
+          <.link
+            href={~p"/users/log_out"}
+            method="delete"
+            class="leading-6 text-gray-900 font-semibold hover:text-gray-700"
+          >
+            Log out
+          </.link>
+        </li>
+      </ul>
+    </div>
+  </header>
+  <main>
+    <.flash_group flash={@flash} />
+    <%= @inner_content %>
+  </main>
+</div>

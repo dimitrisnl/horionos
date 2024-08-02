@@ -30,7 +30,7 @@ config :horionos, Horionos.Mailer, adapter: Swoosh.Adapters.Test
 config :swoosh, :api_client, false
 
 # Print only warnings and errors during test
-config :logger, level: :warning
+config :logger, level: :none
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
@@ -38,3 +38,11 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :horionos, Oban,
+  repo: Horionos.Repo,
+  plugins: false,
+  queues: false,
+  testing: :inline
+
+config :horionos, :rate_limiter, Horionos.Services.RateLimiterMock

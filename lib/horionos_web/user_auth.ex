@@ -1,10 +1,13 @@
 defmodule HorionosWeb.UserAuth do
   use HorionosWeb, :verified_routes
 
+  require Logger
+
   import Plug.Conn
   import Phoenix.Controller
 
   alias Horionos.Accounts
+  alias Horionos.Orgs
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -33,7 +36,20 @@ defmodule HorionosWeb.UserAuth do
     |> renew_session()
     |> put_token_in_session(token)
     |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect_based_on_user_state(user, user_return_to)
+  end
+
+  defp redirect_based_on_user_state(conn, user, user_return_to) do
+    case Orgs.get_user_primary_org(user) do
+      nil ->
+        conn
+        |> redirect(to: ~p"/onboarding")
+
+      org ->
+        conn
+        |> put_session(:current_org_id, org.id)
+        |> redirect(to: user_return_to || signed_in_path(conn))
+    end
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -96,6 +112,44 @@ defmodule HorionosWeb.UserAuth do
     assign(conn, :current_user, user)
   end
 
+  def fetch_current_org(conn, _opts) do
+    if user = conn.assigns.current_user do
+      org_id = get_session(conn, :current_org_id)
+
+      if is_nil(org_id) do
+        handle_org_not_found(conn, user)
+      else
+        case Orgs.get_org(user, org_id) do
+          {:ok, org} ->
+            assign_current_org(conn, org)
+
+          {:error, :unauthorized} ->
+            handle_org_not_found(conn, user)
+        end
+      end
+    else
+      conn
+    end
+  end
+
+  defp assign_current_org(conn, org) do
+    conn
+    |> assign(:current_org, org)
+    |> put_session(:current_org_id, org.id)
+  end
+
+  defp handle_org_not_found(conn, user) do
+    case Orgs.get_user_primary_org(user) do
+      nil ->
+        conn
+        |> assign(:current_org, nil)
+        |> delete_session(:current_org_id)
+
+      org ->
+        assign_current_org(conn, org)
+    end
+  end
+
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
       {token, conn}
@@ -127,6 +181,10 @@ defmodule HorionosWeb.UserAuth do
     * `:redirect_if_user_is_authenticated` - Authenticates the user from the session.
       Redirects to signed_in_path if there's a logged user.
 
+    * `:ensure_current_org` - Assigns the current_org to socket assigns based
+      on the current_org_id session. If there's no current_org_id session,
+      it assigns the primary org to the current_org.
+
   ## Examples
 
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
@@ -146,7 +204,8 @@ defmodule HorionosWeb.UserAuth do
       end
   """
   def on_mount(:mount_current_user, _params, session, socket) do
-    {:cont, mount_current_user(socket, session)}
+    socket = mount_current_user(socket, session)
+    {:cont, socket}
   end
 
   def on_mount(:ensure_authenticated, _params, session, socket) do
@@ -164,6 +223,21 @@ defmodule HorionosWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_current_org, _params, session, socket) do
+    socket = mount_current_org(socket, session)
+
+    if socket.assigns.current_org do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "Please create or select an organization.")
+        |> Phoenix.LiveView.redirect(to: ~p"/onboarding")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
@@ -174,10 +248,43 @@ defmodule HorionosWeb.UserAuth do
     end
   end
 
+  # defp ensure_email_confirmed(conn, _opts) do
+  #   if conn.assigns[:current_user] && !conn.assigns.current_user.confirmed_at do
+  #     conn
+  #     |> put_flash(:error, "You must confirm your email address before accessing this page.")
+  #     |> redirect(to: Routes.user_confirmation_path(conn, :new))
+  #     |> halt()
+  #   else
+  #     conn
+  #   end
+  # end
+  #
+
   defp mount_current_user(socket, session) do
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       if user_token = session["user_token"] do
         Accounts.get_user_by_session_token(user_token)
+      end
+    end)
+  end
+
+  defp mount_current_org(socket, session) do
+    Phoenix.Component.assign_new(socket, :current_org, fn ->
+      user = socket.assigns.current_user
+      org_id = session["current_org_id"]
+
+      cond do
+        is_nil(user) ->
+          nil
+
+        is_nil(org_id) ->
+          Orgs.get_user_primary_org(user)
+
+        true ->
+          case Orgs.get_org(user, org_id) do
+            {:ok, org} -> org
+            _ -> nil
+          end
       end
     end)
   end
@@ -206,7 +313,7 @@ defmodule HorionosWeb.UserAuth do
       conn
     else
       conn
-      |> put_flash_if_not_root
+      |> put_flash_if_not_root()
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
       |> halt()
@@ -217,6 +324,16 @@ defmodule HorionosWeb.UserAuth do
     case current_path(conn) === "/" do
       true -> conn
       false -> conn |> put_flash(:error, "You must log in to access this page.")
+    end
+  end
+
+  def require_org(conn, _opts) do
+    if conn.assigns[:current_org] do
+      conn
+    else
+      conn
+      |> redirect(to: ~p"/onboarding")
+      |> halt()
     end
   end
 
