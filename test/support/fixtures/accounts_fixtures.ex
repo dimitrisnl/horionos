@@ -1,4 +1,7 @@
 defmodule Horionos.AccountsFixtures do
+  @moduledoc """
+  Fixtures for accounts.
+  """
   alias Horionos.Accounts
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"

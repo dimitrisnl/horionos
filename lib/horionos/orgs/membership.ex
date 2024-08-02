@@ -6,7 +6,7 @@ defmodule Horionos.Orgs.Membership do
   use Ecto.Schema
   import Ecto.Changeset
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.{Org, MembershipRole}
+  alias Horionos.Orgs.{MembershipRole, Org}
 
   @type t :: %__MODULE__{
           id: integer() | nil,

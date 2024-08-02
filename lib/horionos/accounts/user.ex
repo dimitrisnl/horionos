@@ -123,7 +123,7 @@ defmodule Horionos.Accounts.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  @spec valid_password?(%Horionos.Accounts.User{}, String.t()) :: boolean()
+  @spec valid_password?(t, String.t()) :: boolean()
   #
   def valid_password?(%Horionos.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do

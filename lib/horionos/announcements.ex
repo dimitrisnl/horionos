@@ -4,10 +4,11 @@ defmodule Horionos.Announcements do
   """
 
   import Ecto.Query
-  alias Horionos.OrgRepo
-  alias Horionos.Announcements.Announcement
-  alias Horionos.Orgs
+
   alias Horionos.Accounts.User
+  alias Horionos.Announcements.Announcement
+  alias Horionos.OrgRepo
+  alias Horionos.Orgs
 
   @doc """
   Returns the list of announcements for a given organization.

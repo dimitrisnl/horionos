@@ -2,7 +2,7 @@ defmodule Horionos.OrgsTest do
   use Horionos.DataCase
 
   alias Horionos.Orgs
-  alias Horionos.Orgs.{Org, Membership}
+  alias Horionos.Orgs.{Membership, Org}
 
   import Horionos.AccountsFixtures
   import Horionos.OrgsFixtures

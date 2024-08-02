@@ -34,7 +34,7 @@ defmodule Horionos.Announcements.Announcement do
     |> cast(attrs, [:title, :body, :org_id])
     |> validate_required([:title, :body, :org_id])
     |> validate_length(:title, max: 255)
-    |> validate_length(:body, max: 10000)
+    |> validate_length(:body, max: 10_000)
     |> foreign_key_constraint(:org_id)
   end
 end

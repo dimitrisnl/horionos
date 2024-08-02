@@ -7,8 +7,8 @@ defmodule Horionos.Orgs.Org do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Horionos.Orgs.Membership
   alias Horionos.Accounts.User
+  alias Horionos.Orgs.Membership
   alias Horionos.Repo
 
   @type t :: %__MODULE__{

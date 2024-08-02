@@ -1,6 +1,9 @@
 defmodule Horionos.OrgsFixtures do
-  alias Horionos.Orgs
+  @moduledoc """
+  Fixtures for orgs.
+  """
   alias Horionos.AccountsFixtures
+  alias Horionos.Orgs
 
   require Logger
 

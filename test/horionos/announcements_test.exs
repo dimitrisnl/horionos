@@ -1,11 +1,11 @@
 defmodule Horionos.AnnouncementsTest do
   use Horionos.DataCase
 
+  alias Horionos.AccountsFixtures
   alias Horionos.Announcements
   alias Horionos.Announcements.Announcement
-  alias Horionos.AccountsFixtures
-  alias Horionos.OrgsFixtures
   alias Horionos.AnnouncementsFixtures
+  alias Horionos.OrgsFixtures
 
   describe "announcements" do
     setup do
@@ -155,7 +155,7 @@ defmodule Horionos.AnnouncementsTest do
 
     test "create_announcement/3 with very long title and body", %{admin: admin, org: org} do
       long_title = String.duplicate("a", 256)
-      long_body = String.duplicate("b", 10001)
+      long_body = String.duplicate("b", 10_001)
       attrs = %{title: long_title, body: long_body, org_id: org.id}
       assert {:error, changeset} = Announcements.create_announcement(admin, org.id, attrs)
       assert "should be at most 255 character(s)" in errors_on(changeset).title

@@ -37,7 +37,7 @@ defmodule Horionos.Accounts.UserNotifier do
   @doc """
   Deliver instructions to confirm account.
   """
-  @spec deliver_confirmation_instructions(%Horionos.Accounts.User{}, String.t()) ::
+  @spec deliver_confirmation_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   #
   def deliver_confirmation_instructions(user, url) do
@@ -50,7 +50,7 @@ defmodule Horionos.Accounts.UserNotifier do
   @doc """
   Deliver instructions to reset a user password.
   """
-  @spec deliver_reset_password_instructions(%Horionos.Accounts.User{}, String.t()) ::
+  @spec deliver_reset_password_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   #
   def deliver_reset_password_instructions(user, url) do
@@ -63,7 +63,7 @@ defmodule Horionos.Accounts.UserNotifier do
   @doc """
   Deliver instructions to update a user email.
   """
-  @spec deliver_update_email_instructions(%Horionos.Accounts.User{}, String.t()) ::
+  @spec deliver_update_email_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   #
   def deliver_update_email_instructions(user, url) do

@@ -5,6 +5,8 @@ defmodule HorionosWeb.FormComponents do
   use Phoenix.Component
 
   import HorionosWeb.CoreComponents
+
+  alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -159,7 +161,7 @@ defmodule HorionosWeb.FormComponents do
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
+        Form.normalize_value("checkbox", assigns[:value])
       end)
 
     ~H"""
