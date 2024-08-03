@@ -13,8 +13,8 @@ defmodule Horionos.Orgs.Org do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          title: String.t(),
-          slug: String.t(),
+          title: String.t() | nil,
+          slug: String.t() | nil,
           memberships: [Membership.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -42,8 +42,7 @@ defmodule Horionos.Orgs.Org do
 
     A changeset.
   """
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  #
+  @spec changeset(t() | %__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(org, attrs) do
     org
     |> cast(attrs, [:title])

@@ -4,6 +4,7 @@ defmodule Horionos.Accounts.UserNotifier do
   """
 
   alias Horionos.Workers.EmailWorker
+  alias Horionos.Accounts.User
 
   require Logger
 

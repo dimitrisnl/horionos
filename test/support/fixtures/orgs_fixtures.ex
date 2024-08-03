@@ -24,14 +24,22 @@ defmodule Horionos.OrgsFixtures do
         title: "Org #{System.unique_integer([:positive])}"
       })
 
-    {:ok, org} = Orgs.create_org(user, attrs)
-    org
+    case Orgs.create_org(user, attrs) do
+      {:ok, org} -> org
+      {:error, reason} -> raise "Failed to create org: #{inspect(reason)}"
+    end
   end
 
   def membership_fixture(creator, attrs \\ %{}) do
     case Orgs.create_membership(creator, attrs) do
-      {:ok, membership} -> membership
-      {:error, reason} -> raise "Failed to create membership: #{inspect(reason)}"
+      {:ok, membership} ->
+        membership
+
+      {:error, :unauthorized} ->
+        raise "Unauthorized to create membership"
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        raise "Failed to create membership: #{inspect(changeset.errors)}"
     end
   end
 end

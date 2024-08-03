@@ -9,7 +9,7 @@ defmodule HorionosWeb.OrgSessionController do
 
     with {:ok, next_org_id} <- validate_org_id(org_id),
          :ok <- check_org_change(current_org_id, next_org_id),
-         {:ok, org} <- Orgs.get_org(current_user, next_org_id) do
+         {:ok, org} <- Orgs.get_org(current_user, to_string(next_org_id)) do
       conn
       |> configure_session(renew: true)
       |> put_session(:current_org_id, next_org_id)
@@ -31,13 +31,6 @@ defmodule HorionosWeb.OrgSessionController do
 
         conn
         |> put_flash(:error, "You do not have access to this organization")
-        |> redirect(to: "/")
-
-      _ ->
-        Logger.error("An unexpected error occurred while switching organizations.")
-
-        conn
-        |> put_flash(:error, "An unexpected error occurred.")
         |> redirect(to: "/")
     end
   end

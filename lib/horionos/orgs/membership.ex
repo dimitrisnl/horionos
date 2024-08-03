@@ -10,7 +10,7 @@ defmodule Horionos.Orgs.Membership do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          role: MembershipRole.t(),
+          role: MembershipRole.t() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t(),
           user_id: integer() | nil,
           org: Org.t() | Ecto.Association.NotLoaded.t(),
@@ -40,7 +40,7 @@ defmodule Horionos.Orgs.Membership do
 
     A changeset.
   """
-  @spec changeset(t(), map()) :: Ecto.Changeset.t()
+  @spec changeset(t() | %__MODULE__{}, map()) :: Ecto.Changeset.t()
   #
   def changeset(membership, attrs) do
     membership
