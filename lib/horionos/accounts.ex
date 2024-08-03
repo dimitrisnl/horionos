@@ -66,7 +66,7 @@ defmodule Horionos.Accounts do
     User.full_name_changeset(user, attrs)
   end
 
-  @spec user_full_name_changeset(User.t(), map()) :: Ecto.Changeset.t()
+  @spec update_user_full_name(User.t(), map()) :: Ecto.Changeset.t()
   #
   def update_user_full_name(user, attrs) do
     user

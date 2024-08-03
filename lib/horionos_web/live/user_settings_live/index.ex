@@ -12,18 +12,24 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     </.header>
 
     <div class="space-y-6">
-    <div class="grid grid-cols-4">
-      <div class="pt-4 text-gray-700">Change your name</div>
-      <div class="col-span-3">
-        <.simple_form for={@full_name_form} id="full_name_form" phx-submit="update_full_name">
-        <.input field={@full_name_form[:full_name]} type="text" label="Name" required value={@current_full_name} />
-          <:actions>
-            <.button phx-disable-with="Changing...">Change Name</.button>
-          </:actions>
-        </.simple_form>
+      <div class="grid grid-cols-4">
+        <div class="pt-4 text-gray-700">Change your name</div>
+        <div class="col-span-3">
+          <.simple_form for={@full_name_form} id="full_name_form" phx-submit="update_full_name">
+            <.input
+              field={@full_name_form[:full_name]}
+              type="text"
+              label="Name"
+              required
+              value={@current_full_name}
+            />
+            <:actions>
+              <.button phx-disable-with="Changing...">Change Name</.button>
+            </:actions>
+          </.simple_form>
+        </div>
       </div>
-    </div>
-    <hr class="border-gray-100" />
+      <hr class="border-gray-100" />
       <div class="grid grid-cols-4">
         <div class="pt-4 text-gray-700">Change your email address</div>
         <div class="col-span-3">
@@ -167,11 +173,12 @@ defmodule HorionosWeb.UserSettingsLive.Index do
           |> Accounts.change_user_full_name(user_params)
           |> to_form()
 
-          {:noreply, socket
-            |> assign(current_user: user)
-            |> assign(full_name_form: full_name_form)
-            |> assign(current_full_name: user.full_name)
-            |> put_flash(:info, "Name updated successfully")}
+        {:noreply,
+         socket
+         |> assign(current_user: user)
+         |> assign(full_name_form: full_name_form)
+         |> assign(current_full_name: user.full_name)
+         |> put_flash(:info, "Name updated successfully")}
 
       {:error, changeset} ->
         Logger.error("Failed to update full name")

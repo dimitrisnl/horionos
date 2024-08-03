@@ -83,7 +83,6 @@ defmodule Horionos.Accounts.User do
     user
     |> cast(attrs, [:full_name])
     |> validate_full_name()
-
   end
 
   @doc """
