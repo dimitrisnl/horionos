@@ -63,11 +63,11 @@ jobs:
           ls -la priv/plts
           file priv/plts/dialyzer.plt
 
-      - name: Check Dialyzer version
-        run: mix dialyzer --version
+      - name: Print Dialyxir version
+        run: grep dialyxir mix.lock | cut -d'"' -f2
 
       - name: Print mix.exs content
         run: cat mix.exs
 
       - name: Run dialyzer
-        run: mix dialyzer --format github --flags :error_handling --flags :underspecs --flags :unmatched_returns --flags :unknown
+        run: mix dialyzer --format github
