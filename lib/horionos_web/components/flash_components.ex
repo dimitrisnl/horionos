@@ -33,9 +33,10 @@ defmodule HorionosWeb.FlashComponents do
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-hook="AutoHideFlash"
       role="alert"
       class={[
-        "fixed right-4 bottom-4 z-50 mr-2 w-80 rounded-xl p-4 sm:w-80",
+        "fixed top-4 right-4 z-50 mr-2 w-80 rounded-xl p-4 sm:w-80",
         @kind == :info && "border-t-2 border-emerald-500 bg-white shadow-md",
         @kind == :error && "border-t-2 border-red-500 bg-white shadow-md"
       ]}
