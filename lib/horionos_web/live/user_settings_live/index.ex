@@ -13,6 +13,24 @@ defmodule HorionosWeb.UserSettingsLive.Index do
 
     <div class="space-y-6">
       <div class="grid grid-cols-4">
+        <div class="pt-4 text-gray-700">Change your name</div>
+        <div class="col-span-3">
+          <.simple_form for={@full_name_form} id="full_name_form" phx-submit="update_full_name">
+            <.input
+              field={@full_name_form[:full_name]}
+              type="text"
+              label="Name"
+              required
+              value={@current_full_name}
+            />
+            <:actions>
+              <.button phx-disable-with="Changing...">Change Name</.button>
+            </:actions>
+          </.simple_form>
+        </div>
+      </div>
+      <hr class="border-gray-100" />
+      <div class="grid grid-cols-4">
         <div class="pt-4 text-gray-700">Change your email address</div>
         <div class="col-span-3">
           <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
@@ -88,15 +106,18 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     user = socket.assigns.current_user
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
+    name_changeset = Accounts.change_user_full_name(user)
     orgs = Horionos.Orgs.list_user_orgs(user)
 
     socket =
       socket
       |> assign(:current_password, nil)
-      |> assign(:email_form_current_password, nil)
+      |> assign(:current_full_name, user.full_name)
       |> assign(:current_email, user.email)
+      |> assign(:email_form_current_password, nil)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:full_name_form, to_form(name_changeset))
       |> assign(:trigger_submit, false)
       |> assign(:orgs, orgs)
 
@@ -138,6 +159,30 @@ defmodule HorionosWeb.UserSettingsLive.Index do
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("update_full_name", params, socket) do
+    %{"user" => user_params} = params
+    user = socket.assigns.current_user
+
+    case Accounts.update_user_full_name(user, user_params) do
+      {:ok, user} ->
+        full_name_form =
+          user
+          |> Accounts.change_user_full_name(user_params)
+          |> to_form()
+
+        {:noreply,
+         socket
+         |> assign(current_user: user)
+         |> assign(full_name_form: full_name_form)
+         |> assign(current_full_name: user.full_name)
+         |> put_flash(:info, "Name updated successfully")}
+
+      {:error, changeset} ->
+        Logger.error("Failed to update full name")
+        {:noreply, assign(socket, full_name_form: to_form(changeset))}
     end
   end
 

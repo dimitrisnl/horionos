@@ -60,6 +60,20 @@ defmodule Horionos.Accounts do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 
+  @spec change_user_full_name(User.t(), map()) :: Ecto.Changeset.t()
+  #
+  def change_user_full_name(user, attrs \\ %{}) do
+    User.full_name_changeset(user, attrs)
+  end
+
+  @spec update_user_full_name(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  #
+  def update_user_full_name(user, attrs) do
+    user
+    |> User.full_name_changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
   """

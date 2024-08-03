@@ -11,6 +11,7 @@ defmodule HorionosWeb.OrgSelectorComponent do
         <li>
           <.form for={%{}} method="post" action={~p"/org/select"}>
             <button
+              disabled={org.id == @current_org.id}
               type="submit"
               class="flex w-full items-center gap-x-3 px-2 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
             >
