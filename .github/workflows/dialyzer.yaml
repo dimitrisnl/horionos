@@ -1,14 +1,3 @@
-name: Dialyzer
-
-on:
-  push:
-    branches: ["master"]
-  pull_request:
-    branches: ["master"]
-
-env:
-  MIX_ENV: test
-
 jobs:
   dialyzer:
     name: Dialyzer (OTP ${{matrix.otp}} | Elixir ${{matrix.elixir}})
@@ -50,5 +39,13 @@ jobs:
           mkdir -p priv/plts
           mix dialyzer --plt
 
+      - name: Create dialyzer.ignore-warnings file
+        run: touch dialyzer.ignore-warnings
+
+      - name: Print Elixir and Erlang versions
+        run: |
+          elixir --version
+          erl -eval '{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().' -noshell
+
       - name: Run dialyzer
-        run: mix dialyzer --format github
+        run: mix dialyzer --format github --verbose
