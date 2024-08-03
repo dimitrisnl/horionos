@@ -18,6 +18,7 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
           action={~p"/users/log_in?_action=registered"}
           method="post"
         >
+          <.input field={@form[:full_name]} type="text" label="Name" required />
           <.input field={@form[:email]} type="email" label="Email" required />
           <.input field={@form[:password]} type="password" label="Password" required />
 

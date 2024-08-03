@@ -85,22 +85,24 @@ defmodule Horionos.AccountsTest do
   describe "change_user_registration/2" do
     test "returns a changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
-      assert changeset.required == [:password, :email]
+      assert changeset.required == [:password, :email, :full_name]
     end
 
     test "allows fields to be set" do
       email = unique_user_email()
       password = valid_user_password()
+      full_name = valid_user_full_name()
 
       changeset =
         Accounts.change_user_registration(
           %User{},
-          valid_user_attributes(email: email, password: password)
+          valid_user_attributes(email: email, password: password, full_name: full_name)
         )
 
       assert changeset.valid?
       assert get_change(changeset, :email) == email
       assert get_change(changeset, :password) == password
+      assert get_change(changeset, :full_name) == full_name
       assert is_nil(get_change(changeset, :hashed_password))
     end
   end
@@ -109,6 +111,44 @@ defmodule Horionos.AccountsTest do
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_email(%User{})
       assert changeset.required == [:email]
+    end
+  end
+
+  describe "change_user_full_name/2" do
+    test "returns a user changeset" do
+      user = user_fixture()
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_full_name(user)
+      assert changeset.required == [:full_name]
+    end
+
+    test "allows full_name to be set" do
+      user = user_fixture()
+      new_full_name = "New Full Name"
+      changeset = Accounts.change_user_full_name(user, %{full_name: new_full_name})
+
+      assert changeset.valid?
+      assert get_change(changeset, :full_name) == new_full_name
+    end
+  end
+
+  describe "update_user_full_name/2" do
+    setup do
+      %{user: user_fixture()}
+    end
+
+    test "updates the full_name", %{user: user} do
+      new_full_name = "New Full Name"
+      {:ok, updated_user} = Accounts.update_user_full_name(user, %{full_name: new_full_name})
+
+      assert updated_user.full_name == new_full_name
+      assert Repo.get!(User, user.id).full_name == new_full_name
+    end
+
+    test "returns error changeset for invalid data", %{user: user} do
+      {:error, changeset} = Accounts.update_user_full_name(user, %{full_name: ""})
+
+      assert %{full_name: ["can't be blank"]} = errors_on(changeset)
+      assert user.full_name == Repo.get!(User, user.id).full_name
     end
   end
 

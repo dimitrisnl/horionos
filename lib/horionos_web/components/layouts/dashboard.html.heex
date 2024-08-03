@@ -67,7 +67,7 @@
               </span>
               <span class="min-w-0">
                 <span class="text-sm/5 block truncate font-medium text-gray-950 dark:text-white">
-                  <%= @current_user.email |> String.split("@") |> List.first() %>
+                  <%= @current_user.full_name %>
                 </span>
                 <span class="text-xs/5 block truncate font-normal text-gray-500 dark:text-gray-400">
                   <%= @current_user.email %>

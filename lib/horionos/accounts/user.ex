@@ -12,6 +12,7 @@ defmodule Horionos.Accounts.User do
   @derive {Inspect, except: [:password, :hashed_password]}
 
   schema "users" do
+    field :full_name, :string
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
@@ -25,6 +26,7 @@ defmodule Horionos.Accounts.User do
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),
           confirmed_at: NaiveDateTime.t() | nil,
+          full_name: String.t() | nil,
           email: String.t() | nil,
           hashed_password: String.t() | nil,
           id: integer() | nil,
@@ -65,9 +67,23 @@ defmodule Horionos.Accounts.User do
   #
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:full_name, :email, :password])
+    |> validate_full_name()
     |> validate_email(opts)
     |> validate_password(opts)
+  end
+
+  @doc """
+  A user changeset for updating the full name.
+
+  """
+  @spec full_name_changeset(t, map()) :: Ecto.Changeset.t()
+  #
+  def full_name_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:full_name])
+    |> validate_full_name()
+
   end
 
   @doc """
@@ -145,6 +161,13 @@ defmodule Horionos.Accounts.User do
   end
 
   ## Private functions
+
+  defp validate_full_name(changeset) do
+    changeset
+    |> validate_required([:full_name])
+    |> validate_length(:full_name, min: 2)
+    |> validate_length(:full_name, max: 160)
+  end
 
   @spec validate_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
   defp validate_email(changeset, opts) do
