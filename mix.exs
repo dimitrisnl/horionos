@@ -12,8 +12,7 @@ defmodule Horionos.MixProject do
       deps: deps(),
       dialyzer: [
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-        plt_add_apps: [:mix, :ex_unit],
-        ignore_warnings: "dialyzer.ignore-warnings"
+        plt_add_apps: [:mix, :ex_unit]
       ]
     ]
   end
