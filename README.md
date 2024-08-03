@@ -1,3 +1,3 @@
 # Horionos
 
-Trying out Phoenix & LiveVie by creating a dashboard.
+Trying out Phoenix & Liview by creating a dashboard.
