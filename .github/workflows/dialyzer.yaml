@@ -1,3 +1,14 @@
+name: Dialyzer
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  MIX_ENV: test
+
 jobs:
   dialyzer:
     name: Dialyzer (OTP ${{matrix.otp}} | Elixir ${{matrix.elixir}})
