@@ -3,8 +3,8 @@ defmodule Horionos.Accounts.UserNotifier do
   Handles sending notification emails to users.
   """
 
-  alias Horionos.Workers.EmailWorker
   alias Horionos.Accounts.User
+  alias Horionos.Workers.EmailWorker
 
   require Logger
 
