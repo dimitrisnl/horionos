@@ -58,5 +58,13 @@ jobs:
           elixir --version
           erl -eval '{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().' -noshell
 
+      - name: Debug PLT directory
+        run: |
+          ls -la priv/plts
+          file priv/plts/dialyzer.plt
+
+      - name: Check Dialyzer version
+        run: mix dialyzer --version
+
       - name: Run dialyzer
-        run: mix dialyzer --format github --verbose
+        run: mix dialyzer --format github
