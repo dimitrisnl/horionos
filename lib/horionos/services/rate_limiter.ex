@@ -1,4 +1,7 @@
 defmodule Horionos.Services.RateLimiter do
+  @moduledoc """
+  Rate limiter service.
+  """
   use GenServer
 
   @callback check_rate(String.t(), integer(), integer()) :: :ok | :error

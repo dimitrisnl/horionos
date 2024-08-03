@@ -1,4 +1,7 @@
 defmodule Horionos.Workers.EmailWorker do
+  @moduledoc """
+  Worker for sending emails.
+  """
   use Oban.Worker, queue: :emails
 
   alias Horionos.Mailer

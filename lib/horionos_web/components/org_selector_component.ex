@@ -1,4 +1,7 @@
 defmodule HorionosWeb.OrgSelectorComponent do
+  @moduledoc """
+  Organization selector
+  """
   use HorionosWeb, :live_component
 
   def render(assigns) do

@@ -26,10 +26,11 @@ defmodule Horionos.Accounts.UserToken do
   @session_validity_in_days Application.compile_env(:horionos, :session_validity_in_days, 60)
 
   @type t :: %__MODULE__{
+          __meta__: Ecto.Schema.Metadata.t(),
           id: integer() | nil,
           token: binary(),
           context: String.t(),
-          sent_to: String.t(),
+          sent_to: String.t() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t(),
           user_id: integer() | nil,
           inserted_at: NaiveDateTime.t() | nil

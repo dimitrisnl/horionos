@@ -52,12 +52,6 @@ defmodule HorionosWeb.OrgLive.FormComponent do
          socket
          |> put_flash(:error, "You are not authorized to update this organization.")
          |> push_patch(to: socket.assigns.patch)}
-
-      {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "An unexpected error occurred. Please try again.")
-         |> push_patch(to: socket.assigns.patch)}
     end
   end
 

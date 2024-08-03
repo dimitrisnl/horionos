@@ -1,10 +1,11 @@
 defmodule HorionosWeb.UserAuthTest do
   use HorionosWeb.ConnCase, async: true
 
-  alias Phoenix.LiveView
   alias Horionos.Accounts
   alias Horionos.Orgs
   alias HorionosWeb.UserAuth
+  alias Phoenix.LiveView
+
   import Horionos.AccountsFixtures
   import Horionos.OrgsFixtures
 

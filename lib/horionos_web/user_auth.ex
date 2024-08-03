@@ -1,4 +1,7 @@
 defmodule HorionosWeb.UserAuth do
+  @moduledoc """
+  User authentication functions.
+  """
   use HorionosWeb, :verified_routes
 
   require Logger
@@ -113,22 +116,13 @@ defmodule HorionosWeb.UserAuth do
   end
 
   def fetch_current_org(conn, _opts) do
-    if user = conn.assigns.current_user do
-      org_id = get_session(conn, :current_org_id)
-
-      if is_nil(org_id) do
-        handle_org_not_found(conn, user)
-      else
-        case Orgs.get_org(user, org_id) do
-          {:ok, org} ->
-            assign_current_org(conn, org)
-
-          {:error, :unauthorized} ->
-            handle_org_not_found(conn, user)
-        end
-      end
+    with %{assigns: %{current_user: user}} when not is_nil(user) <- conn,
+         org_id when not is_nil(org_id) <- get_session(conn, :current_org_id),
+         {:ok, org} <- Orgs.get_org(user, org_id) do
+      assign_current_org(conn, org)
     else
-      conn
+      %{assigns: %{current_user: nil}} -> conn
+      _ -> handle_org_not_found(conn, conn.assigns.current_user)
     end
   end
 
@@ -272,21 +266,18 @@ defmodule HorionosWeb.UserAuth do
     Phoenix.Component.assign_new(socket, :current_org, fn ->
       user = socket.assigns.current_user
       org_id = session["current_org_id"]
-
-      cond do
-        is_nil(user) ->
-          nil
-
-        is_nil(org_id) ->
-          Orgs.get_user_primary_org(user)
-
-        true ->
-          case Orgs.get_org(user, org_id) do
-            {:ok, org} -> org
-            _ -> nil
-          end
-      end
+      do_get_current_org(user, org_id)
     end)
+  end
+
+  defp do_get_current_org(nil, _org_id), do: nil
+  defp do_get_current_org(user, nil), do: Orgs.get_user_primary_org(user)
+
+  defp do_get_current_org(user, org_id) do
+    case Orgs.get_org(user, org_id) do
+      {:ok, org} -> org
+      _ -> nil
+    end
   end
 
   @doc """

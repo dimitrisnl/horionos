@@ -6,26 +6,34 @@ defmodule Horionos.Accounts do
   """
 
   alias Horionos.Repo
-  alias Horionos.Accounts.{User, UserToken, UserNotifier}
+  alias Horionos.Accounts.{User, UserNotifier, UserToken}
 
-  @type user_attrs :: %{required(:email) => String.t(), required(:password) => String.t()}
+  @type user_attrs :: %{
+          required(:email) => String.t(),
+          required(:password) => String.t(),
+          optional(atom()) => any()
+        }
+  @type user_or_nil :: User.t() | nil
+  @type user_operation_result :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
 
   @doc """
   Gets a user by ID.
   """
+  @spec get_user!(integer()) :: User.t()
+  #
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
   Gets a user by email.
   """
-  @spec get_user_by_email(String.t()) :: User.t() | nil
+  @spec get_user_by_email(String.t()) :: user_or_nil()
   #
   def get_user_by_email(email) when is_binary(email), do: Repo.get_by(User, email: email)
 
   @doc """
   Gets a user by email and password.
   """
-  @spec get_user_by_email_and_password(String.t(), String.t()) :: User.t() | nil
+  @spec get_user_by_email_and_password(String.t(), String.t()) :: user_or_nil()
   #
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
@@ -36,8 +44,7 @@ defmodule Horionos.Accounts do
   @doc """
   Registers a user.
   """
-  @spec register_user(user_attrs()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
-  #
+  @spec register_user(user_attrs()) :: user_operation_result()
   def register_user(attrs) do
     %User{}
     |> User.registration_changeset(attrs)
@@ -66,8 +73,7 @@ defmodule Horionos.Accounts do
   Emulates applying the email change without actually changing
   it in the database.
   """
-  @spec apply_user_email(User.t(), String.t(), map()) ::
-          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec apply_user_email(User.t(), String.t(), map()) :: user_operation_result()
   #
   def apply_user_email(user, password, attrs) do
     user
@@ -231,7 +237,7 @@ defmodule Horionos.Accounts do
   @doc """
   Resets the user password.
   """
-  @spec reset_user_password(User.t(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec reset_user_password(User.t(), map()) :: user_operation_result()
   #
   def reset_user_password(user, attrs) do
     Ecto.Multi.new()
@@ -246,6 +252,8 @@ defmodule Horionos.Accounts do
 
   # Private functions
 
+  @spec user_email_multi(User.t(), String.t(), String.t()) :: Ecto.Multi.t()
+  #
   defp user_email_multi(user, email, context) do
     changeset =
       user
@@ -257,6 +265,8 @@ defmodule Horionos.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, [context]))
   end
 
+  @spec confirm_user_multi(User.t()) :: Ecto.Multi.t()
+  #
   defp confirm_user_multi(user) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.confirm_changeset(user))

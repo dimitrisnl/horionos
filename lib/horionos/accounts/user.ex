@@ -23,13 +23,14 @@ defmodule Horionos.Accounts.User do
   end
 
   @type t :: %__MODULE__{
-          id: integer() | nil,
-          email: String.t() | nil,
-          password: String.t() | nil,
-          hashed_password: String.t() | nil,
+          __meta__: Ecto.Schema.Metadata.t(),
           confirmed_at: NaiveDateTime.t() | nil,
-          memberships: [Horionos.Orgs.Membership.t() | Ecto.Association.NotLoaded.t()] | nil,
+          email: String.t() | nil,
+          hashed_password: String.t() | nil,
+          id: integer() | nil,
           inserted_at: DateTime.t() | nil,
+          memberships: [Horionos.Orgs.Membership.t()] | Ecto.Association.NotLoaded.t(),
+          password: String.t() | nil,
           updated_at: DateTime.t() | nil
         }
 
@@ -60,7 +61,7 @@ defmodule Horionos.Accounts.User do
 
   A changeset with the validated data.
   """
-  @spec registration_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  @spec registration_changeset(t(), map(), Keyword.t()) :: Ecto.Changeset.t()
   #
   def registration_changeset(user, attrs, opts \\ []) do
     user
@@ -75,7 +76,6 @@ defmodule Horionos.Accounts.User do
   It requires the email to change otherwise an error is added.
   """
   @spec email_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   def email_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email])
@@ -99,7 +99,6 @@ defmodule Horionos.Accounts.User do
       Defaults to `true`.
   """
   @spec password_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   def password_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:password])
@@ -110,11 +109,10 @@ defmodule Horionos.Accounts.User do
   @doc """
   Confirms the account by setting `confirmed_at`.
   """
-  @spec confirm_changeset(t) :: Ecto.Changeset.t()
-  #
-  def confirm_changeset(user) do
+  @spec confirm_changeset(t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  def confirm_changeset(user_or_changeset) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    change(user, confirmed_at: now)
+    change(user_or_changeset, confirmed_at: now)
   end
 
   @doc """
@@ -123,8 +121,7 @@ defmodule Horionos.Accounts.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  @spec valid_password?(%Horionos.Accounts.User{}, String.t()) :: boolean()
-  #
+  @spec valid_password?(t, String.t()) :: boolean()
   def valid_password?(%Horionos.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Password.verify(password, hashed_password)
@@ -139,7 +136,6 @@ defmodule Horionos.Accounts.User do
   Validates the current password otherwise adds an error to the changeset.
   """
   @spec validate_current_password(Ecto.Changeset.t(), String.t()) :: Ecto.Changeset.t()
-  #
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do
       changeset
@@ -151,7 +147,6 @@ defmodule Horionos.Accounts.User do
   ## Private functions
 
   @spec validate_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
@@ -161,7 +156,6 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec validate_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
@@ -174,7 +168,6 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec maybe_hash_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   defp maybe_hash_password(changeset, opts) do
     hash_password? = Keyword.get(opts, :hash_password, true)
     password = get_change(changeset, :password)
@@ -190,7 +183,6 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec maybe_validate_unique_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
-  #
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset

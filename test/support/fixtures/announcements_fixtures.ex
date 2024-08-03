@@ -1,4 +1,7 @@
 defmodule Horionos.AnnouncementsFixtures do
+  @moduledoc """
+  Fixtures for announcements.
+  """
   alias Horionos.Announcements
 
   def unique_announcement_title, do: "Announcement #{System.unique_integer()}"

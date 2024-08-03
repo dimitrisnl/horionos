@@ -8,10 +8,11 @@ defmodule Horionos.Orgs do
   import Ecto.Query
 
   alias Horionos.Repo
-  alias Horionos.OrgRepo
-  alias Horionos.Orgs.{Org, Membership, MembershipRole}
+
   alias Horionos.Accounts.User
   alias Horionos.Announcements.Announcement
+  alias Horionos.OrgRepo
+  alias Horionos.Orgs.{Membership, MembershipRole, Org}
 
   @doc """
   Lists organizations for a given user.
