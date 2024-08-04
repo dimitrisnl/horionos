@@ -66,7 +66,6 @@ if config_env() == :prod do
     secret_key_base: secret_key_base
 
   config :horionos, Oban,
-    prefix: "oban_jobs_prod",
     repo: Horionos.Repo,
     queues: [emails: 10, default: 10],
     plugins: [
