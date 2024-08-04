@@ -5,7 +5,7 @@ config :horionos,
   ecto_repos: [Horionos.Repo],
   generators: [timestamp_type: :utc_datetime],
   # Emails
-  from_email: "contact@horionos.com",
+  from_email: "jim@contact.horionos.com",
   from_name: "Horionos",
   # Tokens
   reset_password_validity_in_days: 1,

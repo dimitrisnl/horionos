@@ -8,7 +8,7 @@ defmodule Horionos.Accounts.UserNotifier do
 
   require Logger
 
-  @from_email Application.compile_env(:horionos, :from_email, "contact@horionos.com")
+  @from_email Application.compile_env(:horionos, :from_email, "jim@contact.horionos.com")
   @from_name Application.compile_env(:horionos, :from_name, "Horionos")
 
   @doc """
