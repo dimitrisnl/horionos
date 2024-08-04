@@ -7,8 +7,8 @@ defmodule Horionos.Accounts.EmailToken do
   use Ecto.Schema
   import Ecto.Query
 
-  alias Horionos.Accounts.User
   alias Horionos.Accounts.EmailToken
+  alias Horionos.Accounts.User
 
   @hash_algorithm :sha256
   @rand_size 32

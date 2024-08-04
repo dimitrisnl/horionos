@@ -6,7 +6,7 @@ defmodule Horionos.Accounts do
   """
 
   alias Horionos.Repo
-  alias Horionos.Accounts.{User, UserNotifier, EmailToken, SessionToken}
+  alias Horionos.Accounts.{EmailToken, SessionToken, User, UserNotifier}
 
   @type user_attrs :: %{
           required(:email) => String.t(),

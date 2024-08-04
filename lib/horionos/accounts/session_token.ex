@@ -6,8 +6,8 @@ defmodule Horionos.Accounts.SessionToken do
   use Ecto.Schema
   import Ecto.Query
 
-  alias Horionos.Accounts.User
   alias Horionos.Accounts.SessionToken
+  alias Horionos.Accounts.User
 
   @rand_size 32
   @session_validity_in_days Application.compile_env(:horionos, :session_validity_in_days, 60)

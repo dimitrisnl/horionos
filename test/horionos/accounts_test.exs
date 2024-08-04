@@ -2,7 +2,7 @@ defmodule Horionos.AccountsTest do
   use Horionos.DataCase
 
   alias Horionos.Accounts
-  alias Horionos.Accounts.{User, EmailToken, SessionToken}
+  alias Horionos.Accounts.{EmailToken, SessionToken, User}
 
   import Horionos.AccountsFixtures
 
