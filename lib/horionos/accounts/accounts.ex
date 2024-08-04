@@ -7,6 +7,7 @@ defmodule Horionos.Accounts do
 
   alias Horionos.Repo
   alias Horionos.Accounts.{EmailToken, SessionToken, User, UserNotifier}
+  alias Horionos.Notifications
 
   @type user_attrs :: %{
           required(:email) => String.t(),
@@ -49,6 +50,13 @@ defmodule Horionos.Accounts do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
+    |> tap(fn
+      {:ok, user} ->
+        Notifications.notify(:user_registered, user)
+
+      _ ->
+        :ok
+    end)
   end
 
   @doc """

@@ -13,11 +13,13 @@ config :horionos,
   change_email_validity_in_days: 7,
   session_validity_in_days: 60
 
+config :horionos, :notification_method, :log
+
 # Oban configuration
 config :horionos, Oban,
   repo: Horionos.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [emails: 10, default: 10]
+  queues: [emails: 10, default: 10, notifications: 10]
 
 # Configures the endpoint
 config :horionos, HorionosWeb.Endpoint,
