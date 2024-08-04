@@ -42,12 +42,12 @@ defmodule HorionosWeb.AnnouncementLive.Index do
       {:error, :not_found} ->
         socket
         |> put_flash(:error, "Announcement not found.")
-        |> push_redirect(to: ~p"/announcements")
+        |> push_navigate(to: ~p"/announcements")
 
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to edit this announcement.")
-        |> push_redirect(to: ~p"/announcements")
+        |> push_navigate(to: ~p"/announcements")
     end
   end
 
@@ -92,7 +92,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
         {:noreply,
          socket
          |> put_flash(:error, "Unable to delete announcement.")
-         |> push_redirect(to: ~p"/announcements")}
+         |> push_navigate(to: ~p"/announcements")}
     end
   end
 end

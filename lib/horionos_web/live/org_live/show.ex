@@ -29,7 +29,7 @@ defmodule HorionosWeb.OrgLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Organization not found.")
-         |> push_redirect(to: ~p"/orgs")}
+         |> push_navigate(to: ~p"/orgs")}
 
       {:ok, org} ->
         {:noreply,
@@ -48,7 +48,7 @@ defmodule HorionosWeb.OrgLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Unable to delete organization.")
-         |> push_redirect(to: ~p"/orgs")}
+         |> push_navigate(to: ~p"/orgs")}
 
       {:ok, org} ->
         case Orgs.delete_org(user, org) do
@@ -56,7 +56,7 @@ defmodule HorionosWeb.OrgLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, "Organization deleted successfully.")
-             |> push_redirect(to: ~p"/orgs")}
+             |> push_navigate(to: ~p"/orgs")}
 
           {:error, _changeset} ->
             {:noreply,

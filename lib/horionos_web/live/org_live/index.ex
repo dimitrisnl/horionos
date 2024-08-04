@@ -30,7 +30,7 @@ defmodule HorionosWeb.OrgLive.Index do
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to edit this organization.")
-        |> push_redirect(to: ~p"/orgs")
+        |> push_navigate(to: ~p"/orgs")
 
       {:ok, org} ->
         socket
@@ -64,7 +64,7 @@ defmodule HorionosWeb.OrgLive.Index do
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to delete this organization.")
-        |> push_redirect(to: ~p"/orgs")
+        |> push_navigate(to: ~p"/orgs")
 
       {:ok, org} ->
         case Orgs.delete_org(socket.assigns.current_user, org) do
@@ -72,19 +72,19 @@ defmodule HorionosWeb.OrgLive.Index do
             {:noreply,
              socket
              |> put_flash(:info, "Organization deleted successfully")
-             |> push_redirect(to: ~p"/orgs")}
+             |> push_navigate(to: ~p"/orgs")}
 
           {:error, :unauthorized} ->
             {:noreply,
              socket
              |> put_flash(:error, "You are not authorized to delete this organization")
-             |> push_redirect(to: ~p"/orgs")}
+             |> push_navigate(to: ~p"/orgs")}
 
           {:error, _} ->
             {:noreply,
              socket
              |> put_flash(:error, "Failed to delete organization. Please try again.")
-             |> push_redirect(to: ~p"/orgs")}
+             |> push_navigate(to: ~p"/orgs")}
         end
     end
   end

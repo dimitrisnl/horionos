@@ -5,7 +5,7 @@ config :horionos,
   ecto_repos: [Horionos.Repo],
   generators: [timestamp_type: :utc_datetime],
   # Emails
-  from_email: "contact@horionos.com",
+  from_email: "jim@contact.horionos.com",
   from_name: "Horionos",
   # Tokens
   reset_password_validity_in_days: 1,
@@ -72,3 +72,5 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+import_config "appsignal.exs"

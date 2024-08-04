@@ -29,7 +29,7 @@ defmodule HorionosWeb.OnboardingLive do
 
   def mount(_params, _session, socket) do
     if socket.assigns[:current_org] do
-      {:ok, push_redirect(socket, to: ~p"/")}
+      {:ok, push_navigate(socket, to: ~p"/")}
     else
       form = to_form(%{"title" => ""})
       {:ok, assign(socket, form: form), layout: {HorionosWeb.Layouts, :minimal}}

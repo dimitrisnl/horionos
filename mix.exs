@@ -68,7 +68,8 @@ defmodule Horionos.MixProject do
       {:tailwind_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:mix_audit, "~> 2.0", only: [:dev, :test], runtime: false}
+      {:mix_audit, "~> 2.0", only: [:dev, :test], runtime: false},
+      {:appsignal_phoenix, "~> 2.4"}
     ]
   end
 
