@@ -35,13 +35,13 @@ defmodule HorionosWeb.AnnouncementLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Announcement not found.")
-         |> push_redirect(to: ~p"/announcements")}
+         |> push_navigate(to: ~p"/announcements")}
 
       {:error, :unauthorized} ->
         {:noreply,
          socket
          |> put_flash(:error, "You are not authorized to view this announcement.")
-         |> push_redirect(to: ~p"/announcements")}
+         |> push_navigate(to: ~p"/announcements")}
     end
   end
 
@@ -57,7 +57,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, "Announcement deleted successfully.")
-             |> push_redirect(to: ~p"/announcements")}
+             |> push_navigate(to: ~p"/announcements")}
 
           {:error, _changeset} ->
             {:noreply,
@@ -69,7 +69,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Unable to delete announcement.")
-         |> push_redirect(to: ~p"/announcements")}
+         |> push_navigate(to: ~p"/announcements")}
     end
   end
 
