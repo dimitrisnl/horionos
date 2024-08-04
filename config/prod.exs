@@ -25,3 +25,5 @@ config :horionos, Oban,
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
     {Oban.Plugins.Cron, crontab: []}
   ]
+
+config :appsignal, :config, active: true
