@@ -170,7 +170,7 @@ defmodule HorionosWeb.CoreComponents do
               phx-click={@row_click && @row_click.(row)}
               class={["relative p-0", @row_click && "hover:cursor-pointer"]}
             >
-              <div class="block py-4 pr-6">
+              <div class="max-w-[500px] relative block truncate py-4 pr-6">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
                 <span class={["relative", i == 0 && "font-semibold text-gray-900"]}>
                   <%= render_slot(col, @row_item.(row)) %>
@@ -215,7 +215,7 @@ defmodule HorionosWeb.CoreComponents do
       <dl class="-my-4 divide-y divide-gray-100">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
           <dt class="w-1/4 flex-none text-gray-500"><%= item.title %></dt>
-          <dd class="text-gray-700"><%= render_slot(item) %></dd>
+          <dd class="truncate text-gray-700"><%= render_slot(item) %></dd>
         </div>
       </dl>
     </div>
