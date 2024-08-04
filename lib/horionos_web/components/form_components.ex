@@ -235,7 +235,7 @@ defmodule HorionosWeb.FormComponents do
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
             "block w-full rounded-lg text-gray-900 focus:ring-0 sm:text-sm sm:leading-6",
-            "phx-no-feedback:border-gray-300 phx-no-feedback:focus:border-gray-400",
+            "pr-8 phx-no-feedback:border-gray-300 phx-no-feedback:focus:border-gray-400",
             @errors == [] && "border-gray-300 focus:border-gray-400",
             @errors != [] && "border-rose-400 focus:border-rose-400"
           ]}
@@ -243,7 +243,7 @@ defmodule HorionosWeb.FormComponents do
         />
         <button
           type="button"
-          class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+          class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-500"
           phx-click={
             JS.toggle_attribute({"type", "password", "text"}, to: "##{@id}")
             |> JS.toggle_class("hidden", to: "#show-icon-#{@id}")

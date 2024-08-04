@@ -14,7 +14,16 @@ defmodule Horionos.Repo.Migrations.CreateUsersAuthTables do
 
     create unique_index(:users, [:email])
 
-    create table(:users_tokens) do
+    create table(:session_tokens) do
+      add :user_id, references(:users, on_delete: :delete_all), null: false
+      add :token, :binary, null: false
+      timestamps(updated_at: false)
+    end
+
+    create index(:session_tokens, [:user_id])
+    create unique_index(:session_tokens, [:token])
+
+    create table(:email_tokens) do
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :token, :binary, null: false
       add :context, :string, null: false
@@ -22,7 +31,7 @@ defmodule Horionos.Repo.Migrations.CreateUsersAuthTables do
       timestamps(updated_at: false)
     end
 
-    create index(:users_tokens, [:user_id])
-    create unique_index(:users_tokens, [:context, :token])
+    create index(:email_tokens, [:user_id])
+    create unique_index(:email_tokens, [:context, :token])
   end
 end

@@ -51,7 +51,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Your account has been confirmed successfully. You can now log in.")
+         |> put_flash(:info, "Your account has been confirmed successfully.")
          |> redirect(to: ~p"/users/log_in")}
 
       :error ->

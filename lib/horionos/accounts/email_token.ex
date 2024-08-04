@@ -1,14 +1,14 @@
-defmodule Horionos.Accounts.UserToken do
+defmodule Horionos.Accounts.EmailToken do
   @moduledoc """
   Handles the creation and verification of tokens for various user-related operations
-  such as session management, email confirmation, and password resets.
+  such as email confirmation, and password resets.
   """
 
   use Ecto.Schema
   import Ecto.Query
 
   alias Horionos.Accounts.User
-  alias Horionos.Accounts.UserToken
+  alias Horionos.Accounts.EmailToken
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -23,7 +23,6 @@ defmodule Horionos.Accounts.UserToken do
                                    :change_email_validity_in_days,
                                    7
                                  )
-  @session_validity_in_days Application.compile_env(:horionos, :session_validity_in_days, 60)
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),
@@ -36,59 +35,13 @@ defmodule Horionos.Accounts.UserToken do
           inserted_at: NaiveDateTime.t() | nil
         }
 
-  schema "users_tokens" do
+  schema "email_tokens" do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
     belongs_to :user, User
 
     timestamps(updated_at: false)
-  end
-
-  @doc """
-  Generates a token that will be stored in a signed place,
-  such as session or cookie. As they are signed, those
-  tokens do not need to be hashed.
-
-  The reason why we store session tokens in the database, even
-  though Phoenix already provides a session cookie, is because
-  Phoenix' default session cookies are not persisted, they are
-  simply signed and potentially encrypted. This means they are
-  valid indefinitely, unless you change the signing/encryption
-  salt.
-
-  Therefore, storing them allows individual user
-  sessions to be expired. The token system can also be extended
-  to store additional data, such as the device used for logging in.
-  You could then use this information to display all valid sessions
-  and devices in the UI and allow users to explicitly expire any
-  session they deem invalid.
-  """
-  @spec build_session_token(User.t()) :: {binary(), t()}
-  #
-  def build_session_token(user) do
-    token = :crypto.strong_rand_bytes(@rand_size)
-    {token, %UserToken{token: token, context: "session", user_id: user.id}}
-  end
-
-  @doc """
-  Checks if the token is valid and returns its underlying lookup query.
-
-  The query returns the user found by the token, if any.
-
-  The token is valid if it matches the value in the database and it has
-  not expired (after @session_validity_in_days).
-  """
-  @spec verify_session_token_query(binary()) :: {:ok, Ecto.Query.t()}
-  #
-  def verify_session_token_query(token) do
-    query =
-      from token in by_token_and_context_query(token, "session"),
-        join: user in assoc(token, :user),
-        where: token.inserted_at > ago(@session_validity_in_days, "day"),
-        select: user
-
-    {:ok, query}
   end
 
   @doc """
@@ -182,7 +135,7 @@ defmodule Horionos.Accounts.UserToken do
   @spec by_token_and_context_query(binary(), String.t()) :: Ecto.Query.t()
   #
   def by_token_and_context_query(token, context) do
-    from UserToken, where: [token: ^token, context: ^context]
+    from EmailToken, where: [token: ^token, context: ^context]
   end
 
   @doc """
@@ -191,13 +144,13 @@ defmodule Horionos.Accounts.UserToken do
   @spec by_user_and_contexts_query(User.t(), :all | [String.t()]) :: Ecto.Query.t()
   #
   def by_user_and_contexts_query(user, :all) do
-    from t in UserToken, where: t.user_id == ^user.id
+    from t in EmailToken, where: t.user_id == ^user.id
   end
 
   @spec by_user_and_contexts_query(User.t(), [String.t()]) :: Ecto.Query.t()
   #
   def by_user_and_contexts_query(user, [_ | _] = contexts) do
-    from t in UserToken, where: t.user_id == ^user.id and t.context in ^contexts
+    from t in EmailToken, where: t.user_id == ^user.id and t.context in ^contexts
   end
 
   defp build_hashed_token(user, context, sent_to) do
@@ -205,7 +158,7 @@ defmodule Horionos.Accounts.UserToken do
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
     {Base.url_encode64(token, padding: false),
-     %UserToken{
+     %EmailToken{
        token: hashed_token,
        context: context,
        sent_to: sent_to,
