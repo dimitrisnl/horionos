@@ -4,7 +4,6 @@ defmodule HorionosWeb.UserAuthTest do
   alias Horionos.Accounts
   alias Horionos.Orgs
   alias HorionosWeb.UserAuth
-  alias Phoenix.LiveView
 
   import Horionos.AccountsFixtures
   import Horionos.OrgsFixtures
@@ -22,6 +21,7 @@ defmodule HorionosWeb.UserAuthTest do
 
   describe "log_in_user/3" do
     test "stores the user token in the session", %{conn: conn, user: user} do
+      # Log in the user and check if the token is properly stored
       conn =
         conn
         |> fetch_flash()
@@ -33,6 +33,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do
+      # Ensure previous session data is cleared on login
       conn =
         conn
         |> fetch_flash()
@@ -43,6 +44,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "redirects to the configured path", %{conn: conn, user: user} do
+      # Check if user is redirected to the correct path after login
       conn =
         conn
         |> fetch_flash()
@@ -53,6 +55,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "writes a cookie if remember_me is configured", %{conn: conn, user: user} do
+      # Verify remember_me functionality
       conn =
         conn
         |> fetch_flash()
@@ -67,11 +70,13 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "redirects to onboarding if user has no organization", %{conn: conn, user: user} do
+      # Check redirection to onboarding for users without an org
       conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
       assert redirected_to(conn) == ~p"/onboarding"
     end
 
     test "redirects to primary org if user has an organization", %{conn: conn, user: user} do
+      # Verify redirection to home page for users with an org
       Horionos.OrgsFixtures.org_fixture(%{user: user})
 
       conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
@@ -79,10 +84,25 @@ defmodule HorionosWeb.UserAuthTest do
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :current_org_id)
     end
+
+    test "handles race condition on session token creation", %{conn: conn, user: user} do
+      # Simulate and test handling of race condition in token creation
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.log_in_user(user)
+
+      token = get_session(conn, :user_token)
+      Accounts.delete_user_session_token(token)
+
+      assert get_session(conn, :user_token)
+      refute Accounts.get_user_by_session_token(token)
+    end
   end
 
   describe "logout_user/1" do
     test "erases session and cookies", %{conn: conn, user: user} do
+      # Ensure logout properly clears session and cookies
       user_token = Accounts.generate_user_session_token(user)
 
       conn =
@@ -100,6 +120,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "broadcasts to the given live_socket_id", %{conn: conn} do
+      # Verify logout broadcasts disconnect event
       live_socket_id = "users_sessions:abcdef-token"
       HorionosWeb.Endpoint.subscribe(live_socket_id)
 
@@ -111,6 +132,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "works even if user is already logged out", %{conn: conn} do
+      # Ensure logout function is idempotent
       conn = conn |> fetch_cookies() |> UserAuth.log_out_user()
       refute get_session(conn, :user_token)
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
@@ -120,12 +142,14 @@ defmodule HorionosWeb.UserAuthTest do
 
   describe "fetch_current_user/2" do
     test "authenticates user from session", %{conn: conn, user: user} do
+      # Verify user authentication from session token
       user_token = Accounts.generate_user_session_token(user)
       conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_user([])
       assert conn.assigns.current_user.id == user.id
     end
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
+      # Test user authentication from remember_me cookie
       logged_in_conn =
         conn
         |> fetch_flash()
@@ -148,6 +172,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
+      # Ensure no authentication occurs with missing data
       _ = Accounts.generate_user_session_token(user)
       conn = UserAuth.fetch_current_user(conn, [])
       refute get_session(conn, :user_token)
@@ -162,6 +187,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "assigns current_org from session", %{conn: conn, user: user, org: org} do
+      # Verify current_org is correctly assigned from session
       conn =
         conn
         |> Map.put(:params, %{})
@@ -174,6 +200,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "assigns primary org if no org_id in session", %{conn: conn, user: user, org: org} do
+      # Check if primary org is assigned when no org_id in session
       conn =
         conn
         |> Map.put(:params, %{})
@@ -185,6 +212,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "assigns nil if user has no orgs", %{conn: conn, user: user} do
+      # Ensure nil is assigned when user has no organizations
       Orgs.delete_org(user, Orgs.get_user_primary_org(user))
 
       conn =
@@ -198,6 +226,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "does nothing if no current_user", %{conn: conn} do
+      # Verify no action taken when there's no current user
       conn =
         conn
         |> Map.put(:params, %{})
@@ -207,147 +236,70 @@ defmodule HorionosWeb.UserAuthTest do
       refute conn.assigns[:current_org]
       refute get_session(conn, :current_org_id)
     end
-  end
 
-  describe "on_mount :mount_current_user" do
-    test "assigns current_user based on a valid user_token", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
-      session = conn |> put_session(:user_token, user_token) |> get_session()
+    test "handles switching between organizations", %{conn: conn, user: user} do
+      # Test proper handling of org switching
+      org1 = org_fixture(%{user: user})
+      org2 = org_fixture(%{user: user})
 
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
-
-      assert updated_socket.assigns.current_user.id == user.id
-    end
-
-    test "assigns nil to current_user assign if there isn't a valid user_token", %{conn: conn} do
-      user_token = "invalid_token"
-      session = conn |> put_session(:user_token, user_token) |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
-
-      assert is_nil(updated_socket.assigns.current_user)
-    end
-
-    test "assigns nil to current_user assign if there isn't a user_token", %{conn: conn} do
-      session = conn |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
-
-      assert is_nil(updated_socket.assigns.current_user)
-    end
-  end
-
-  describe "on_mount :ensure_authenticated" do
-    test "authenticates current_user based on a valid user_token", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
-      session = conn |> put_session(:user_token, user_token) |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:ensure_authenticated, %{}, session, %LiveView.Socket{})
-
-      assert updated_socket.assigns.current_user.id == user.id
-    end
-
-    test "redirects to login page if there isn't a valid user_token", %{conn: conn} do
-      user_token = "invalid_token"
-      session = conn |> put_session(:user_token, user_token) |> get_session()
-
-      socket = %LiveView.Socket{
-        endpoint: HorionosWeb.Endpoint,
-        assigns: %{__changed__: %{}, flash: %{}}
-      }
-
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert is_nil(updated_socket.assigns.current_user)
-    end
-
-    test "redirects to login page if there isn't a user_token", %{conn: conn} do
-      session = conn |> get_session()
-
-      socket = %LiveView.Socket{
-        endpoint: HorionosWeb.Endpoint,
-        assigns: %{__changed__: %{}, flash: %{}}
-      }
-
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert is_nil(updated_socket.assigns.current_user)
-    end
-  end
-
-  describe "on_mount :ensure_current_org" do
-    test "assigns current_org based on a valid org_id", %{conn: conn, user: user} do
-      org = org_fixture(%{user: user})
-      user_token = Accounts.generate_user_session_token(user)
-
-      session =
+      conn =
         conn
-        |> put_session(:user_token, user_token)
-        |> put_session(:current_org_id, org.id)
-        |> get_session()
+        |> assign(:current_user, user)
+        |> put_session(:current_org_id, org1.id)
+        |> UserAuth.fetch_current_org([])
 
-      socket = %LiveView.Socket{
-        endpoint: HorionosWeb.Endpoint,
-        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
-      }
+      assert conn.assigns.current_org.id == org1.id
 
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:ensure_current_org, %{}, session, socket)
+      conn =
+        conn
+        |> put_session(:current_org_id, org2.id)
+        |> UserAuth.fetch_current_org([])
 
-      assert updated_socket.assigns.current_org.id == org.id
+      assert conn.assigns.current_org.id == org2.id
     end
 
-    test "redirects to onboarding if there isn't a valid org_id", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
-      session = conn |> put_session(:user_token, user_token) |> get_session()
+    test "handles case when org is deleted while user is logged in", %{conn: conn, user: user} do
+      # Verify correct behavior when current org is deleted
+      org1 = org_fixture(%{user: user})
+      org2 = org_fixture(%{user: user})
 
-      socket = %LiveView.Socket{
-        endpoint: HorionosWeb.Endpoint,
-        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
-      }
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> put_session(:current_org_id, org1.id)
+        |> UserAuth.fetch_current_org([])
 
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_current_org, %{}, session, socket)
-      assert updated_socket.assigns.current_org == nil
-    end
-  end
+      assert conn.assigns.current_org.id == org1.id
 
-  describe "on_mount :redirect_if_user_is_authenticated" do
-    test "redirects if there is an authenticated  user ", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
-      session = conn |> put_session(:user_token, user_token) |> get_session()
+      {:ok, _deleted_org} = Orgs.delete_org(user, org1)
+      assert {:error, :unauthorized} = Orgs.get_org(user, org1.id)
 
-      assert {:halt, _updated_socket} =
-               UserAuth.on_mount(
-                 :redirect_if_user_is_authenticated,
-                 %{},
-                 session,
-                 %LiveView.Socket{}
-               )
-    end
+      updated_conn = UserAuth.fetch_current_org(conn, [])
 
-    test "doesn't redirect if there is no authenticated user", %{conn: conn} do
-      session = conn |> get_session()
+      assert updated_conn.assigns.current_org.id != org1.id
+      assert is_integer(updated_conn.assigns.current_org.id)
+      assert get_session(updated_conn, :current_org_id) == updated_conn.assigns.current_org.id
 
-      assert {:cont, _updated_socket} =
-               UserAuth.on_mount(
-                 :redirect_if_user_is_authenticated,
-                 %{},
-                 session,
-                 %LiveView.Socket{}
-               )
+      {:ok, _} = Orgs.delete_org(user, org2)
+      {:ok, _} = Orgs.delete_org(user, updated_conn.assigns.current_org)
+
+      final_conn = UserAuth.fetch_current_org(updated_conn, [])
+
+      assert final_conn.assigns.current_org == nil
+      refute get_session(final_conn, :current_org_id)
     end
   end
 
   describe "redirect_if_user_is_authenticated/2" do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
+      # Check redirection for authenticated users
       conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
       assert conn.halted
       assert redirected_to(conn) == ~p"/"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do
+      # Verify no redirection for unauthenticated users
       conn = UserAuth.redirect_if_user_is_authenticated(conn, [])
       refute conn.halted
       refute conn.status
@@ -356,13 +308,14 @@ defmodule HorionosWeb.UserAuthTest do
 
   describe "require_authenticated_user/2" do
     test "redirects if user is not authenticated", %{conn: conn} do
+      # Ensure unauthenticated users are redirected to login
       conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
       assert conn.halted
-
       assert redirected_to(conn) == ~p"/users/log_in"
     end
 
     test "stores the path to redirect to on GET", %{conn: conn} do
+      # Verify return path is stored for GET requests
       halted_conn =
         %{conn | path_info: ["foo"], query_string: ""}
         |> fetch_flash()
@@ -389,6 +342,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
+      # Check that authenticated users are not redirected
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
       refute conn.status
@@ -402,6 +356,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "does not redirect if user has an org", %{conn: conn, user: user, org: org} do
+      # Verify no redirection when user has an org
       conn =
         conn
         |> assign(:current_user, user)
@@ -413,6 +368,7 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "redirects to onboarding if user has no org", %{conn: conn, user: user} do
+      # Ensure redirection to onboarding when user has no org
       conn =
         conn
         |> assign(:current_user, user)

@@ -3,6 +3,7 @@ defmodule HorionosWeb.Router do
 
   import HorionosWeb.UserAuth
 
+  alias HorionosWeb.UserAuthLive
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -32,6 +33,7 @@ defmodule HorionosWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{HorionosWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [{UserAuthLive, :redirect_if_user_is_authenticated}] do
       live "/users/register", AuthLive.UserRegistrationLive, :new
       live "/users/log_in", AuthLive.UserLoginLive, :new
       live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
@@ -47,6 +49,7 @@ defmodule HorionosWeb.Router do
 
     live_session :onboarding,
       on_mount: [{HorionosWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [{UserAuthLive, :ensure_authenticated}] do
       live "/onboarding", OnboardingLive, :onboarding
     end
   end
@@ -61,6 +64,8 @@ defmodule HorionosWeb.Router do
       on_mount: [
         {HorionosWeb.UserAuth, :ensure_authenticated},
         {HorionosWeb.UserAuth, :ensure_current_org}
+        {UserAuthLive, :ensure_authenticated},
+        {UserAuthLive, :ensure_current_org},
       ] do
       live "/", DashboardLive, :home
       live "/users/settings", UserSettingsLive.Index, :edit
@@ -88,6 +93,7 @@ defmodule HorionosWeb.Router do
 
     live_session :current_user,
       on_mount: [{HorionosWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{UserAuthLive, :mount_current_user}] do
       live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
       live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
     end
