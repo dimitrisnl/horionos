@@ -84,6 +84,53 @@ defmodule HorionosWeb.AnnouncementLiveTest do
 
       refute has_element?(index_live, "#announcements-#{announcement.id}")
     end
+
+    @tag create_org: true
+    test "shows correct state after deleting newly created announcement", %{
+      conn: conn,
+      announcement: original_announcement
+    } do
+      {:ok, index_live, _html} = live(conn, ~p"/announcements")
+
+      # Verify the original announcement is present
+      assert has_element?(index_live, "#announcements-#{original_announcement.id}")
+
+      # Create a new announcement
+      assert index_live |> element("a", "New Announcement") |> render_click() =~
+               "New Announcement"
+
+      assert index_live
+             |> form("#announcement-form", announcement: @create_attrs)
+             |> render_submit()
+
+      assert_patch(index_live, ~p"/announcements")
+
+      # Verify both announcements are now present
+      assert has_element?(index_live, "#announcements-#{original_announcement.id}")
+      assert has_element?(index_live, "tr", @create_attrs.title)
+
+      # Delete the newly created announcement
+      new_announcement_id =
+        index_live
+        |> element("tr", @create_attrs.title)
+        |> render()
+        |> Floki.attribute("id")
+        |> List.first()
+        |> String.replace("announcements-", "")
+
+      assert index_live
+             |> element("#announcements-#{new_announcement_id} a", "Delete")
+             |> render_click()
+
+      # Verify the new announcement is gone
+      refute has_element?(index_live, "#announcements-#{new_announcement_id}")
+
+      # Verify the original announcement is still present
+      assert has_element?(index_live, "#announcements-#{original_announcement.id}")
+
+      # Verify the empty state is not shown
+      refute has_element?(index_live, "div", "No Announcements")
+    end
   end
 
   describe "Show" do

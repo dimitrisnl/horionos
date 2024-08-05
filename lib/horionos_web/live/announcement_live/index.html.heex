@@ -14,7 +14,7 @@
 </.header>
 
 <.table
-  :if={Enum.count(@streams.announcements) > 0}
+  :if={@streams.announcements != []}
   id="announcements"
   rows={@streams.announcements}
   row_click={fn {_id, announcement} -> JS.navigate(~p"/announcements/#{announcement}") end}
@@ -38,7 +38,7 @@
 </.table>
 
 <div
-  :if={Enum.count(@streams.announcements) == 0}
+  :if={@streams.announcements == []}
   class="mt-12 rounded-lg border border-dashed p-12 text-center"
 >
   <.icon name="hero-megaphone" class="h-12 w-12 text-gray-400" />
