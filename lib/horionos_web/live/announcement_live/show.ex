@@ -2,18 +2,15 @@ defmodule HorionosWeb.AnnouncementLive.Show do
   use HorionosWeb, :live_view
 
   alias Horionos.Announcements
-  alias Horionos.Orgs
 
   require Logger
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    orgs = Orgs.list_user_orgs(user)
 
     socket =
       socket
-      |> assign(:orgs, orgs)
       |> assign(:current_email, user.email)
 
     {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}

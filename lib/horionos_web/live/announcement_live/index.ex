@@ -3,7 +3,6 @@ defmodule HorionosWeb.AnnouncementLive.Index do
 
   alias Horionos.Announcements
   alias Horionos.Announcements.Announcement
-  alias Horionos.Orgs
 
   require Logger
 
@@ -12,12 +11,10 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    with orgs <- Orgs.list_user_orgs(user),
-         {:ok, announcements} <- Announcements.list_announcements(user, org.id) do
+    with {:ok, announcements} <- Announcements.list_announcements(user, org.id) do
       socket =
         socket
         |> assign(:current_email, user.email)
-        |> assign(:orgs, orgs)
         |> stream(:announcements, announcements)
 
       {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}

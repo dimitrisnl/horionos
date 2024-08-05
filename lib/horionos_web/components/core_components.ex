@@ -332,16 +332,38 @@ defmodule HorionosWeb.CoreComponents do
   attr :href, :string, required: true
   attr :icon, :string, required: true
   attr :text, :string, required: true
+  attr :active, :boolean, default: false
 
   def nav_link(assigns) do
+    assigns = assign_new(assigns, :active, fn -> false end)
+
     ~H"""
     <.link
       href={@href}
-      class="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-gray-950 sm:py-2 sm:text-sm/5 hover:bg-gray-950/5 active:bg-gray-950/5 dark:text-white dark:hover:bg-white/5 dark:active:bg-white/5"
+      class={[
+        "group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium sm:py-2 sm:text-sm/5",
+        @active &&
+          [
+            "bg-gray-900/5 dark:bg-white/10",
+            "text-gray-950 dark:text-white"
+          ],
+        !@active &&
+          [
+            "text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white",
+            "hover:bg-gray-950/5 active:bg-gray-950/5 dark:hover:bg-white/5 dark:active:bg-white/5"
+          ]
+      ]}
     >
       <.icon
         name={@icon}
-        class="shrink-0 text-gray-500 size-5 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white"
+        class={
+           "shrink-0 size-5 " <>
+           if @active do
+             "text-gray-950 dark:text-white"
+           else
+             "text-gray-500 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white"
+           end
+         }
       />
       <span class="truncate"><%= @text %></span>
     </.link>
