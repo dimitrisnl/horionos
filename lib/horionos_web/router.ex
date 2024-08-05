@@ -3,8 +3,8 @@ defmodule HorionosWeb.Router do
 
   import HorionosWeb.UserAuth
 
-  alias HorionosWeb.UserAuthLive
   alias HorionosWeb.LiveHelpers
+  alias HorionosWeb.UserAuthLive
 
   @root_layout {HorionosWeb.Layouts, :root}
 

@@ -1,4 +1,7 @@
 defmodule HorionosWeb.LiveHelpers do
+  @moduledoc """
+  LiveView helper functions.
+  """
   import Phoenix.Component
 
   alias Horionos.Orgs
