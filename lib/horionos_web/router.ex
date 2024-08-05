@@ -3,18 +3,23 @@ defmodule HorionosWeb.Router do
 
   import HorionosWeb.UserAuth
 
+  alias HorionosWeb.LiveHelpers
+  alias HorionosWeb.UserAuthLive
+
+  @root_layout {HorionosWeb.Layouts, :root}
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {HorionosWeb.Layouts, :root}
+    plug :put_root_layout, html: @root_layout
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
     plug :fetch_current_org
   end
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
+  # Development routes
   if Application.compile_env(:horionos, :dev_routes) do
     import Phoenix.LiveDashboard.Router
 
@@ -26,12 +31,12 @@ defmodule HorionosWeb.Router do
     end
   end
 
-  ### Only for unauthenticated users
+  # Public routes (unauthenticated users only)
   scope "/", HorionosWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{HorionosWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [{UserAuthLive, :redirect_if_user_is_authenticated}] do
       live "/users/register", AuthLive.UserRegistrationLive, :new
       live "/users/log_in", AuthLive.UserLoginLive, :new
       live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
@@ -41,17 +46,17 @@ defmodule HorionosWeb.Router do
     post "/users/log_in", UserSessionController, :create
   end
 
-  # Onboarding scope. Authenticated but not onboarded users (missing org)
+  # Onboarding routes (authenticated but not onboarded users)
   scope "/", HorionosWeb do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :onboarding,
-      on_mount: [{HorionosWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [{UserAuthLive, :ensure_authenticated}] do
       live "/onboarding", OnboardingLive, :onboarding
     end
   end
 
-  ### Authenticated routes, with an Organization in scope
+  # Authenticated routes with organization context
   scope "/", HorionosWeb do
     pipe_through [:browser, :require_authenticated_user, :require_org]
 
@@ -59,19 +64,24 @@ defmodule HorionosWeb.Router do
 
     live_session :authenticated_with_org,
       on_mount: [
-        {HorionosWeb.UserAuth, :ensure_authenticated},
-        {HorionosWeb.UserAuth, :ensure_current_org}
+        {UserAuthLive, :ensure_authenticated},
+        {UserAuthLive, :ensure_current_org},
+        {LiveHelpers, :default}
       ] do
       live "/", DashboardLive, :home
+
+      # User settings
       live "/users/settings", UserSettingsLive.Index, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
 
+      # Organization management
       live "/orgs", OrgLive.Index, :index
       live "/orgs/new", OrgLive.Index, :new
       live "/orgs/:id/edit", OrgLive.Index, :edit
       live "/orgs/:id", OrgLive.Show, :show
       live "/orgs/:id/show/edit", OrgLive.Show, :edit
 
+      # Announcements
       live "/announcements", AnnouncementLive.Index, :index
       live "/announcements/new", AnnouncementLive.Index, :new
       live "/announcements/:id/edit", AnnouncementLive.Index, :edit
@@ -80,14 +90,14 @@ defmodule HorionosWeb.Router do
     end
   end
 
-  ### Both authenticated and unauthenticated routes
+  # Mixed authentication routes
   scope "/", HorionosWeb do
     pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
 
     live_session :current_user,
-      on_mount: [{HorionosWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{UserAuthLive, :mount_current_user}] do
       live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
       live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
     end

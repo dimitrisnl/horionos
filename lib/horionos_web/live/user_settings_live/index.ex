@@ -107,7 +107,6 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
     name_changeset = Accounts.change_user_full_name(user)
-    orgs = Horionos.Orgs.list_user_orgs(user)
 
     socket =
       socket
@@ -119,7 +118,6 @@ defmodule HorionosWeb.UserSettingsLive.Index do
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:full_name_form, to_form(name_changeset))
       |> assign(:trigger_submit, false)
-      |> assign(:orgs, orgs)
 
     {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
   end

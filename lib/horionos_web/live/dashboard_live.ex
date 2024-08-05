@@ -1,6 +1,5 @@
 defmodule HorionosWeb.DashboardLive do
   use HorionosWeb, :live_view
-  alias Horionos.Orgs
 
   def render(assigns) do
     ~H"""
@@ -42,12 +41,10 @@ defmodule HorionosWeb.DashboardLive do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    orgs = Orgs.list_user_orgs(user)
 
     socket =
       socket
       |> assign(:current_email, user.email)
-      |> assign(:orgs, orgs)
 
     {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
   end

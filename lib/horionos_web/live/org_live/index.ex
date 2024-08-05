@@ -12,7 +12,6 @@ defmodule HorionosWeb.OrgLive.Index do
     socket =
       socket
       |> assign(:current_email, user.email)
-      |> assign(:orgs, orgs)
       |> stream(:orgs, orgs)
 
     {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
