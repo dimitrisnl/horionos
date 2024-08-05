@@ -67,10 +67,11 @@ if config_env() == :prod do
 
   config :horionos, Oban,
     repo: Horionos.Repo,
-    queues: [emails: 10, default: 10],
+    queues: [emails: 10, default: 10, notifications: 10],
     plugins: [
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
-      {Oban.Plugins.Cron, crontab: []}
+      {Oban.Plugins.Cron, crontab: []},
+      Oban.Plugins.Lifeline
     ]
 
   # ## SSL Support
@@ -128,7 +129,7 @@ else
   config :horionos, Oban,
     prefix: "oban_jobs_#{config_env()}",
     repo: Horionos.Repo,
-    queues: [emails: 10, default: 10],
+    queues: [emails: 10, default: 10, notifications: 10],
     plugins: [
       # Shorter pruning time for non-prod
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24},
