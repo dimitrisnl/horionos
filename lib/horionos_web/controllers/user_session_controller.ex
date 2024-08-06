@@ -55,6 +55,6 @@ defmodule HorionosWeb.UserSessionController do
   end
 
   def delete(conn, _params) do
-    UserAuth.log_out_user(conn)
+    UserAuth.log_out_user(conn) |> redirect(to: ~p"/users/log_in")
   end
 end

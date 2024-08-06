@@ -1,21 +1,5 @@
 import Config
 
-# config/runtime.exs is executed for all environments, including
-# during releases. It is executed after compilation and before the
-# system starts, so it is typically used to load production configuration
-# and secrets from environment variables or elsewhere. Do not define
-# any compile-time configuration in here, as it won't be applied.
-# The block below contains prod specific runtime configuration.
-
-# ## Using releases
-#
-# If you use `mix release`, you need to explicitly enable the server
-# by passing the PHX_SERVER=true when you start it:
-#
-#     PHX_SERVER=true bin/horionos start
-#
-# Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
-# script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
   config :horionos, HorionosWeb.Endpoint, server: true
 end
@@ -67,10 +51,14 @@ if config_env() == :prod do
 
   config :horionos, Oban,
     repo: Horionos.Repo,
-    queues: [emails: 10, default: 10, notifications: 10],
+    queues: [emails: 10, default: 10, notifications: 10, unverified_accounts: 10],
     plugins: [
+      # Prune jobs older than 7 days
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
-      {Oban.Plugins.Cron, crontab: []},
+      {Oban.Plugins.Cron,
+       crontab: [
+         {"@daily", Horionos.Workers.LockUnverifiedAccountsWorker}
+       ]},
       Oban.Plugins.Lifeline
     ]
 
@@ -125,14 +113,4 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
-else
-  config :horionos, Oban,
-    prefix: "oban_jobs_#{config_env()}",
-    repo: Horionos.Repo,
-    queues: [emails: 10, default: 10, notifications: 10],
-    plugins: [
-      # Shorter pruning time for non-prod
-      {Oban.Plugins.Pruner, max_age: 60 * 60 * 24},
-      {Oban.Plugins.Cron, crontab: []}
-    ]
 end

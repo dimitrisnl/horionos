@@ -17,6 +17,7 @@ defmodule Horionos.Accounts.User do
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+    field :locked_at, :utc_datetime
 
     has_many :memberships, Horionos.Orgs.Membership
 
@@ -33,7 +34,8 @@ defmodule Horionos.Accounts.User do
           inserted_at: DateTime.t() | nil,
           memberships: [Horionos.Orgs.Membership.t()] | Ecto.Association.NotLoaded.t(),
           password: String.t() | nil,
-          updated_at: DateTime.t() | nil
+          updated_at: DateTime.t() | nil,
+          locked_at: DateTime.t() | nil
         }
 
   @doc """
@@ -91,6 +93,7 @@ defmodule Horionos.Accounts.User do
   It requires the email to change otherwise an error is added.
   """
   @spec email_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   def email_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email])
@@ -114,6 +117,7 @@ defmodule Horionos.Accounts.User do
       Defaults to `true`.
   """
   @spec password_changeset(t, map(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   def password_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:password])
@@ -125,6 +129,7 @@ defmodule Horionos.Accounts.User do
   Confirms the account by setting `confirmed_at`.
   """
   @spec confirm_changeset(t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  #
   def confirm_changeset(user_or_changeset) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     change(user_or_changeset, confirmed_at: now)
@@ -137,6 +142,7 @@ defmodule Horionos.Accounts.User do
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
   @spec valid_password?(t, String.t()) :: boolean()
+  #
   def valid_password?(%Horionos.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Password.verify(password, hashed_password)
@@ -151,6 +157,7 @@ defmodule Horionos.Accounts.User do
   Validates the current password otherwise adds an error to the changeset.
   """
   @spec validate_current_password(Ecto.Changeset.t(), String.t()) :: Ecto.Changeset.t()
+  #
   def validate_current_password(changeset, password) do
     if valid_password?(changeset.data, password) do
       changeset
@@ -169,6 +176,7 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec validate_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
@@ -178,6 +186,7 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec validate_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
@@ -190,6 +199,7 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec maybe_hash_password(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   defp maybe_hash_password(changeset, opts) do
     hash_password? = Keyword.get(opts, :hash_password, true)
     password = get_change(changeset, :password)
@@ -205,6 +215,7 @@ defmodule Horionos.Accounts.User do
   end
 
   @spec maybe_validate_unique_email(Ecto.Changeset.t(), Keyword.t()) :: Ecto.Changeset.t()
+  #
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset

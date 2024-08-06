@@ -7,19 +7,21 @@ config :horionos,
   # Emails
   from_email: "jim@contact.horionos.com",
   from_name: "Horionos",
-  # Tokens
+  # Token and grace periods
   reset_password_validity_in_days: 1,
   confirm_validity_in_days: 7,
   change_email_validity_in_days: 7,
-  session_validity_in_days: 60
+  session_validity_in_days: 60,
+  unconfirmed_email_deadline_in_days: 7,
+  unconfirmed_email_lock_deadline_in_days: 30
 
 config :horionos, :notification_method, :log
 
 # Oban configuration
 config :horionos, Oban,
   repo: Horionos.Repo,
-  plugins: [Oban.Plugins.Pruner],
-  queues: [emails: 10, default: 10, notifications: 10]
+  plugins: [Oban.Plugins.Pruner, {Oban.Plugins.Cron, crontab: []}],
+  queues: [emails: 10, default: 10, notifications: 10, unverified_accounts: 10]
 
 # Configures the endpoint
 config :horionos, HorionosWeb.Endpoint,
@@ -32,13 +34,7 @@ config :horionos, HorionosWeb.Endpoint,
   pubsub_server: Horionos.PubSub,
   live_view: [signing_salt: "S6Z3/glq"]
 
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
+# Local adapter for mailer, overriden in runtime.exs
 config :horionos, Horionos.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)

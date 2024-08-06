@@ -529,6 +529,188 @@ defmodule Horionos.AccountsTest do
     end
   end
 
+  describe "email verification" do
+    test "email_verification_deadline" do
+      user = user_fixture()
+      assert Accounts.email_verification_deadline(user) == DateTime.add(user.inserted_at, 7, :day)
+    end
+
+    test "email_verified?/1 returns true for confirmed users" do
+      user = user_fixture()
+
+      updated_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+          )
+        )
+
+      assert Accounts.email_verified?(updated_user)
+    end
+
+    test "email_verified?/1 returns false for unconfirmed users" do
+      user = user_fixture()
+      refute Accounts.email_verified?(user)
+    end
+
+    test "email_verification_pending?/1 returns true for unconfirmed users within deadline" do
+      user = user_fixture()
+      assert Accounts.email_verification_pending?(user)
+    end
+
+    test "email_verification_pending?/1 returns false for confirmed users" do
+      user = user_fixture()
+
+      updated_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+          )
+        )
+
+      refute Accounts.email_verification_pending?(updated_user)
+    end
+
+    test "email_verification_pending?/1 returns false for users past deadline" do
+      user = user_fixture()
+
+      updated_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            inserted_at:
+              DateTime.utc_now() |> DateTime.add(-40, :day) |> DateTime.truncate(:second)
+          )
+        )
+
+      refute Accounts.email_verification_pending?(updated_user)
+    end
+
+    test "user_email_verified_or_pending?/1 returns true for confirmed users" do
+      user = user_fixture()
+
+      updated_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+          )
+        )
+
+      assert Accounts.user_email_verified_or_pending?(updated_user)
+    end
+
+    test "user_email_verified_or_pending?/1 returns true for unconfirmed users within deadline" do
+      user = user_fixture()
+      assert Accounts.user_email_verified_or_pending?(user)
+    end
+
+    test "user_email_verified_or_pending?/1 returns false for unconfirmed users past deadline" do
+      user = user_fixture()
+
+      updated_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            inserted_at:
+              DateTime.utc_now() |> DateTime.add(-40, :day) |> DateTime.truncate(:second)
+          )
+        )
+
+      refute Accounts.user_email_verified_or_pending?(updated_user)
+    end
+  end
+
+  describe "user locking" do
+    test "lock_user/1 sets locked_at timestamp" do
+      user = user_fixture()
+      {:ok, locked_user} = Accounts.lock_user(user)
+      assert locked_user.locked_at
+    end
+
+    test "unlock_user/1 clears locked_at timestamp" do
+      user = user_fixture()
+
+      locked_user =
+        Repo.update!(
+          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
+        )
+
+      {:ok, unlocked_user} = Accounts.unlock_user(locked_user)
+      refute unlocked_user.locked_at
+    end
+
+    test "user_locked?/1 returns true for locked users" do
+      user = user_fixture()
+
+      locked_user =
+        Repo.update!(
+          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
+        )
+
+      assert Accounts.user_locked?(locked_user)
+    end
+
+    test "user_locked?/1 returns false for unlocked users" do
+      user = user_fixture()
+      refute Accounts.user_locked?(user)
+    end
+  end
+
+  describe "lock_expired_unverified_accounts/0" do
+    test "locks unverified accounts past deadline" do
+      past_deadline = DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+
+      user1 =
+        user_fixture()
+        |> then(&Repo.update!(Ecto.Changeset.change(&1, inserted_at: past_deadline)))
+
+      user2 =
+        user_fixture()
+        |> then(&Repo.update!(Ecto.Changeset.change(&1, inserted_at: past_deadline)))
+
+      _user3 =
+        user_fixture()
+        |> then(
+          &Repo.update!(
+            Ecto.Changeset.change(&1,
+              confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+            )
+          )
+        )
+
+      # This one has a future deadline by default
+      _user4 = user_fixture()
+
+      {locked_count, locked_users} = Accounts.lock_expired_unverified_accounts()
+      assert locked_count == 2
+      assert Enum.map(locked_users, & &1.id) == [user1.id, user2.id]
+    end
+
+    test "doesn't lock already locked accounts" do
+      past_deadline = DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+
+      _user1 =
+        user_fixture()
+        |> then(
+          &Repo.update!(
+            Ecto.Changeset.change(&1,
+              inserted_at: past_deadline,
+              locked_at: DateTime.utc_now() |> DateTime.truncate(:second)
+            )
+          )
+        )
+
+      user2 =
+        user_fixture()
+        |> then(&Repo.update!(Ecto.Changeset.change(&1, inserted_at: past_deadline)))
+
+      # This one has a future deadline by default
+      _user3 = user_fixture()
+
+      {locked_count, locked_users} = Accounts.lock_expired_unverified_accounts()
+      assert locked_count == 1
+      assert Enum.map(locked_users, & &1.id) == [user2.id]
+    end
+  end
+
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""

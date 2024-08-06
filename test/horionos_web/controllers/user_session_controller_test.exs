@@ -121,13 +121,13 @@ defmodule HorionosWeb.UserSessionControllerTest do
         HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
 
       conn = conn |> delete(~p"/users/log_out")
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/users/log_in"
       refute get_session(conn, :user_token)
     end
 
     test "succeeds even if the user is not logged in", %{conn: conn} do
       conn = delete(conn, ~p"/users/log_out")
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/users/log_in"
       refute get_session(conn, :user_token)
     end
   end
