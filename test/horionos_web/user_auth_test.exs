@@ -7,6 +7,7 @@ defmodule HorionosWeb.UserAuthTest do
 
   import Horionos.AccountsFixtures
   import Horionos.OrgsFixtures
+  alias Horionos.Repo
 
   @remember_me_cookie "_horionos_web_user_remember_me"
 
@@ -115,7 +116,6 @@ defmodule HorionosWeb.UserAuthTest do
       refute get_session(conn, :user_token)
       refute conn.cookies[@remember_me_cookie]
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      assert redirected_to(conn) == ~p"/"
       refute Accounts.get_user_by_session_token(user_token)
     end
 
@@ -136,7 +136,7 @@ defmodule HorionosWeb.UserAuthTest do
       conn = conn |> fetch_cookies() |> UserAuth.log_out_user()
       refute get_session(conn, :user_token)
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      assert redirected_to(conn) == ~p"/"
+      # No redirect from this method anymore
     end
   end
 
@@ -377,6 +377,103 @@ defmodule HorionosWeb.UserAuthTest do
 
       assert conn.halted
       assert redirected_to(conn) == ~p"/onboarding"
+    end
+  end
+
+  describe "require_email_verified/2" do
+    test "allows access for verified users", %{conn: conn, user: user} do
+      verified_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+          )
+        )
+
+      conn =
+        conn
+        |> assign(:current_user, verified_user)
+        |> UserAuth.require_email_verified([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "allows access for unverified users within verification deadline", %{
+      conn: conn,
+      user: user
+    } do
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> UserAuth.require_email_verified([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "logs out and redirects unverified users past verification deadline", %{
+      conn: conn,
+      user: user
+    } do
+      expired_user =
+        Repo.update!(
+          Ecto.Changeset.change(user,
+            inserted_at:
+              DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+          )
+        )
+
+      conn =
+        conn
+        |> assign(:current_user, expired_user)
+        |> fetch_flash()
+        |> fetch_cookies()
+        |> UserAuth.require_email_verified([])
+
+      assert redirected_to(conn) == ~p"/users/log_in"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Your email address needs to be verified. Please check your inbox for the verification email."
+
+      assert conn.halted
+
+      refute get_session(conn, :user_token)
+      refute conn.cookies[@remember_me_cookie]
+    end
+  end
+
+  describe "require_unlocked_account/2" do
+    test "allows access for unlocked users", %{conn: conn, user: user} do
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> UserAuth.require_unlocked_account([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "logs out and redirects locked users", %{conn: conn, user: user} do
+      locked_user =
+        Repo.update!(
+          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
+        )
+
+      conn =
+        conn
+        |> assign(:current_user, locked_user)
+        |> fetch_flash()
+        |> fetch_cookies()
+        |> UserAuth.require_unlocked_account([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/users/log_in"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Your account is locked. Please contact support to unlock it."
+
+      refute get_session(conn, :user_token)
+      refute conn.cookies[@remember_me_cookie]
     end
   end
 end

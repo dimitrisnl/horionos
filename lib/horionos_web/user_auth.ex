@@ -60,7 +60,6 @@ defmodule HorionosWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/")
   end
 
   # Plugs
@@ -194,16 +193,35 @@ defmodule HorionosWeb.UserAuth do
     end
   end
 
-  # defp ensure_email_confirmed(conn, _opts) do
-  #   if conn.assigns[:current_user] && !conn.assigns.current_user.confirmed_at do
-  #     conn
-  #     |> put_flash(:error, "You must confirm your email address before accessing this page.")
-  #     |> redirect(to: Routes.user_confirmation_path(conn, :new))
-  #     |> halt()
-  #   else
-  #     conn
-  #   end
-  # end
+  def require_email_verified(conn, _opts) do
+    if Accounts.user_email_verified_or_pending?(conn.assigns.current_user) do
+      conn
+    else
+      conn
+      |> log_out_user()
+      |> put_flash(
+        :error,
+        "Your email address needs to be verified. Please check your inbox for the verification email."
+      )
+      |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    end
+  end
+
+  def require_unlocked_account(conn, _opts) do
+    if Accounts.user_locked?(conn.assigns.current_user) do
+      conn
+      |> clear_session()
+      |> put_flash(
+        :error,
+        "Your account is locked. Please contact support to unlock it."
+      )
+      |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    else
+      conn
+    end
+  end
 
   defp put_flash_if_not_root(conn) do
     case current_path(conn) === "/" do

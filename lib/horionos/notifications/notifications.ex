@@ -29,4 +29,8 @@ defmodule Horionos.Notifications do
   defp format_message(:user_registered, %{full_name: full_name, email: email}) do
     "✨ New user registered: #{full_name} (#{email})"
   end
+
+  defp format_message(:user_locked, %{full_name: full_name, email: email}) do
+    "🔒 User locked: #{full_name} (#{email})"
+  end
 end

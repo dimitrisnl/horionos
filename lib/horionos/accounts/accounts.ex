@@ -5,9 +5,21 @@ defmodule Horionos.Accounts do
   and user profile management.
   """
 
+  import Ecto.Query
+
   alias Horionos.Repo
   alias Horionos.Accounts.{EmailToken, SessionToken, User, UserNotifier}
   alias Horionos.Notifications
+
+  @unconfirmed_email_lock_deadline_in_days Application.compile_env(
+                                             :horionos,
+                                             :unconfirmed_email_lock_deadline_in_days
+                                           )
+
+  @unconfirmed_email_deadline_in_days Application.compile_env(
+                                        :horionos,
+                                        :unconfirmed_email_deadline_in_days
+                                      )
 
   @type user_attrs :: %{
           required(:email) => String.t(),
@@ -274,6 +286,79 @@ defmodule Horionos.Accounts do
     end
   end
 
+  @spec email_verified?(User.t()) :: boolean()
+  #
+  def email_verified?(user) do
+    !is_nil(user.confirmed_at)
+  end
+
+  @spec email_verification_deadline(User.t()) :: DateTime.t()
+  #
+  def email_verification_deadline(%User{} = user) do
+    DateTime.add(user.inserted_at, @unconfirmed_email_deadline_in_days, :day)
+  end
+
+  @spec email_verification_pending?(User.t()) :: boolean()
+  #
+  def email_verification_pending?(user) do
+    now = truncate_datetime(DateTime.utc_now())
+
+    is_nil(user.confirmed_at) &&
+      DateTime.compare(email_verification_deadline(user), now) == :gt
+  end
+
+  @spec user_email_verified_or_pending?(User.t()) :: boolean()
+  #
+  def user_email_verified_or_pending?(user) do
+    email_verified?(user) || email_verification_pending?(user)
+  end
+
+  @spec lock_user(User.t()) :: user_operation_result()
+  #
+  def lock_user(user) do
+    now = truncate_datetime(DateTime.utc_now())
+
+    user
+    |> Ecto.Changeset.change(locked_at: now)
+    |> Repo.update()
+  end
+
+  @spec unlock_user(User.t()) :: user_operation_result()
+  #
+  def unlock_user(user) do
+    user
+    |> Ecto.Changeset.change(locked_at: nil)
+    |> Repo.update()
+  end
+
+  @spec user_locked?(User.t()) :: boolean()
+  #
+  def user_locked?(user) do
+    !is_nil(user.locked_at)
+  end
+
+  @doc """
+  Locks all unverified user accounts that were created more than a month ago.
+  Returns the number of accounts locked.
+  """
+  @spec lock_expired_unverified_accounts() :: {integer(), [User.t()]}
+  def lock_expired_unverified_accounts do
+    now = truncate_datetime(DateTime.utc_now())
+    lock_threshold = DateTime.add(now, -@unconfirmed_email_lock_deadline_in_days, :day)
+
+    query =
+      from u in User,
+        where:
+          is_nil(u.confirmed_at) and
+            u.inserted_at <= ^lock_threshold and
+            is_nil(u.locked_at),
+        select: u
+
+    {locked_count, locked_users} = Repo.update_all(query, set: [locked_at: now])
+
+    {locked_count, locked_users}
+  end
+
   # Private functions
 
   @spec user_email_multi(User.t(), String.t(), String.t()) :: Ecto.Multi.t()
@@ -295,5 +380,11 @@ defmodule Horionos.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.confirm_changeset(user))
     |> Ecto.Multi.delete_all(:tokens, EmailToken.by_user_and_contexts_query(user, ["confirm"]))
+  end
+
+  @spec truncate_datetime(DateTime.t()) :: DateTime.t()
+  #
+  defp truncate_datetime(datetime) do
+    DateTime.truncate(datetime, :second)
   end
 end

@@ -181,4 +181,51 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
                )
     end
   end
+
+  describe "on_mount :redirect_if_locked" do
+    test "redirects if the user is locked", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+      {:ok, user} = Accounts.lock_user(user)
+
+      session =
+        conn
+        |> put_session(:user_token, user_token)
+        |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: HorionosWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
+      }
+
+      assert {:halt, _updated_socket} =
+               UserAuthLive.on_mount(
+                 :redirect_if_locked,
+                 %{},
+                 session,
+                 socket
+               )
+    end
+
+    test "doesn't redirect an valid user", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+
+      session =
+        conn
+        |> put_session(:user_token, user_token)
+        |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: HorionosWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}, current_user: user}
+      }
+
+      assert {:cont, _updated_socket} =
+               UserAuthLive.on_mount(
+                 :redirect_if_locked,
+                 %{},
+                 session,
+                 socket
+               )
+    end
+  end
 end

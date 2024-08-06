@@ -19,14 +19,15 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLiveTest do
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      {:ok, conn} =
+      html =
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+      assert html =~ "Confirmation instructions sent"
+
+      assert html =~
+               "You will receive an email with instructions shortly. Please check your email inbox and follow the instructions to confirm your account."
 
       assert Repo.get_by!(Accounts.EmailToken, user_id: user.id).context == "confirm"
     end
@@ -36,14 +37,15 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLiveTest do
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      {:ok, conn} =
+      html =
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+      assert html =~ "Confirmation instructions sent"
+
+      assert html =~
+               "You will receive an email with instructions shortly. Please check your email inbox and follow the instructions to confirm your account."
 
       user_email = user.email
       refute_received {:email, %{to: [^user_email]}}
@@ -52,14 +54,15 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLiveTest do
     test "does not send confirmation token if email is invalid", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      {:ok, conn} =
+      html =
         lv
         |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
         |> render_submit()
-        |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+      assert html =~ "Confirmation instructions sent"
+
+      assert html =~
+               "You will receive an email with instructions shortly. Please check your email inbox and follow the instructions to confirm your account."
 
       assert Repo.all(Accounts.EmailToken) == []
     end

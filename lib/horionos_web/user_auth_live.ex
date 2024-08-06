@@ -11,6 +11,8 @@ defmodule HorionosWeb.UserAuthLive do
   alias Horionos.Accounts
   alias Horionos.Orgs
 
+  require Logger
+
   @doc """
   Handles mounting and authenticating the current_user in LiveViews.
 
@@ -31,6 +33,8 @@ defmodule HorionosWeb.UserAuthLive do
     * `:ensure_current_org` - Assigns the current_org to socket assigns based
       on the current_org_id session. If there's no current_org_id session,
       it assigns the primary org to the current_org.
+
+    * `:redirect_if_locked` - Redirects to the login if the user is locked.
 
   ## Examples
 
@@ -90,6 +94,20 @@ defmodule HorionosWeb.UserAuthLive do
 
     if socket.assigns.current_user do
       {:halt, redirect(socket, to: signed_in_path(socket))}
+    else
+      {:cont, socket}
+    end
+  end
+
+  def on_mount(:redirect_if_locked, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+    user = socket.assigns.current_user
+
+    if Accounts.user_locked?(user) do
+      {:halt,
+       socket
+       |> put_flash(:error, "Your account is locked. Please contact support to unlock it.")
+       |> redirect(to: ~p"/users/log_in")}
     else
       {:cont, socket}
     end

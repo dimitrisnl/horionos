@@ -51,14 +51,20 @@ defmodule HorionosWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :onboarding,
-      on_mount: [{UserAuthLive, :ensure_authenticated}] do
+      on_mount: [{UserAuthLive, :ensure_authenticated}, {UserAuthLive, :redirect_if_locked}] do
       live "/onboarding", OnboardingLive, :onboarding
     end
   end
 
   # Authenticated routes with organization context
   scope "/", HorionosWeb do
-    pipe_through [:browser, :require_authenticated_user, :require_org]
+    pipe_through [
+      :browser,
+      :require_authenticated_user,
+      :require_email_verified,
+      :require_unlocked_account,
+      :require_org
+    ]
 
     post "/org/select", OrgSessionController, :update
 
@@ -66,6 +72,7 @@ defmodule HorionosWeb.Router do
       on_mount: [
         {UserAuthLive, :ensure_authenticated},
         {UserAuthLive, :ensure_current_org},
+        {UserAuthLive, :redirect_if_locked},
         {LiveHelpers, :default}
       ] do
       live "/", DashboardLive, :home
@@ -96,7 +103,7 @@ defmodule HorionosWeb.Router do
 
     delete "/users/log_out", UserSessionController, :delete
 
-    live_session :current_user,
+    live_session :email_confirmation,
       on_mount: [{UserAuthLive, :mount_current_user}] do
       live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
       live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new

@@ -15,6 +15,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
       socket =
         socket
         |> assign(:current_email, user.email)
+        |> assign(:announcements_count, length(announcements))
         |> stream(:announcements, announcements)
 
       {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
@@ -62,7 +63,10 @@ defmodule HorionosWeb.AnnouncementLive.Index do
 
   @impl true
   def handle_info({HorionosWeb.AnnouncementLive.FormComponent, {:saved, announcement}}, socket) do
-    {:noreply, stream_insert(socket, :announcements, announcement)}
+    {:noreply,
+     socket
+     |> stream_insert(:announcements, announcement)
+     |> update(:announcements_count, &(&1 + 1))}
   end
 
   @impl true
@@ -77,6 +81,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
             {:noreply,
              socket
              |> stream_delete(:announcements, announcement)
+             |> update(:announcements_count, &(&1 - 1))
              |> put_flash(:info, "Announcement deleted successfully.")}
 
           {:error, _changeset} ->

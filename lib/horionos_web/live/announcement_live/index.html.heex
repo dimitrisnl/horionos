@@ -1,7 +1,7 @@
 <.header>
   Announcements
   <:subtitle>All your announcements in one place</:subtitle>
-  <:actions :if={Enum.count(@streams.announcements) > 0}>
+  <:actions :if={@announcements_count > 0}>
     <.link patch={~p"/announcements/new"}>
       <.button>
         <:left_icon>
@@ -14,7 +14,7 @@
 </.header>
 
 <.table
-  :if={@streams.announcements != []}
+  :if={@announcements_count > 0}
   id="announcements"
   rows={@streams.announcements}
   row_click={fn {_id, announcement} -> JS.navigate(~p"/announcements/#{announcement}") end}
@@ -38,7 +38,7 @@
 </.table>
 
 <div
-  :if={@streams.announcements == []}
+  :if={@announcements_count == 0}
   class="mt-12 rounded-lg border border-dashed p-12 text-center"
 >
   <.icon name="hero-megaphone" class="h-12 w-12 text-gray-400" />

@@ -9,25 +9,41 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
   def render(assigns) do
     ~H"""
     <.guest_view
-      title="No confirmation instructions received?"
-      subtitle="We'll send a new confirmation link to your inbox"
+      title={
+        if @instructions_sent,
+          do: "Confirmation instructions sent",
+          else: "Resend confirmation instructions"
+      }
+      subtitle={
+        if @instructions_sent,
+          do:
+            "You will receive an email with instructions shortly. Please check your email inbox and follow the instructions to confirm your account.",
+          else: "We'll send a new confirmation link to your inbox"
+      }
     >
       <div class="mx-auto max-w-sm">
-        <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send_instructions">
-          <.input field={@form[:email]} type="email" placeholder="Email" required />
-          <:actions>
-            <.button phx-disable-with="Sending..." class="w-full">
-              Resend confirmation instructions
-            </.button>
-          </:actions>
-        </.simple_form>
+        <%= if @instructions_sent do %>
+          <div class="size-12 bg-emerald-100/75 mx-auto flex items-center justify-center rounded-full border border-emerald-200">
+            <.icon name="hero-envelope" class="size-7 text-emerald-600" />
+          </div>
+        <% else %>
+          <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send_instructions">
+            <.input field={@form[:email]} type="email" placeholder="Email" required />
+            <:actions>
+              <.button phx-disable-with="Sending..." class="w-full">
+                Resend confirmation instructions
+              </.button>
+            </:actions>
+          </.simple_form>
+        <% end %>
       </div>
     </.guest_view>
     """
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user")), layout: {HorionosWeb.Layouts, :guest}}
+    {:ok, assign(socket, form: to_form(%{}, as: "user"), instructions_sent: false),
+     layout: {HorionosWeb.Layouts, :guest}}
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
@@ -46,13 +62,10 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
           )
         end
 
-        info =
-          "If your email is in our system and it has not been confirmed yet, you will receive an email with instructions shortly."
-
         {:noreply,
          socket
-         |> put_flash(:info, info)
-         |> redirect(to: ~p"/")}
+         |> assign(instructions_sent: true)
+         |> assign(form: to_form(%{}, as: "user"))}
 
       :error ->
         {:noreply,

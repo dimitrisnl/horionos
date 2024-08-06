@@ -14,14 +14,12 @@ defmodule Horionos.Accounts.EmailToken do
   @rand_size 32
   @reset_password_validity_in_days Application.compile_env(
                                      :horionos,
-                                     :reset_password_validity_in_days,
-                                     1
+                                     :reset_password_validity_in_days
                                    )
-  @confirm_validity_in_days Application.compile_env(:horionos, :confirm_validity_in_days, 7)
+  @confirm_validity_in_days Application.compile_env(:horionos, :confirm_validity_in_days)
   @change_email_validity_in_days Application.compile_env(
                                    :horionos,
-                                   :change_email_validity_in_days,
-                                   7
+                                   :change_email_validity_in_days
                                  )
 
   @type t :: %__MODULE__{
