@@ -6,7 +6,7 @@
   <:actions>
     <div class="flex items-center space-x-4">
       <.link patch={~p"/orgs/#{@org}/show/edit"} phx-click={JS.push_focus()}>
-        <.button>
+        <.button variant="secondary">
           <:left_icon>
             <.icon name="hero-pencil-micro" />
           </:left_icon>
@@ -17,7 +17,7 @@
         phx-click={JS.push("delete", value: %{id: @org.id})}
         data-confirm="Are you sure you want to delete the organization? This action cannot be undone."
       >
-        <.button intent="destructive">
+        <.button variant="destructive">
           <:left_icon>
             <.icon name="hero-trash-micro" />
           </:left_icon>

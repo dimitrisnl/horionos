@@ -1,6 +1,5 @@
 <.header>
   Organizations
-  <:subtitle>All your organizations in one place</:subtitle>
   <:actions>
     <.link patch={~p"/orgs/new"}>
       <.button>
@@ -29,6 +28,7 @@
     <.link
       phx-click={JS.push("delete", value: %{id: org.id}) |> hide("##{id}")}
       data-confirm="Are you sure you want to delete this organization? This action cannot be undone."
+      class="text-rose-600"
     >
       Delete
     </.link>

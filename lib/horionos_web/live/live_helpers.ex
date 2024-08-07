@@ -22,6 +22,8 @@ defmodule HorionosWeb.LiveHelpers do
       HorionosWeb.AnnouncementLive.Show -> :announcements
       HorionosWeb.OrgLive.Index -> :organizations
       HorionosWeb.OrgLive.Show -> :organizations
+      HorionosWeb.UserSettingsLive.Index -> :user_profile
+      HorionosWeb.UserSettingsLive.Security -> :user_security
       _ -> :other
     end
   end

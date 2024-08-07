@@ -14,8 +14,8 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       {:ok, _lv, html} = live(conn, ~p"/users/settings")
 
       assert html =~ "Account Settings"
-      assert html =~ "Change Email"
-      assert html =~ "Change Password"
+      assert html =~ "Change your display name"
+      assert html =~ "Change your email address"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
@@ -46,7 +46,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
     end
 
     @tag create_org: true
-    test "renders errors with invalid data (phx-change)", %{conn: conn} do
+    test "renders errors with invalid data", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
       result =
@@ -80,84 +80,42 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
     end
   end
 
-  describe "update password form" do
-    test "updates the user password", %{conn: conn} do
-      email = unique_user_email()
-      current_password = "old_password!"
+  describe "Change display name" do
+    setup :register_and_log_in_user
 
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{
-          conn: conn,
-          create_org: true,
-          user_attrs: %{password: current_password, email: email}
-        })
-
-      new_password = valid_user_password()
-
-      {:ok, lv, _html} = live(conn, ~p"/users/settings")
-
-      form =
-        form(lv, "#password_form", %{
-          "current_password" => current_password,
-          "user" => %{
-            "email" => email,
-            "password" => new_password
-          }
-        })
-
-      render_submit(form)
-
-      new_password_conn = follow_trigger_action(form, conn)
-
-      assert redirected_to(new_password_conn) == ~p"/users/settings"
-
-      assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
-
-      assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
-               "Password updated successfully"
-
-      assert Accounts.get_user_by_email_and_password(email, new_password)
-    end
-
-    test "renders errors with invalid data (phx-change)", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+    @tag create_org: true
+    test "updates the user display name", %{conn: conn, user: user} do
+      new_full_name = "New Display Name"
 
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
       result =
         lv
-        |> element("#password_form")
-        |> render_submit(%{
-          "current_password" => "invalid",
-          "user" => %{
-            "password" => "too short"
-          }
-        })
-
-      assert result =~ "Change Password"
-      assert result =~ "should be at least 12 character(s)"
-    end
-
-    test "renders errors with invalid data (phx-submit)", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
-
-      {:ok, lv, _html} = live(conn, ~p"/users/settings")
-
-      result =
-        lv
-        |> form("#password_form", %{
-          "current_password" => "invalid",
-          "user" => %{
-            "password" => "too short"
-          }
+        |> form("#full_name_form", %{
+          "user" => %{"full_name" => new_full_name}
         })
         |> render_submit()
 
-      assert result =~ "Change Password"
-      assert result =~ "should be at least 12 character(s)"
-      assert result =~ "is not valid"
+      assert result =~ "Name updated successfully"
+
+      assert Accounts.get_user_by_email(user.email) == %Accounts.User{
+               user
+               | full_name: new_full_name
+             }
+    end
+
+    @tag create_org: true
+    test "renders errors with invalid data", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      result =
+        lv
+        |> form("#full_name_form", %{
+          "user" => %{"full_name" => ""}
+        })
+        |> render_submit()
+
+      assert result =~ "be blank"
     end
   end
 
@@ -190,10 +148,6 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert flash["error"] == "Email change link is invalid or it has expired."
-
-      # Check that the email is displayed on the settings page
-      {:ok, lv, _html} = live(conn, ~p"/users/settings")
-      assert lv |> element("#hidden_user_email") |> render() =~ email
     end
 
     @tag create_org: true

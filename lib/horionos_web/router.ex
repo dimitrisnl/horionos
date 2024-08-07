@@ -79,6 +79,7 @@ defmodule HorionosWeb.Router do
 
       # User settings
       live "/users/settings", UserSettingsLive.Index, :edit
+      live "/users/settings/security", UserSettingsLive.Security, :security
       live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
 
       # Organization management

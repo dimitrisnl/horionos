@@ -56,26 +56,52 @@ defmodule HorionosWeb.FormComponents do
   attr :type, :string, default: nil
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
-  attr :intent, :string, default: nil, doc: "the intent of the button"
+  attr :variant, :string, default: nil, doc: "the variant of the button"
 
   slot :inner_block, required: true
-  slot :left_icon
-  slot :right_icon
+  slot :left_icon, default: nil
+  slot :right_icon, default: nil
 
-  def button(%{intent: "destructive"} = assigns) do
+  def button(%{variant: "destructive"} = assigns) do
     ~H"""
     <button
       type={@type}
       class={[
-        "rounded-lg bg-red-600 px-2.5 py-2 hover:bg-red-700 phx-submit-loading:opacity-75",
-        "flex items-center space-x-2 text-sm font-semibold leading-6 text-white active:text-white/80",
+        "rounded-lg bg-rose-50 px-2.5 py-3 hover:bg-rose-200 phx-submit-loading:opacity-75",
+        "flex items-center justify-center space-x-2 text-sm font-medium leading-none text-rose-600 active:text-rose-600/80",
         @class
       ]}
       {@rest}
     >
-      <div :if={@left_icon}><%= render_slot(@left_icon) %></div>
+      <%= if @left_icon != [] do %>
+        <div><%= render_slot(@left_icon) %></div>
+      <% end %>
       <div><%= render_slot(@inner_block) %></div>
-      <div :if={@right_icon}><%= render_slot(@right_icon) %></div>
+      <%= if @right_icon != [] do %>
+        <div><%= render_slot(@right_icon) %></div>
+      <% end %>
+    </button>
+    """
+  end
+
+  def button(%{variant: "secondary"} = assigns) do
+    ~H"""
+    <button
+      type={@type}
+      class={[
+        "rounded-lg bg-gray-100 px-2.5 py-3 hover:bg-gray-200 phx-submit-loading:opacity-75",
+        "flex items-center justify-center space-x-2 text-sm font-medium leading-none text-gray-950 active:text-gray-950/80",
+        @class
+      ]}
+      {@rest}
+    >
+      <%= if @left_icon != [] do %>
+        <div><%= render_slot(@left_icon) %></div>
+      <% end %>
+      <div><%= render_slot(@inner_block) %></div>
+      <%= if @right_icon != [] do %>
+        <div><%= render_slot(@right_icon) %></div>
+      <% end %>
     </button>
     """
   end
@@ -85,15 +111,19 @@ defmodule HorionosWeb.FormComponents do
     <button
       type={@type}
       class={[
-        "rounded-lg bg-gray-900 px-2.5 py-2 hover:bg-gray-700 phx-submit-loading:opacity-75",
-        "flex items-center justify-center space-x-2 text-sm font-semibold leading-6 text-white active:text-white/80",
+        "rounded-lg bg-gray-900 px-2.5 py-3 hover:bg-gray-700 phx-submit-loading:opacity-75",
+        "flex items-center justify-center space-x-2 text-sm font-medium leading-none text-white active:text-white/80",
         @class
       ]}
       {@rest}
     >
-      <div :if={@left_icon}><%= render_slot(@left_icon) %></div>
+      <%= if @left_icon != [] do %>
+        <div><%= render_slot(@left_icon) %></div>
+      <% end %>
       <div><%= render_slot(@inner_block) %></div>
-      <div :if={@right_icon}><%= render_slot(@right_icon) %></div>
+      <%= if @right_icon != [] do %>
+        <div><%= render_slot(@right_icon) %></div>
+      <% end %>
     </button>
     """
   end
@@ -206,7 +236,11 @@ defmodule HorionosWeb.FormComponents do
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+      <div class="flex justify-between">
+        <.label for={@id}><%= @label %></.label>
+
+        <.error :for={msg <- @errors}><%= msg %></.error>
+      </div>
       <textarea
         id={@id}
         name={@name}
@@ -218,7 +252,6 @@ defmodule HorionosWeb.FormComponents do
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -226,7 +259,11 @@ defmodule HorionosWeb.FormComponents do
   def input(%{type: "password"} = assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+      <div class="flex justify-between">
+        <.label for={@id}><%= @label %></.label>
+
+        <.error :for={msg <- @errors}><%= msg %></.error>
+      </div>
       <div class="relative mt-2">
         <input
           type={@type}
@@ -254,7 +291,6 @@ defmodule HorionosWeb.FormComponents do
           <.icon name="hero-eye-slash" class="size-4 hidden" id={"hide-icon-#{@id}"} />
         </button>
       </div>
-      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -263,7 +299,11 @@ defmodule HorionosWeb.FormComponents do
   def input(assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+      <div class="flex justify-between">
+        <.label for={@id}><%= @label %></.label>
+
+        <.error :for={msg <- @errors}><%= msg %></.error>
+      </div>
       <input
         type={@type}
         name={@name}
@@ -277,7 +317,6 @@ defmodule HorionosWeb.FormComponents do
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -303,10 +342,10 @@ defmodule HorionosWeb.FormComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden">
+    <div class="flex gap-1.5 text-xs leading-6 text-rose-600 phx-no-feedback:hidden">
       <.icon name="hero-exclamation-circle" class="mt-0.5 h-5 w-5 flex-none" />
-      <%= render_slot(@inner_block) %>
-    </p>
+      <div class="first-letter:uppercase"><%= render_slot(@inner_block) %></div>
+    </div>
     """
   end
 end

@@ -8,13 +8,43 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     ~H"""
     <.header class="text-center">
       Account Settings
-      <:subtitle>Manage your account settings</:subtitle>
+      <:actions>
+        <nav class="flex flex-row space-x-4 space-y-0">
+          <a
+            href={~p"/users/settings"}
+            class={[
+              "rounded-md px-3 py-2 text-sm font-medium",
+              "text-gray-500 hover:text-gray-700",
+              @active_tab == :user_profile && "bg-gray-100 text-gray-900"
+            ]}
+          >
+            Profile
+          </a>
+          <a
+            href={~p"/users/settings/security"}
+            class={[
+              "rounded-md px-3 py-2 text-sm font-medium",
+              "text-gray-500 hover:text-gray-700",
+              @active_tab == :user_security && "bg-gray-100 text-gray-900"
+            ]}
+          >
+            Security
+          </a>
+        </nav>
+      </:actions>
     </.header>
 
-    <div class="space-y-6">
-      <div class="grid grid-cols-4">
-        <div class="pt-4 text-gray-700">Change your name</div>
-        <div class="col-span-3">
+    <div class="space-y-12">
+      <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
+        <div class="space-y-1">
+          <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
+            Change your display name
+          </div>
+          <div class="text-base/6 text-gray-500 dark:text-gray-400 sm:text-sm/6">
+            Your display name is how you appear to other users on Horionos.
+          </div>
+        </div>
+        <div>
           <.simple_form for={@full_name_form} id="full_name_form" phx-submit="update_full_name">
             <.input
               field={@full_name_form[:full_name]}
@@ -30,9 +60,16 @@ defmodule HorionosWeb.UserSettingsLive.Index do
         </div>
       </div>
       <hr class="border-gray-100" />
-      <div class="grid grid-cols-4">
-        <div class="pt-4 text-gray-700">Change your email address</div>
-        <div class="col-span-3">
+      <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
+        <div class="space-y-1">
+          <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
+            Change your email address
+          </div>
+          <div class="text-base/6 text-gray-500 dark:text-gray-400 sm:text-sm/6">
+            To change your email, you'll need to confirm your current password.
+          </div>
+        </div>
+        <div>
           <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
             <.input field={@email_form[:email]} type="email" label="Email" required />
             <.input
@@ -46,41 +83,6 @@ defmodule HorionosWeb.UserSettingsLive.Index do
             />
             <:actions>
               <.button phx-disable-with="Changing...">Change Email</.button>
-            </:actions>
-          </.simple_form>
-        </div>
-      </div>
-      <hr class="border-gray-100" />
-      <div class="grid grid-cols-4">
-        <div class="pt-4 text-gray-700">Change your password</div>
-        <div class="col-span-3">
-          <.simple_form
-            for={@password_form}
-            id="password_form"
-            action={~p"/users/log_in?_action=password_updated"}
-            method="post"
-            phx-submit="update_password"
-            phx-trigger-action={@trigger_submit}
-          >
-            <input
-              name={@password_form[:email].name}
-              type="hidden"
-              id="hidden_user_email"
-              value={@current_email}
-            />
-            <.input field={@password_form[:password]} type="password" label="New password" required />
-
-            <.input
-              field={@password_form[:current_password]}
-              name="current_password"
-              type="password"
-              label="Current password"
-              id="current_password_for_password"
-              value={@current_password}
-              required
-            />
-            <:actions>
-              <.button phx-disable-with="Changing...">Change Password</.button>
             </:actions>
           </.simple_form>
         </div>
@@ -105,17 +107,14 @@ defmodule HorionosWeb.UserSettingsLive.Index do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     email_changeset = Accounts.change_user_email(user)
-    password_changeset = Accounts.change_user_password(user)
     name_changeset = Accounts.change_user_full_name(user)
 
     socket =
       socket
-      |> assign(:current_password, nil)
       |> assign(:current_full_name, user.full_name)
       |> assign(:current_email, user.email)
       |> assign(:email_form_current_password, nil)
       |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
       |> assign(:full_name_form, to_form(name_changeset))
       |> assign(:trigger_submit, false)
 
@@ -142,24 +141,6 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     end
   end
 
-  def handle_event("update_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
-
-    case Accounts.update_user_password(user, password, user_params) do
-      {:ok, user} ->
-        password_form =
-          user
-          |> Accounts.change_user_password(user_params)
-          |> to_form()
-
-        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
-    end
-  end
-
   def handle_event("update_full_name", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_user
@@ -182,9 +163,5 @@ defmodule HorionosWeb.UserSettingsLive.Index do
         Logger.error("Failed to update full name")
         {:noreply, assign(socket, full_name_form: to_form(changeset))}
     end
-  end
-
-  def handle_event("toggle_password_visibility", _, socket) do
-    {:noreply, update(socket, :show_password, &(!&1))}
   end
 end
