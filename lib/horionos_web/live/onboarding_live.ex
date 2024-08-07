@@ -38,10 +38,10 @@ defmodule HorionosWeb.OnboardingLive do
 
   def handle_event("save", %{"title" => title}, socket) do
     case Orgs.create_org(socket.assigns.current_user, %{title: title}) do
-      {:ok, org} ->
+      {:ok, _org} ->
         {:noreply,
          socket
-         |> redirect(to: ~p"/?org_id=#{org.id}")}
+         |> redirect(to: ~p"/")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
