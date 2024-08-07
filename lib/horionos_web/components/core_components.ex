@@ -41,7 +41,7 @@ defmodule HorionosWeb.CoreComponents do
     >
       <div id={"#{@id}-bg"} class="bg-gray-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
       <div
-        class="fixed inset-0 overflow-y-auto"
+        class="fixed top-0 right-0 left-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
         aria-describedby={"#{@id}-description"}
         role="dialog"
@@ -49,13 +49,13 @@ defmodule HorionosWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class="w-full max-w-2xl p-4 sm:p-6 lg:py-8">
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-gray-700/10 ring-gray-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
+              class="shadow-gray-700/10 ring-gray-700/10 relative hidden rounded-lg bg-white p-8 shadow-lg ring-1 transition"
             >
               <div class="absolute top-6 right-5">
                 <button
@@ -89,13 +89,13 @@ defmodule HorionosWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class="mx-auto mb-6 max-w-6xl border-b border-gray-100 pb-8" class={[@class]}>
+    <header class="mx-auto mb-12 max-w-6xl border-b border-gray-100 pb-6" class={[@class]}>
       <div class="flex items-start justify-between">
         <div class="space-y-4">
           <h1 class="text-2xl/8 font-semibold text-gray-950 dark:text-white sm:text-xl/8">
             <%= render_slot(@inner_block) %>
           </h1>
-          <h2 :if={@subtitle != []} class="text-base/7 text-gray-950 dark:text-white sm:text-base/6">
+          <h2 :if={@subtitle != []} class="text-base/6 text-gray-600 dark:text-zinc-400 sm:text-md/6">
             <%= render_slot(@subtitle) %>
           </h2>
         </div>
@@ -153,8 +153,8 @@ defmodule HorionosWeb.CoreComponents do
       <table class="w-[40rem] mt-11 sm:w-full">
         <thead class="text-left text-sm leading-6 text-gray-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pr-6 pb-4 font-normal"><%= col[:label] %></th>
-            <th :if={@action != []} class="relative p-0 pb-4">
+            <th :for={col <- @col} class="px-4 py-0 pb-4 font-normal"><%= col[:label] %></th>
+            <th :if={@action != []} class="relative px-4 py-0 pb-4">
               <span class="sr-only"><%= gettext("Actions") %></span>
             </th>
           </tr>
@@ -162,13 +162,13 @@ defmodule HorionosWeb.CoreComponents do
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-gray-100 border-t border-gray-200 text-sm leading-6 text-gray-700"
+          class="relative divide-y divide-gray-100 border-t border-gray-100 text-sm leading-6 text-gray-700"
         >
           <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-gray-50">
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
+              class={["relative rounded-lg p-0 px-4", @row_click && "hover:cursor-pointer"]}
             >
               <div class="max-w-[500px] relative block truncate py-4 pr-6">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
@@ -182,7 +182,7 @@ defmodule HorionosWeb.CoreComponents do
                 <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
                 <span
                   :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-gray-900 hover:text-gray-700"
+                  class="relative ml-4 font-medium leading-6 text-gray-800 hover:text-gray-700"
                 >
                   <%= render_slot(action, @row_item.(row)) %>
                 </span>
@@ -212,10 +212,12 @@ defmodule HorionosWeb.CoreComponents do
   def list(assigns) do
     ~H"""
     <div class="mt-14">
-      <dl class="-my-4 divide-y divide-gray-100">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-gray-500"><%= item.title %></dt>
-          <dd class="truncate text-gray-700"><%= render_slot(item) %></dd>
+      <dl class="divide-y divide-gray-100">
+        <div :for={item <- @item} class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="truncate text-sm font-medium leading-6 text-gray-900"><%= item.title %></dt>
+          <dd class="mt-1 break-words text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+            <%= render_slot(item) %>
+          </dd>
         </div>
       </dl>
     </div>
@@ -237,9 +239,9 @@ defmodule HorionosWeb.CoreComponents do
     <div>
       <.link
         navigate={@navigate}
-        class="text-sm font-semibold text-gray-900 hover:text-gray-700 space-x-1 flex items-center"
+        class="hover:text-gray-700 space-x-2 flex items-center hover:underline underline-offset-4"
       >
-        <.icon name="hero-chevron-left-micro" class="h-4 w-4" />
+        <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
         <div>
           <%= render_slot(@inner_block) %>
         </div>
@@ -335,8 +337,6 @@ defmodule HorionosWeb.CoreComponents do
   attr :active, :boolean, default: false
 
   def nav_link(assigns) do
-    assigns = assign_new(assigns, :active, fn -> false end)
-
     ~H"""
     <.link
       href={@href}
@@ -349,7 +349,7 @@ defmodule HorionosWeb.CoreComponents do
           ],
         !@active &&
           [
-            "text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white",
+            "text-gray-700 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white",
             "hover:bg-gray-950/5 active:bg-gray-950/5 dark:hover:bg-white/5 dark:active:bg-white/5"
           ]
       ]}
@@ -361,7 +361,7 @@ defmodule HorionosWeb.CoreComponents do
            if @active do
              "text-gray-950 dark:text-white"
            else
-             "text-gray-500 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white"
+             "text-gray-700 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white"
            end
          }
       />

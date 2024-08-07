@@ -8,17 +8,15 @@ defmodule HorionosWeb.UserSettingsLive.Security do
     ~H"""
     <.header class="text-center">
       Account Security
-
       <:actions>
-        <nav class="flex flex-col sm:flex-row sm:space-x-4 sm:space-y-0 space-y-4">
+        <nav class="flex flex-row space-x-4 space-y-0">
           <a
             href={~p"/users/settings"}
             class={[
               "rounded-md px-3 py-2 text-sm font-medium",
               "text-gray-500 hover:text-gray-700",
-              @active_tab == :user_profile && "text-gray-900 bg-gray-100",
+              @active_tab == :user_profile && "bg-gray-100 text-gray-900"
             ]}
-
           >
             Profile
           </a>
@@ -27,7 +25,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
             class={[
               "rounded-md px-3 py-2 text-sm font-medium",
               "text-gray-500 hover:text-gray-700",
-              @active_tab == :user_security && "text-gray-900 bg-gray-100",
+              @active_tab == :user_security && "bg-gray-100 text-gray-900"
             ]}
           >
             Security
@@ -36,17 +34,17 @@ defmodule HorionosWeb.UserSettingsLive.Security do
       </:actions>
     </.header>
 
-
-
     <div class="space-y-12">
-    <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
-    <div class='space-y-1'>
-      <div class="text-base/7 font-semibold text-gray-950 sm:text-sm/6 dark:text-white">Change your password</div>
-      <div class="text-base/6 text-gray-500 sm:text-sm/6 dark:text-gray-400">
-      To change your email, you'll need to confirm your current one.
-
-      </div>
-      </div>
+      <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
+        <div class="space-y-1">
+          <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
+            Change your password
+          </div>
+          <div class="text-base/6 text-gray-500 dark:text-gray-400 sm:text-sm/6">
+            To change your password, you'll need to confirm your current one.
+            <br />After the change, we'll clear all your sessions for security reasons.
+          </div>
+        </div>
         <div>
           <.simple_form
             for={@password_form}
@@ -56,7 +54,6 @@ defmodule HorionosWeb.UserSettingsLive.Security do
             phx-submit="update_password"
             phx-trigger-action={@trigger_submit}
           >
-
             <.input field={@password_form[:password]} type="password" label="New password" required />
 
             <.input
@@ -75,7 +72,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
               value={@current_email}
             />
             <:actions>
-              <.button  phx-disable-with="Changing...">Change Password</.button>
+              <.button phx-disable-with="Changing...">Change Password</.button>
             </:actions>
           </.simple_form>
         </div>
@@ -97,7 +94,6 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
     {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
   end
-
 
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params

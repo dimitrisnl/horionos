@@ -5,7 +5,7 @@
         <div class="relative">
           <div class="mb-4 flex h-12 shrink-0 items-center space-x-4 px-2">
             <.brand_icon variant="small" />
-            <h1 class="text-lg font-bold leading-6 text-gray-900">Horionos</h1>
+            <h1 class="select-none text-lg font-bold leading-6 text-gray-900">Horionos</h1>
           </div>
           <button
             popovertarget="org-menu"
@@ -76,7 +76,7 @@
                 <span class="text-sm/5 block truncate font-medium text-gray-950 dark:text-white">
                   <%= @current_user.full_name %>
                 </span>
-                <span class="text-xs/5 block truncate font-normal text-gray-500 dark:text-gray-400">
+                <span class="text-xs/5 block truncate font-normal text-gray-600 dark:text-gray-400">
                   <%= @current_user.email %>
                 </span>
               </span>
@@ -120,7 +120,7 @@
     </nav>
   </div>
   <main class="flex flex-1 flex-col pb-4 shadow lg:min-w-0 lg:pt-4 lg:pr-4 lg:pl-64">
-    <div class="grow p-6 lg:ring-gray-950/5 lg:rounded-lg lg:bg-white lg:p-10 lg:shadow-sm lg:ring-1 lg:dark:ring-white/10 lg:dark:bg-gray-900">
+    <div class="grow bg-white p-6 lg:ring-gray-950/5 lg:rounded-lg lg:p-10 lg:shadow-sm lg:ring-1 lg:dark:ring-white/10 lg:dark:bg-gray-900">
       <div class="mx-auto max-w-6xl">
         <.flash_group flash={@flash} />
         <%= @inner_content %>

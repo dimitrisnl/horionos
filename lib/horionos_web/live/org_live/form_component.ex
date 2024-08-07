@@ -7,7 +7,11 @@ defmodule HorionosWeb.OrgLive.FormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.header><%= @title %></.header>
+      <header class="mx-auto mb-4 max-w-6xl border-b border-gray-100 pb-4">
+        <h1 class="text-2xl/8 font-semibold text-gray-950 dark:text-white sm:text-xl/8">
+          <%= @title %>
+        </h1>
+      </header>
 
       <.simple_form for={@form} id="org-form" phx-target={@myself} phx-submit="save">
         <.input field={@form[:title]} type="text" label="Name" />

@@ -33,7 +33,7 @@ defmodule HorionosWeb.OrgSelectorComponent do
           href={~p"/orgs/new"}
           class="flex items-center gap-x-3 px-2 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
         >
-          <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-100 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
+          <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
             <.icon name="hero-plus-micro" class="text-blue-600" />
           </span>
           <div class="truncate">New organization</div>
