@@ -238,7 +238,7 @@ defmodule HorionosWeb.FormComponents do
     <div phx-feedback-for={@name}>
       <div class="flex justify-between">
         <.label for={@id}><%= @label %></.label>
-        
+
         <.error :for={msg <- @errors}><%= msg %></.error>
       </div>
       <textarea
@@ -261,7 +261,7 @@ defmodule HorionosWeb.FormComponents do
     <div phx-feedback-for={@name}>
       <div class="flex justify-between">
         <.label for={@id}><%= @label %></.label>
-        
+
         <.error :for={msg <- @errors}><%= msg %></.error>
       </div>
       <div class="relative mt-2">
@@ -301,7 +301,7 @@ defmodule HorionosWeb.FormComponents do
     <div phx-feedback-for={@name}>
       <div class="flex justify-between">
         <.label for={@id}><%= @label %></.label>
-        
+
         <.error :for={msg <- @errors}><%= msg %></.error>
       </div>
       <input
