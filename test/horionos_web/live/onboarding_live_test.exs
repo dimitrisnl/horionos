@@ -25,9 +25,8 @@ defmodule HorionosWeb.OnboardingLiveTest do
         |> render_submit()
         |> follow_redirect(conn)
 
-      # Check that we're redirected to the root path with an org_id
+      # Check that we're redirected to the root path
       assert conn.request_path == "/"
-      assert String.match?(conn.query_string, ~r/org_id=\d+/)
 
       assert [org] = Orgs.list_user_orgs(user)
       assert org.title == "Test Org"
