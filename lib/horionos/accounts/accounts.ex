@@ -8,8 +8,9 @@ defmodule Horionos.Accounts do
   import Ecto.Query
 
   alias Horionos.Repo
-  alias Horionos.Accounts.{EmailToken, SessionToken, User, UserNotifier}
-  alias Horionos.Notifications
+  alias Horionos.Accounts.{EmailToken, SessionToken, User}
+  alias Horionos.AdminNotifications
+  alias Horionos.UserNotifications
 
   @unconfirmed_email_lock_deadline_in_days Application.compile_env(
                                              :horionos,
@@ -64,7 +65,7 @@ defmodule Horionos.Accounts do
     |> Repo.insert()
     |> tap(fn
       {:ok, user} ->
-        Notifications.notify(:user_registered, user)
+        AdminNotifications.notify(:user_registered, user)
 
       _ ->
         :ok
@@ -144,7 +145,11 @@ defmodule Horionos.Accounts do
     {encoded_token, user_token} = EmailToken.build_email_token(user, "change:#{current_email}")
 
     Repo.insert!(user_token)
-    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+
+    UserNotifications.deliver_update_email_instructions(
+      user,
+      update_email_url_fun.(encoded_token)
+    )
   end
 
   @doc """
@@ -224,7 +229,11 @@ defmodule Horionos.Accounts do
     else
       {encoded_token, user_token} = EmailToken.build_email_token(user, "confirm")
       Repo.insert!(user_token)
-      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+
+      UserNotifications.deliver_confirmation_instructions(
+        user,
+        confirmation_url_fun.(encoded_token)
+      )
     end
   end
 
@@ -253,7 +262,11 @@ defmodule Horionos.Accounts do
       when is_function(reset_password_url_fun, 1) do
     {encoded_token, user_token} = EmailToken.build_email_token(user, "reset_password")
     Repo.insert!(user_token)
-    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+
+    UserNotifications.deliver_reset_password_instructions(
+      user,
+      reset_password_url_fun.(encoded_token)
+    )
   end
 
   @doc """

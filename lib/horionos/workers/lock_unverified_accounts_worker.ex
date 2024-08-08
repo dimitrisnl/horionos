@@ -5,14 +5,14 @@ defmodule Horionos.Workers.LockUnverifiedAccountsWorker do
   use Oban.Worker, queue: :unverified_accounts
 
   alias Horionos.Accounts
-  alias Horionos.Notifications
+  alias Horionos.AdminNotifications
 
   @impl Oban.Worker
   def perform(_job) do
     {locked_count, locked_users} = Accounts.lock_expired_unverified_accounts()
 
     for user <- locked_users do
-      Notifications.notify(:user_locked, user)
+      AdminNotifications.notify(:user_locked, user)
     end
 
     {:ok, locked_count}
