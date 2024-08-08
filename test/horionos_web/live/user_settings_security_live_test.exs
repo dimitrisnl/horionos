@@ -103,4 +103,53 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       assert result =~ "is not valid"
     end
   end
+
+  describe "active sessions" do
+    setup %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      # Create an additional session
+      Accounts.generate_user_session_token(user, %{
+        device: "Test Device",
+        os: "Test OS",
+        browser: "Test Browser",
+        browser_version: "1.0"
+      })
+
+      %{conn: conn, user: user}
+    end
+
+    test "renders active sessions", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/users/settings/security")
+
+      assert html =~ "Active sessions"
+      assert html =~ "Test Device"
+      assert html =~ "Test OS"
+      assert html =~ "Test Browser"
+      assert html =~ "version: 1.0"
+      assert html =~ "Log out of all other sessions"
+    end
+
+    test "deletes other sessions", %{user: user, conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/users/settings/security")
+
+      assert html =~ "Log out of all other sessions"
+
+      form = form(lv, "#clear_sessions_form")
+      render_submit(form)
+
+      new_conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(new_conn) == ~p"/users/settings/security"
+
+      assert Phoenix.Flash.get(new_conn.assigns.flash, :info) =~
+               "All other sessions have been logged out."
+
+      # Verify that other sessions are deleted
+      sessions = Accounts.get_user_sessions(user, get_session(new_conn, :user_token))
+      assert length(sessions) == 1
+      assert Enum.any?(sessions, fn session -> session.is_current end)
+    end
+  end
 end

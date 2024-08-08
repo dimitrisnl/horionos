@@ -71,7 +71,8 @@ defmodule Horionos.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.0", only: [:dev, :test], runtime: false},
       {:appsignal_phoenix, "~> 2.4"},
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+      {:ua_parser, "~> 1.8"}
     ]
   end
 
