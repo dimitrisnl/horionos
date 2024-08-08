@@ -18,11 +18,20 @@ defmodule Horionos.Accounts.SessionToken do
           token: binary(),
           user: User.t() | Ecto.Association.NotLoaded.t(),
           user_id: integer() | nil,
-          inserted_at: NaiveDateTime.t() | nil
+          inserted_at: NaiveDateTime.t() | nil,
+          device: String.t(),
+          os: String.t(),
+          browser: String.t(),
+          browser_version: String.t()
         }
 
   schema "session_tokens" do
     field :token, :binary
+    field :device, :string
+    field :os, :string
+    field :browser, :string
+    field :browser_version
+
     belongs_to :user, User
 
     timestamps(updated_at: false)
@@ -47,11 +56,30 @@ defmodule Horionos.Accounts.SessionToken do
   and devices in the UI and allow users to explicitly expire any
   session they deem invalid.
   """
-  @spec build_session_token(User.t()) :: {binary(), t()}
+  @spec build_session_token(User.t(), map() | nil) :: {binary(), t()}
   #
-  def build_session_token(user) do
+  def build_session_token(user, device_info \\ nil) do
     token = :crypto.strong_rand_bytes(@rand_size)
-    {token, %SessionToken{token: token, user_id: user.id}}
+
+    session_token = %SessionToken{
+      token: token,
+      user_id: user.id
+    }
+
+    session_token =
+      if device_info do
+        %{
+          session_token
+          | device: Map.get(device_info, :device, "Unknown"),
+            os: Map.get(device_info, :os, "Unknown"),
+            browser: Map.get(device_info, :browser, "Unknown"),
+            browser_version: Map.get(device_info, :browser_version, "")
+        }
+      else
+        session_token
+      end
+
+    {token, session_token}
   end
 
   @doc """

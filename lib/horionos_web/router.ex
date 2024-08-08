@@ -67,6 +67,7 @@ defmodule HorionosWeb.Router do
     ]
 
     post "/org/select", OrgSessionController, :update
+    post "/users/clear_sessions", UserSessionController, :delete_other_sessions
 
     live_session :authenticated_with_org,
       on_mount: [

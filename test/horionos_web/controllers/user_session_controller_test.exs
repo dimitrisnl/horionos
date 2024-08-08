@@ -3,6 +3,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
+  alias Horionos.Accounts
 
   describe "POST /users/log_in" do
     test "logs the user in", %{conn: conn} do
@@ -129,6 +130,62 @@ defmodule HorionosWeb.UserSessionControllerTest do
       conn = delete(conn, ~p"/users/log_out")
       assert redirected_to(conn) == ~p"/users/log_in"
       refute get_session(conn, :user_token)
+    end
+  end
+
+  describe "DELETE /users/clear_sessions" do
+    setup %{conn: conn} do
+      %{conn: conn, user: user} =
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+
+      # Create an additional session
+      Accounts.generate_user_session_token(user, %{
+        device: "Test Device",
+        os: "Test OS",
+        browser: "Test Browser",
+        browser_version: "1.0"
+      })
+
+      %{conn: conn, user: user}
+    end
+
+    test "clears other sessions", %{conn: conn, user: user} do
+      # Ensure we have two sessions
+      assert length(Accounts.get_user_sessions(user, get_session(conn, :user_token))) == 2
+
+      conn =
+        conn
+        |> fetch_flash()
+        |> post(~p"/users/clear_sessions")
+
+      assert redirected_to(conn) == ~p"/users/settings/security"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "All other sessions have been logged out"
+
+      # Verify that only one session remains
+      assert length(Accounts.get_user_sessions(user, get_session(conn, :user_token))) == 1
+    end
+
+    test "does not clear the current session", %{conn: conn} do
+      original_token = get_session(conn, :user_token)
+
+      conn = post(conn, ~p"/users/clear_sessions")
+
+      assert get_session(conn, :user_token) == original_token
+    end
+
+    test "fails gracefully if no other sessions exist", %{conn: conn, user: user} do
+      # Clear other sessions manually
+      Accounts.clear_user_sessions(user, get_session(conn, :user_token))
+
+      conn =
+        conn
+        |> fetch_flash()
+        |> post(~p"/users/clear_sessions")
+
+      assert redirected_to(conn) == ~p"/users/settings/security"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Failed to log out other sessions"
     end
   end
 end

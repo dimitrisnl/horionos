@@ -40,7 +40,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
           <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
             Change your display name
           </div>
-          <div class="text-base/6 text-gray-500 dark:text-gray-400 sm:text-sm/6">
+          <div class="text-base/6 max-w-md text-gray-500 dark:text-gray-400 sm:text-sm/6">
             Your display name is how you appear to other users on Horionos.
           </div>
         </div>
@@ -65,7 +65,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
           <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
             Change your email address
           </div>
-          <div class="text-base/6 text-gray-500 dark:text-gray-400 sm:text-sm/6">
+          <div class="text-base/6 max-w-md text-gray-500 dark:text-gray-400 sm:text-sm/6">
             To change your email, you'll need to confirm your current password.
           </div>
         </div>

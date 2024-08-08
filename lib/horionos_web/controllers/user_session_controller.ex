@@ -27,7 +27,10 @@ defmodule HorionosWeb.UserSessionController do
          user when not is_nil(user) <- Accounts.get_user_by_email_and_password(email, password) do
       Logger.info("Successful login for user: #{user.id}")
       conn = maybe_put_flash(conn, info)
-      UserAuth.log_in_user(conn, user, user_params)
+
+      device_info = extract_user_agent_info(conn)
+
+      UserAuth.log_in_user(conn, user, user_params, device_info)
     else
       :error ->
         Logger.warning("Rate limit exceeded for login attempts: #{email}")
@@ -42,6 +45,29 @@ defmodule HorionosWeb.UserSessionController do
     end
   end
 
+  def delete(conn, _params) do
+    UserAuth.log_out_user(conn) |> redirect(to: ~p"/users/log_in")
+  end
+
+  def delete_other_sessions(conn, _params) do
+    user = conn.assigns.current_user
+    user_token = get_session(conn, :user_token)
+
+    case Accounts.clear_user_sessions(user, user_token) do
+      {deleted_count, nil} when deleted_count > 0 ->
+        conn
+        |> put_flash(:info, "All other sessions have been logged out.")
+        |> redirect(to: ~p"/users/settings/security")
+
+      _ ->
+        conn
+        |> put_flash(:error, "Failed to log out other sessions. Please try again.")
+        |> redirect(to: ~p"/users/settings/security")
+    end
+  end
+
+  ## Private functions
+
   defp maybe_put_flash(conn, info) when is_binary(info) and info != "",
     do: put_flash(conn, :info, info)
 
@@ -54,7 +80,50 @@ defmodule HorionosWeb.UserSessionController do
     |> redirect(to: ~p"/users/log_in")
   end
 
-  def delete(conn, _params) do
-    UserAuth.log_out_user(conn) |> redirect(to: ~p"/users/log_in")
+  defp extract_user_agent_info(conn) do
+    ua =
+      conn
+      |> Plug.Conn.get_req_header("user-agent")
+      |> List.first()
+      |> UAParser.parse()
+
+    browser_version =
+      case ua.version do
+        %{major: major, minor: minor, patch: patch} when not is_nil(patch) ->
+          "#{major}.#{minor}.#{patch}"
+
+        %{major: major, minor: minor} ->
+          "#{major}.#{minor}"
+
+        _ ->
+          ""
+      end
+
+    os_version =
+      case ua.os.version do
+        %{major: major, minor: minor, patch: patch} when not is_nil(patch) ->
+          "#{major}.#{minor}.#{patch}"
+
+        %{major: major, minor: minor} ->
+          "#{major}.#{minor}"
+
+        _ ->
+          ""
+      end
+
+    %{
+      device: ua.device.family || "unknown",
+      os: "#{ua.os.family} #{os_version}" |> String.trim(),
+      browser: ua.family || "unknown",
+      browser_version: browser_version
+    }
+  rescue
+    _ ->
+      %{
+        device: "unknown",
+        os: "unknown",
+        browser: "unknown",
+        browser_version: ""
+      }
   end
 end

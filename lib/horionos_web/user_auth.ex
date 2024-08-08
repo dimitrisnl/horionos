@@ -33,8 +33,8 @@ defmodule HorionosWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, user, params \\ %{}) do
-    token = Accounts.generate_user_session_token(user)
+  def log_in_user(conn, user, params \\ %{}, device_info \\ %{}) do
+    token = Accounts.generate_user_session_token(user, device_info)
     user_return_to = get_session(conn, :user_return_to)
 
     conn

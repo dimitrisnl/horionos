@@ -182,10 +182,11 @@ defmodule Horionos.Accounts do
   @doc """
   Generates a session token.
   """
-  @spec generate_user_session_token(User.t()) :: String.t()
   #
-  def generate_user_session_token(user) do
-    {token, user_token} = SessionToken.build_session_token(user)
+  @spec generate_user_session_token(User.t(), map() | nil) :: String.t()
+  #
+  def generate_user_session_token(user, device_info \\ nil) do
+    {token, user_token} = SessionToken.build_session_token(user, device_info)
     Repo.insert!(user_token)
     token
   end
@@ -357,6 +358,30 @@ defmodule Horionos.Accounts do
     {locked_count, locked_users} = Repo.update_all(query, set: [locked_at: now])
 
     {locked_count, locked_users}
+  end
+
+  @spec get_user_sessions(User.t(), String.t()) :: [map()]
+  #
+  def get_user_sessions(user, current_token) do
+    SessionToken.by_user_query(user)
+    |> select([st], %{
+      id: st.id,
+      device: st.device,
+      os: st.os,
+      browser: st.browser,
+      browser_version: st.browser_version,
+      inserted_at: st.inserted_at,
+      is_current: st.token == ^current_token
+    })
+    |> Repo.all()
+  end
+
+  @spec clear_user_sessions(User.t(), String.t()) :: {integer(), nil | [term()]}
+  #
+  def clear_user_sessions(user, current_token) do
+    SessionToken.by_user_query(user)
+    |> where([st], st.token != ^current_token)
+    |> Repo.delete_all()
   end
 
   # Private functions
