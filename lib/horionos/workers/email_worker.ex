@@ -35,7 +35,7 @@ defmodule Horionos.Workers.EmailWorker do
   end
 
   defp template_file(template) do
-    Application.app_dir(:horionos, "priv/email_templates/#{template}.eex")
+    Application.app_dir(:horionos, "priv/email_templates/#{template}.txt.eex")
   end
 
   defp string_keys_to_atoms(map) do
