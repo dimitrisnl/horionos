@@ -179,13 +179,13 @@ defmodule Horionos.Orgs do
 
   ## Examples
 
-      iex> change_org(org)
+      iex> build_org_changeset(org)
       %Ecto.Changeset{data: %Org{}}
 
   """
-  @spec change_org(Org.t(), map()) :: Ecto.Changeset.t()
+  @spec build_org_changeset(Org.t(), map()) :: Ecto.Changeset.t()
   #
-  def change_org(%Org{} = org, attrs \\ %{}) do
+  def build_org_changeset(%Org{} = org, attrs \\ %{}) do
     Org.changeset(org, attrs)
   end
 

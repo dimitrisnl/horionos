@@ -28,7 +28,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
 
   @impl true
   def update(%{announcement: announcement} = assigns, socket) do
-    changeset = Announcements.change_announcement(announcement)
+    changeset = Announcements.build_announcement_changeset(announcement)
 
     {:ok,
      socket
@@ -41,7 +41,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
   def handle_event("validate", %{"announcement" => announcement_params}, socket) do
     changeset =
       socket.assigns.announcement
-      |> Announcements.change_announcement(announcement_params)
+      |> Announcements.build_announcement_changeset(announcement_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
