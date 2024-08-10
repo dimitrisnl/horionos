@@ -21,7 +21,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :mount_current_user" do
     test "assigns current_user based on a valid user_token", %{conn: conn, user: user} do
       # Test that a valid user token results in the correct current_user assignment
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       {:cont, updated_socket} =
@@ -55,7 +55,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :ensure_authenticated" do
     test "authenticates current_user based on a valid user_token", %{conn: conn, user: user} do
       # Test successful authentication with a valid token
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       {:cont, updated_socket} =
@@ -96,7 +96,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
     test "assigns current_org based on a valid org_id", %{conn: conn, user: user} do
       # Test correct org assignment with a valid org_id
       org = org_fixture(%{user: user})
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
 
       session =
         conn
@@ -119,7 +119,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
       # Verify correct org assignment when user has multiple orgs
       org_fixture(%{user: user})
       org2 = org_fixture(%{user: user})
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
 
       session =
         conn
@@ -140,7 +140,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
 
     test "redirects to onboarding if there isn't a valid org_id", %{conn: conn, user: user} do
       # Check redirection to onboarding when no valid org_id is present
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       socket = %LiveView.Socket{
@@ -156,7 +156,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :redirect_if_user_is_authenticated" do
     test "redirects if there is an authenticated user", %{conn: conn, user: user} do
       # Verify redirection for authenticated users
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       assert {:halt, _updated_socket} =
@@ -184,7 +184,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
 
   describe "on_mount :redirect_if_locked" do
     test "redirects if the user is locked", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       {:ok, user} = Accounts.lock_user(user)
 
       session =
@@ -207,7 +207,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
     end
 
     test "doesn't redirect an valid user", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
 
       session =
         conn

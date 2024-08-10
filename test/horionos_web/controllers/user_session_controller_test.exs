@@ -139,7 +139,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
         HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
 
       # Create an additional session
-      Accounts.generate_user_session_token(user, %{
+      Accounts.create_session_token(user, %{
         device: "Test Device",
         os: "Test OS",
         browser: "Test Browser",
@@ -151,7 +151,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "clears other sessions", %{conn: conn, user: user} do
       # Ensure we have two sessions
-      assert length(Accounts.get_user_sessions(user, get_session(conn, :user_token))) == 2
+      assert length(Accounts.list_user_sessions(user, get_session(conn, :user_token))) == 2
 
       conn =
         conn
@@ -164,7 +164,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
                "All other sessions have been logged out"
 
       # Verify that only one session remains
-      assert length(Accounts.get_user_sessions(user, get_session(conn, :user_token))) == 1
+      assert length(Accounts.list_user_sessions(user, get_session(conn, :user_token))) == 1
     end
 
     test "does not clear the current session", %{conn: conn} do
@@ -177,7 +177,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "fails gracefully if no other sessions exist", %{conn: conn, user: user} do
       # Clear other sessions manually
-      Accounts.clear_user_sessions(user, get_session(conn, :user_token))
+      Accounts.revoke_other_user_sessions(user, get_session(conn, :user_token))
 
       conn =
         conn

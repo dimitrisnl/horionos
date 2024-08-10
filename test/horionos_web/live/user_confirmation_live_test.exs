@@ -20,7 +20,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLiveTest do
     test "confirms the given token once", %{conn: conn, user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.send_confirmation_instructions(user, url)
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
@@ -36,7 +36,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "Your account has been confirmed successfully"
 
-      assert Accounts.get_user!(user.id).confirmed_at
+      assert Accounts.get_user_by_id!(user.id).confirmed_at
       refute get_session(conn, :user_token)
       assert Repo.all(Accounts.EmailToken) == []
 
@@ -83,7 +83,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                "The confirmation link is invalid or has expired"
 
-      refute Accounts.get_user!(user.id).confirmed_at
+      refute Accounts.get_user_by_id!(user.id).confirmed_at
     end
   end
 end

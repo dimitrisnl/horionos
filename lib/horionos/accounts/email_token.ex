@@ -1,7 +1,15 @@
 defmodule Horionos.Accounts.EmailToken do
   @moduledoc """
-  Handles the creation and verification of tokens for various user-related operations
-  such as email confirmation, and password resets.
+  Manages the creation and verification of tokens for email-related operations.
+
+  This module handles:
+  - Generation of secure tokens for email verification, password resets, etc.
+  - Verification of tokens for various email-related contexts
+  - Database interactions for storing and retrieving email tokens
+
+  It plays a crucial role in securing email-based workflows such as account
+  confirmation and password resets, ensuring that these operations are
+  both secure and time-limited.
   """
 
   use Ecto.Schema
@@ -72,18 +80,18 @@ defmodule Horionos.Accounts.EmailToken do
   context. The default contexts supported by this function are either
   "confirm", for account confirmation emails, and "reset_password",
   for resetting the password. For verifying requests to change the email,
-  see `verify_change_email_token_query/2`.
+  see `get_verify_change_email_token_query/2`.
   """
-  @spec verify_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
+  @spec get_verify_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
   #
-  def verify_email_token_query(token, context) do
+  def get_verify_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
         days = days_for_context(context)
 
         query =
-          from token in by_token_and_context_query(hashed_token, context),
+          from token in get_token_and_context_query(hashed_token, context),
             join: user in assoc(token, :user),
             where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
             select: user
@@ -101,23 +109,23 @@ defmodule Horionos.Accounts.EmailToken do
   The query returns the user found by the token, if any.
 
   This is used to validate requests to change the user
-  email. It is different from `verify_email_token_query/2` precisely because
-  `verify_email_token_query/2` validates the email has not changed, which is
+  email. It is different from `get_verify_email_token_query/2` precisely because
+  `get_verify_email_token_query/2` validates the email has not changed, which is
   the starting point by this function.
 
   The given token is valid if it matches its hashed counterpart in the
   database and if it has not expired (after @change_email_validity_in_days).
   The context must always start with "change:".
   """
-  @spec verify_change_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
+  @spec get_verify_change_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
   #
-  def verify_change_email_token_query(token, "change:" <> _ = context) do
+  def get_verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
       {:ok, decoded_token} ->
         hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
 
         query =
-          from token in by_token_and_context_query(hashed_token, context),
+          from token in get_token_and_context_query(hashed_token, context),
             where: token.inserted_at > ago(@change_email_validity_in_days, "day")
 
         {:ok, query}
@@ -130,24 +138,24 @@ defmodule Horionos.Accounts.EmailToken do
   @doc """
   Returns the token struct for the given token value and context.
   """
-  @spec by_token_and_context_query(binary(), String.t()) :: Ecto.Query.t()
+  @spec get_token_and_context_query(binary(), String.t()) :: Ecto.Query.t()
   #
-  def by_token_and_context_query(token, context) do
+  def get_token_and_context_query(token, context) do
     from EmailToken, where: [token: ^token, context: ^context]
   end
 
   @doc """
   Gets all tokens for the given user for the given contexts.
   """
-  @spec by_user_and_contexts_query(User.t(), :all | [String.t()]) :: Ecto.Query.t()
+  @spec get_user_tokens_by_contexts_query(User.t(), :all | [String.t()]) :: Ecto.Query.t()
   #
-  def by_user_and_contexts_query(user, :all) do
+  def get_user_tokens_by_contexts_query(user, :all) do
     from t in EmailToken, where: t.user_id == ^user.id
   end
 
-  @spec by_user_and_contexts_query(User.t(), [String.t()]) :: Ecto.Query.t()
+  @spec get_user_tokens_by_contexts_query(User.t(), [String.t()]) :: Ecto.Query.t()
   #
-  def by_user_and_contexts_query(user, [_ | _] = contexts) do
+  def get_user_tokens_by_contexts_query(user, [_ | _] = contexts) do
     from t in EmailToken, where: t.user_id == ^user.id and t.context in ^contexts
   end
 

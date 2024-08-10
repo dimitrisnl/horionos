@@ -172,10 +172,10 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
   def mount(_params, session, socket) do
     user = socket.assigns.current_user
-    password_changeset = Accounts.change_user_password(user)
+    password_changeset = Accounts.build_password_changeset(user)
     user_token = session["user_token"]
 
-    sessions = Accounts.get_user_sessions(user, user_token)
+    sessions = Accounts.list_user_sessions(user, user_token)
 
     socket =
       socket
@@ -198,7 +198,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
       {:ok, user} ->
         password_form =
           user
-          |> Accounts.change_user_password(user_params)
+          |> Accounts.build_password_changeset(user_params)
           |> to_form()
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}

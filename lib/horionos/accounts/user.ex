@@ -1,6 +1,14 @@
 defmodule Horionos.Accounts.User do
   @moduledoc """
-  Schema and changeset functions for User accounts.
+  Defines the User schema and provides changeset functions for user-related operations.
+
+  This module includes:
+  - The database schema for the users table
+  - Changeset functions for various user operations (registration, profile updates, etc.)
+  - Helper functions for password validation and hashing
+
+  It serves as the core data structure for user information in the system,
+  ensuring data integrity and providing the necessary validations for user-related changes.
   """
 
   use Ecto.Schema
@@ -149,7 +157,7 @@ defmodule Horionos.Accounts.User do
   end
 
   def valid_password?(_, _) do
-    Password.hash_and_stub_false()
+    Password.perform_dummy_check()
     false
   end
 
@@ -207,7 +215,7 @@ defmodule Horionos.Accounts.User do
     if hash_password? && password && changeset.valid? do
       changeset
       |> validate_length(:password, max: 72, count: :bytes)
-      |> Password.hash_password()
+      |> Password.hash_password_changeset()
       |> delete_change(:password)
     else
       changeset

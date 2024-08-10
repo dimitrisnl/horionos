@@ -45,7 +45,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
   end
 
   defp confirm_account(token, socket) do
-    case Accounts.confirm_user(token) do
+    case Accounts.confirm_user_email(token) do
       {:ok, user} ->
         Logger.info("User confirmed: #{user.email}")
 

@@ -26,7 +26,7 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
     form_source =
       case socket.assigns do
         %{user: user} ->
-          Accounts.change_user_password(user)
+          Accounts.build_password_changeset(user)
 
         _ ->
           %{}
@@ -67,7 +67,7 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
   end
 
   defp assign_user_and_token(socket, %{"token" => token}) do
-    if user = Accounts.get_user_by_reset_password_token(token) do
+    if user = Accounts.get_user_from_reset_token(token) do
       assign(socket, user: user, token: token)
     else
       Logger.warning("Invalid or expired reset password token used")

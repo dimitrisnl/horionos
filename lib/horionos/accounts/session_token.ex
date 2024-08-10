@@ -1,6 +1,16 @@
 defmodule Horionos.Accounts.SessionToken do
   @moduledoc """
-  Handles the creation and verification of session tokens
+  Handles the creation and management of session tokens for user authentication.
+
+  Key functionalities include:
+  - Generating secure session tokens
+  - Storing and retrieving session information
+  - Validating session tokens
+  - Managing token expiration
+
+  This module is essential for maintaining user sessions securely,
+  allowing for features like "remember me" functionality and
+  multi-device session management.
   """
 
   use Ecto.Schema

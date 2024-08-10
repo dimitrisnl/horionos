@@ -48,7 +48,7 @@ defmodule Horionos.Orgs.Org do
     |> cast(attrs, [:title])
     |> validate_required([:title])
     |> validate_length(:title, min: 2, max: 255)
-    |> maybe_generate_slug()
+    |> maybe_generate_unique_slug()
     |> unique_constraint(:slug)
   end
 
@@ -81,14 +81,14 @@ defmodule Horionos.Orgs.Org do
 
   # Private functions
 
-  defp maybe_generate_slug(changeset) do
+  defp maybe_generate_unique_slug(changeset) do
     case get_change(changeset, :title) do
       nil -> changeset
-      title -> generate_slug(changeset, title)
+      title -> generate_unique_slug(changeset, title)
     end
   end
 
-  defp generate_slug(changeset, title) do
+  defp generate_unique_slug(changeset, title) do
     base_slug = title |> String.downcase() |> String.replace(~r/[^\w-]+/, "-")
 
     case find_unique_slug(base_slug) do

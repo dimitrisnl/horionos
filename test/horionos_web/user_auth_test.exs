@@ -30,7 +30,7 @@ defmodule HorionosWeb.UserAuthTest do
 
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
-      assert Accounts.get_user_by_session_token(token)
+      assert Accounts.get_user_from_session_token(token)
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do
@@ -94,17 +94,17 @@ defmodule HorionosWeb.UserAuthTest do
         |> UserAuth.log_in_user(user)
 
       token = get_session(conn, :user_token)
-      Accounts.delete_user_session_token(token)
+      Accounts.revoke_session_token(token)
 
       assert get_session(conn, :user_token)
-      refute Accounts.get_user_by_session_token(token)
+      refute Accounts.get_user_from_session_token(token)
     end
   end
 
   describe "logout_user/1" do
     test "erases session and cookies", %{conn: conn, user: user} do
       # Ensure logout properly clears session and cookies
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
 
       conn =
         conn
@@ -116,7 +116,7 @@ defmodule HorionosWeb.UserAuthTest do
       refute get_session(conn, :user_token)
       refute conn.cookies[@remember_me_cookie]
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      refute Accounts.get_user_by_session_token(user_token)
+      refute Accounts.get_user_from_session_token(user_token)
     end
 
     test "broadcasts to the given live_socket_id", %{conn: conn} do
@@ -143,7 +143,7 @@ defmodule HorionosWeb.UserAuthTest do
   describe "fetch_current_user/2" do
     test "authenticates user from session", %{conn: conn, user: user} do
       # Verify user authentication from session token
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = Accounts.create_session_token(user)
       conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_user([])
       assert conn.assigns.current_user.id == user.id
     end
@@ -173,7 +173,7 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
       # Ensure no authentication occurs with missing data
-      _ = Accounts.generate_user_session_token(user)
+      _ = Accounts.create_session_token(user)
       conn = UserAuth.fetch_current_user(conn, [])
       refute get_session(conn, :user_token)
       refute conn.assigns.current_user
