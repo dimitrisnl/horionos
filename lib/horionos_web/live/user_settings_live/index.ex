@@ -106,8 +106,8 @@ defmodule HorionosWeb.UserSettingsLive.Index do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_changeset = Accounts.change_user_email(user)
-    name_changeset = Accounts.change_user_full_name(user)
+    email_changeset = Accounts.build_email_changeset(user)
+    name_changeset = Accounts.build_full_name_changeset(user)
 
     socket =
       socket
@@ -125,9 +125,9 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
-    case Accounts.apply_user_email(user, password, user_params) do
+    case Accounts.apply_email_change(user, password, user_params) do
       {:ok, applied_user} ->
-        Accounts.deliver_user_update_email_instructions(
+        Accounts.send_update_email_instructions(
           applied_user,
           user.email,
           &url(~p"/users/settings/confirm_email/#{&1}")
@@ -149,7 +149,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
       {:ok, user} ->
         full_name_form =
           user
-          |> Accounts.change_user_full_name(user_params)
+          |> Accounts.build_full_name_changeset(user_params)
           |> to_form()
 
         {:noreply,

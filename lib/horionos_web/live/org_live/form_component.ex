@@ -25,7 +25,7 @@ defmodule HorionosWeb.OrgLive.FormComponent do
 
   @impl true
   def update(%{org: org} = assigns, socket) do
-    changeset = Orgs.change_org(org)
+    changeset = Orgs.build_org_changeset(org)
 
     {:ok,
      socket

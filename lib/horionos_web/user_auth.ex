@@ -34,7 +34,7 @@ defmodule HorionosWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}, device_info \\ %{}) do
-    token = Accounts.generate_user_session_token(user, device_info)
+    token = Accounts.create_session_token(user, device_info)
     user_return_to = get_session(conn, :user_return_to)
 
     conn
@@ -51,7 +51,7 @@ defmodule HorionosWeb.UserAuth do
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_user_session_token(user_token)
+    user_token && Accounts.revoke_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       HorionosWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -69,7 +69,7 @@ defmodule HorionosWeb.UserAuth do
   """
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
+    user = user_token && Accounts.get_user_from_session_token(user_token)
     assign(conn, :current_user, user)
   end
 
@@ -194,7 +194,7 @@ defmodule HorionosWeb.UserAuth do
   end
 
   def require_email_verified(conn, _opts) do
-    if Accounts.user_email_verified_or_pending?(conn.assigns.current_user) do
+    if Accounts.email_verified_or_pending?(conn.assigns.current_user) do
       conn
     else
       conn

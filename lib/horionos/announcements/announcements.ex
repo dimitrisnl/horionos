@@ -86,9 +86,9 @@ defmodule Horionos.Announcements do
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking announcement changes.
   """
-  @spec change_announcement(Announcement.t(), map()) :: Ecto.Changeset.t()
+  @spec build_announcement_changeset(Announcement.t(), map()) :: Ecto.Changeset.t()
   #
-  def change_announcement(%Announcement{} = announcement, attrs \\ %{}) do
+  def build_announcement_changeset(%Announcement{} = announcement, attrs \\ %{}) do
     Announcement.changeset(announcement, attrs)
   end
 end

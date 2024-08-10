@@ -110,7 +110,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
         HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
 
       # Create an additional session
-      Accounts.generate_user_session_token(user, %{
+      Accounts.create_session_token(user, %{
         device: "Test Device",
         os: "Test OS",
         browser: "Test Browser",
@@ -147,7 +147,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
                "All other sessions have been logged out."
 
       # Verify that other sessions are deleted
-      sessions = Accounts.get_user_sessions(user, get_session(new_conn, :user_token))
+      sessions = Accounts.list_user_sessions(user, get_session(new_conn, :user_token))
       assert length(sessions) == 1
       assert Enum.any?(sessions, fn session -> session.is_current end)
     end

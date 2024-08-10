@@ -285,10 +285,10 @@ defmodule Horionos.OrgsTest do
     end
   end
 
-  describe "change_org/2" do
+  describe "build_org_changeset/2" do
     test "returns a org changeset" do
       org = org_fixture()
-      assert %Ecto.Changeset{} = changeset = Orgs.change_org(org)
+      assert %Ecto.Changeset{} = changeset = Orgs.build_org_changeset(org)
       assert changeset.valid?
     end
   end

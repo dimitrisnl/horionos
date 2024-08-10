@@ -1,18 +1,26 @@
 defmodule Horionos.Accounts.Password do
   @moduledoc """
-  Handles password hashing and verification.
+  Handles password hashing, verification, and related security operations.
+
+  This module provides a secure interface for working with passwords in the Horionos application.
+  It uses Bcrypt for password hashing, which is a strong, adaptive hash function designed to resist
+  various types of attacks, including rainbow table and brute-force attacks.
+
+  Key features and responsibilities:
+  - Securely hashing passwords for storage
+  - Verifying passwords against their hashed versions
+  - Protecting against timing attacks
+  - Updating Ecto changesets with hashed passwords
+
+  This module should be used for all password-related operations to ensure consistent
+  and secure handling of passwords throughout the application.
+
+  Note: This module does not store any passwords. It only provides functions to work
+  with passwords in a secure manner.
   """
 
   @doc """
   Hashes a password using Bcrypt.
-
-  ## Parameters
-
-    - `password` - The password to hash.
-
-  ## Returns
-
-    The hashed password.
   """
   @spec hash(String.t()) :: String.t()
   #
@@ -22,15 +30,6 @@ defmodule Horionos.Accounts.Password do
 
   @doc """
   Verifies a password against a hashed password.
-
-  ## Parameters
-
-    - `password` - The password to verify.
-    - `hashed_password` - The hashed password to verify against.
-
-  ## Returns
-
-    `true` if the password is verified, `false` otherwise.
   """
   @spec verify(String.t(), String.t()) :: boolean()
   #
@@ -41,26 +40,18 @@ defmodule Horionos.Accounts.Password do
   @doc """
   Performs a dummy check to prevent timing attacks.
   """
-  @spec hash_and_stub_false() :: boolean()
+  @spec perform_dummy_check() :: boolean()
   #
-  def hash_and_stub_false do
+  def perform_dummy_check do
     Bcrypt.no_user_verify()
   end
 
   @doc """
   Hashes a password and returns an updated changeset.
-
-  ## Parameters
-
-    - `changeset` - The changeset to update.
-
-  ## Returns
-
-    The updated changeset.
   """
-  @spec hash_password(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  @spec hash_password_changeset(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   #
-  def hash_password(changeset) do
+  def hash_password_changeset(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
         Ecto.Changeset.put_change(changeset, :hashed_password, hash(password))

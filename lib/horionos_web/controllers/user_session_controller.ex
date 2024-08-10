@@ -53,7 +53,7 @@ defmodule HorionosWeb.UserSessionController do
     user = conn.assigns.current_user
     user_token = get_session(conn, :user_token)
 
-    case Accounts.clear_user_sessions(user, user_token) do
+    case Accounts.revoke_other_user_sessions(user, user_token) do
       {deleted_count, nil} when deleted_count > 0 ->
         conn
         |> put_flash(:info, "All other sessions have been logged out.")

@@ -127,7 +127,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
+          Accounts.send_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
       %{conn: conn, token: token, email: email, user: user}

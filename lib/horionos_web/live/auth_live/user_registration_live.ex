@@ -39,7 +39,7 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accounts.change_user_registration(%User{})
+    changeset = Accounts.build_registration_changeset(%User{})
 
     socket =
       socket
@@ -57,12 +57,12 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
             Logger.info("New user registered: #{user.id}")
 
             {:ok, _} =
-              Accounts.deliver_user_confirmation_instructions(
+              Accounts.send_confirmation_instructions(
                 user,
                 &url(~p"/users/confirm/#{&1}")
               )
 
-            changeset = Accounts.change_user_registration(user)
+            changeset = Accounts.build_registration_changeset(user)
             {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
 
           {:error, %Ecto.Changeset{} = changeset} ->

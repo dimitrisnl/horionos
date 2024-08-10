@@ -50,7 +50,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
     case RateLimiter.check_rate("confirmation_instructions:#{email}", 3, 300_000) do
       :ok ->
         if user = Accounts.get_user_by_email(email) do
-          Accounts.deliver_user_confirmation_instructions(
+          Accounts.send_confirmation_instructions(
             user,
             &url(~p"/users/confirm/#{&1}")
           )

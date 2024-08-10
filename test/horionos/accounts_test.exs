@@ -82,9 +82,9 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "change_user_registration/2" do
+  describe "build_registration_changeset/2" do
     test "returns a changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
+      assert %Ecto.Changeset{} = changeset = Accounts.build_registration_changeset(%User{})
       assert changeset.required == [:password, :email, :full_name]
     end
 
@@ -94,7 +94,7 @@ defmodule Horionos.AccountsTest do
       full_name = valid_user_full_name()
 
       changeset =
-        Accounts.change_user_registration(
+        Accounts.build_registration_changeset(
           %User{},
           valid_user_attributes(email: email, password: password, full_name: full_name)
         )
@@ -107,24 +107,24 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "change_user_email/2" do
+  describe "build_email_changeset/2" do
     test "returns a user changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_email(%User{})
+      assert %Ecto.Changeset{} = changeset = Accounts.build_email_changeset(%User{})
       assert changeset.required == [:email]
     end
   end
 
-  describe "change_user_full_name/2" do
+  describe "build_full_name_changeset/2" do
     test "returns a user changeset" do
       user = user_fixture()
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_full_name(user)
+      assert %Ecto.Changeset{} = changeset = Accounts.build_full_name_changeset(user)
       assert changeset.required == [:full_name]
     end
 
     test "allows full_name to be set" do
       user = user_fixture()
       new_full_name = "New Full Name"
-      changeset = Accounts.change_user_full_name(user, %{full_name: new_full_name})
+      changeset = Accounts.build_full_name_changeset(user, %{full_name: new_full_name})
 
       assert changeset.valid?
       assert get_change(changeset, :full_name) == new_full_name
@@ -152,19 +152,19 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "apply_user_email/3" do
+  describe "apply_email_change/3" do
     setup do
       %{user: user_fixture()}
     end
 
     test "requires email to change", %{user: user} do
-      {:error, changeset} = Accounts.apply_user_email(user, valid_user_password(), %{})
+      {:error, changeset} = Accounts.apply_email_change(user, valid_user_password(), %{})
       assert %{email: ["did not change"]} = errors_on(changeset)
     end
 
     test "validates email", %{user: user} do
       {:error, changeset} =
-        Accounts.apply_user_email(user, valid_user_password(), %{email: "not valid"})
+        Accounts.apply_email_change(user, valid_user_password(), %{email: "not valid"})
 
       assert %{email: ["must have the @ sign and no spaces"]} = errors_on(changeset)
     end
@@ -173,7 +173,7 @@ defmodule Horionos.AccountsTest do
       too_long = String.duplicate("db", 100)
 
       {:error, changeset} =
-        Accounts.apply_user_email(user, valid_user_password(), %{email: too_long})
+        Accounts.apply_email_change(user, valid_user_password(), %{email: too_long})
 
       assert "should be at most 160 character(s)" in errors_on(changeset).email
     end
@@ -182,21 +182,21 @@ defmodule Horionos.AccountsTest do
       %{email: email} = user_fixture()
       password = valid_user_password()
 
-      {:error, changeset} = Accounts.apply_user_email(user, password, %{email: email})
+      {:error, changeset} = Accounts.apply_email_change(user, password, %{email: email})
 
       assert "has already been taken" in errors_on(changeset).email
     end
 
     test "validates current password", %{user: user} do
       {:error, changeset} =
-        Accounts.apply_user_email(user, "invalid", %{email: unique_user_email()})
+        Accounts.apply_email_change(user, "invalid", %{email: unique_user_email()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
     test "applies the email without persisting it", %{user: user} do
       email = unique_user_email()
-      {:ok, user} = Accounts.apply_user_email(user, valid_user_password(), %{email: email})
+      {:ok, user} = Accounts.apply_email_change(user, valid_user_password(), %{email: email})
       assert user.email == email
 
       assert is_nil(Accounts.get_user_by_email(email))
@@ -211,7 +211,7 @@ defmodule Horionos.AccountsTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_update_email_instructions(user, "current@example.com", url)
+          Accounts.send_update_email_instructions(user, "current@example.com", url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -229,7 +229,7 @@ defmodule Horionos.AccountsTest do
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
+          Accounts.send_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
       %{user: user, token: token, email: email}
@@ -265,15 +265,15 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "change_user_password/2" do
+  describe "build_password_changeset/2" do
     test "returns a user changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_user_password(%User{})
+      assert %Ecto.Changeset{} = changeset = Accounts.build_password_changeset(%User{})
       assert changeset.required == [:password]
     end
 
     test "allows fields to be set" do
       changeset =
-        Accounts.change_user_password(%User{}, %{
+        Accounts.build_password_changeset(%User{}, %{
           "password" => "new valid password"
         })
 
@@ -328,7 +328,7 @@ defmodule Horionos.AccountsTest do
     end
 
     test "deletes all tokens for the given user", %{user: user} do
-      _ = Accounts.generate_user_session_token(user)
+      _ = Accounts.create_session_token(user)
 
       {:ok, _} =
         Accounts.update_user_password(user, valid_user_password(), %{
@@ -340,13 +340,13 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "generate_user_session_token/1" do
+  describe "create_session_token/1" do
     setup do
       %{user: user_fixture()}
     end
 
     test "generates a token", %{user: user} do
-      token = Accounts.generate_user_session_token(user)
+      token = Accounts.create_session_token(user)
       assert user_token = Repo.get_by(SessionToken, token: token)
 
       # Creating the same token for another user should fail
@@ -359,38 +359,38 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "get_user_by_session_token/1" do
+  describe "get_user_from_session_token/1" do
     setup do
       user = user_fixture()
-      token = Accounts.generate_user_session_token(user)
+      token = Accounts.create_session_token(user)
       %{user: user, token: token}
     end
 
     test "returns user by token", %{user: user, token: token} do
-      assert session_user = Accounts.get_user_by_session_token(token)
+      assert session_user = Accounts.get_user_from_session_token(token)
       assert session_user.id == user.id
     end
 
     test "does not return user for invalid token" do
-      refute Accounts.get_user_by_session_token("oops")
+      refute Accounts.get_user_from_session_token("oops")
     end
 
     test "does not return user for expired token", %{token: token} do
       {1, nil} = Repo.update_all(SessionToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      refute Accounts.get_user_by_session_token(token)
+      refute Accounts.get_user_from_session_token(token)
     end
   end
 
-  describe "delete_user_session_token/1" do
+  describe "revoke_session_token/1" do
     test "deletes the token" do
       user = user_fixture()
-      token = Accounts.generate_user_session_token(user)
-      assert Accounts.delete_user_session_token(token) == :ok
-      refute Accounts.get_user_by_session_token(token)
+      token = Accounts.create_session_token(user)
+      assert Accounts.revoke_session_token(token) == :ok
+      refute Accounts.get_user_from_session_token(token)
     end
   end
 
-  describe "deliver_user_confirmation_instructions/2" do
+  describe "send_confirmation_instructions/2" do
     setup do
       %{user: user_fixture()}
     end
@@ -398,7 +398,7 @@ defmodule Horionos.AccountsTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.send_confirmation_instructions(user, url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -409,20 +409,20 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "confirm_user/1" do
+  describe "confirm_user_email/1" do
     setup do
       user = user_fixture()
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.send_confirmation_instructions(user, url)
         end)
 
       %{user: user, token: token}
     end
 
     test "confirms the email with a valid token", %{user: user, token: token} do
-      assert {:ok, confirmed_user} = Accounts.confirm_user(token)
+      assert {:ok, confirmed_user} = Accounts.confirm_user_email(token)
       assert confirmed_user.confirmed_at
       assert confirmed_user.confirmed_at != user.confirmed_at
       assert Repo.get!(User, user.id).confirmed_at
@@ -430,20 +430,20 @@ defmodule Horionos.AccountsTest do
     end
 
     test "does not confirm with invalid token", %{user: user} do
-      assert Accounts.confirm_user("oops") == :error
+      assert Accounts.confirm_user_email("oops") == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(EmailToken, user_id: user.id)
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
       {1, nil} = Repo.update_all(EmailToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_user(token) == :error
+      assert Accounts.confirm_user_email(token) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(EmailToken, user_id: user.id)
     end
   end
 
-  describe "deliver_user_reset_password_instructions/2" do
+  describe "send_reset_password_instructions/2" do
     setup do
       %{user: user_fixture()}
     end
@@ -451,7 +451,7 @@ defmodule Horionos.AccountsTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
+          Accounts.send_reset_password_instructions(user, url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -462,31 +462,31 @@ defmodule Horionos.AccountsTest do
     end
   end
 
-  describe "get_user_by_reset_password_token/1" do
+  describe "get_user_from_reset_token/1" do
     setup do
       user = user_fixture()
 
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_reset_password_instructions(user, url)
+          Accounts.send_reset_password_instructions(user, url)
         end)
 
       %{user: user, token: token}
     end
 
     test "returns the user with valid token", %{user: %{id: id}, token: token} do
-      assert %User{id: ^id} = Accounts.get_user_by_reset_password_token(token)
+      assert %User{id: ^id} = Accounts.get_user_from_reset_token(token)
       assert Repo.get_by(EmailToken, user_id: id)
     end
 
     test "does not return the user with invalid token", %{user: user} do
-      refute Accounts.get_user_by_reset_password_token("oops")
+      refute Accounts.get_user_from_reset_token("oops")
       assert Repo.get_by(EmailToken, user_id: user.id)
     end
 
     test "does not return the user if token expired", %{user: user, token: token} do
       {1, nil} = Repo.update_all(EmailToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      refute Accounts.get_user_by_reset_password_token(token)
+      refute Accounts.get_user_from_reset_token(token)
       assert Repo.get_by(EmailToken, user_id: user.id)
     end
   end
@@ -522,7 +522,7 @@ defmodule Horionos.AccountsTest do
     end
 
     test "deletes all tokens for the given user", %{user: user} do
-      _ = Accounts.generate_user_session_token(user)
+      _ = Accounts.create_session_token(user)
       {:ok, _} = Accounts.reset_user_password(user, %{password: "new valid password"})
       refute Repo.get_by(EmailToken, user_id: user.id)
       refute Repo.get_by(SessionToken, user_id: user.id)
@@ -530,9 +530,11 @@ defmodule Horionos.AccountsTest do
   end
 
   describe "email verification" do
-    test "email_verification_deadline" do
+    test "get_email_verification_deadline" do
       user = user_fixture()
-      assert Accounts.email_verification_deadline(user) == DateTime.add(user.inserted_at, 7, :day)
+
+      assert Accounts.get_email_verification_deadline(user) ==
+               DateTime.add(user.inserted_at, 7, :day)
     end
 
     test "email_verified?/1 returns true for confirmed users" do
@@ -585,7 +587,7 @@ defmodule Horionos.AccountsTest do
       refute Accounts.email_verification_pending?(updated_user)
     end
 
-    test "user_email_verified_or_pending?/1 returns true for confirmed users" do
+    test "email_verified_or_pending?/1 returns true for confirmed users" do
       user = user_fixture()
 
       updated_user =
@@ -595,15 +597,15 @@ defmodule Horionos.AccountsTest do
           )
         )
 
-      assert Accounts.user_email_verified_or_pending?(updated_user)
+      assert Accounts.email_verified_or_pending?(updated_user)
     end
 
-    test "user_email_verified_or_pending?/1 returns true for unconfirmed users within deadline" do
+    test "email_verified_or_pending?/1 returns true for unconfirmed users within deadline" do
       user = user_fixture()
-      assert Accounts.user_email_verified_or_pending?(user)
+      assert Accounts.email_verified_or_pending?(user)
     end
 
-    test "user_email_verified_or_pending?/1 returns false for unconfirmed users past deadline" do
+    test "email_verified_or_pending?/1 returns false for unconfirmed users past deadline" do
       user = user_fixture()
 
       updated_user =
@@ -614,7 +616,7 @@ defmodule Horionos.AccountsTest do
           )
         )
 
-      refute Accounts.user_email_verified_or_pending?(updated_user)
+      refute Accounts.email_verified_or_pending?(updated_user)
     end
   end
 

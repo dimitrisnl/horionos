@@ -8,7 +8,7 @@ defmodule HorionosWeb.OrgSessionController do
     current_user = conn.assigns.current_user
 
     with {:ok, next_org_id} <- validate_org_id(org_id),
-         :ok <- check_org_change(current_org_id, next_org_id),
+         :ok <- org_changed?(current_org_id, next_org_id),
          {:ok, org} <- Orgs.get_org(current_user, to_string(next_org_id)) do
       conn
       |> configure_session(renew: true)
@@ -46,8 +46,8 @@ defmodule HorionosWeb.OrgSessionController do
 
   defp validate_org_id(_), do: {:error, :invalid_org_id}
 
-  defp check_org_change(current_org_id, next_org_id) when current_org_id == next_org_id,
+  defp org_changed?(current_org_id, next_org_id) when current_org_id == next_org_id,
     do: {:error, :no_change}
 
-  defp check_org_change(_, _), do: :ok
+  defp org_changed?(_, _), do: :ok
 end
