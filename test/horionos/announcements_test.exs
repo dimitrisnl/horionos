@@ -148,7 +148,10 @@ defmodule Horionos.AnnouncementsTest do
       assert {:error, :unauthorized} = Announcements.delete_announcement(non_member, announcement)
     end
 
-    test "build_announcement_changeset/1 returns a announcement changeset", %{admin: admin, org: org} do
+    test "build_announcement_changeset/1 returns a announcement changeset", %{
+      admin: admin,
+      org: org
+    } do
       announcement = AnnouncementsFixtures.announcement_fixture(admin, org)
       assert %Ecto.Changeset{} = Announcements.build_announcement_changeset(announcement)
     end

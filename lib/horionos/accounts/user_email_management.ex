@@ -125,14 +125,20 @@ defmodule Horionos.Accounts.UserEmailManagement do
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.delete_all(:tokens, EmailToken.get_user_tokens_by_contexts_query(user, [context]))
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      EmailToken.get_user_tokens_by_contexts_query(user, [context])
+    )
   end
 
   @spec confirm_user_email_multi(User.t()) :: Ecto.Multi.t()
   defp confirm_user_email_multi(user) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.confirm_changeset(user))
-    |> Ecto.Multi.delete_all(:tokens, EmailToken.get_user_tokens_by_contexts_query(user, ["confirm"]))
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      EmailToken.get_user_tokens_by_contexts_query(user, ["confirm"])
+    )
   end
 
   @spec truncate_datetime(DateTime.t()) :: DateTime.t()

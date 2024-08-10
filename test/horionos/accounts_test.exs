@@ -532,7 +532,9 @@ defmodule Horionos.AccountsTest do
   describe "email verification" do
     test "get_email_verification_deadline" do
       user = user_fixture()
-      assert Accounts.get_email_verification_deadline(user) == DateTime.add(user.inserted_at, 7, :day)
+
+      assert Accounts.get_email_verification_deadline(user) ==
+               DateTime.add(user.inserted_at, 7, :day)
     end
 
     test "email_verified?/1 returns true for confirmed users" do

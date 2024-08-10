@@ -117,7 +117,8 @@ defmodule Horionos.Accounts.EmailToken do
   database and if it has not expired (after @change_email_validity_in_days).
   The context must always start with "change:".
   """
-  @spec get_verify_change_email_token_query(binary(), String.t()) :: {:ok, Ecto.Query.t()} | :error
+  @spec get_verify_change_email_token_query(binary(), String.t()) ::
+          {:ok, Ecto.Query.t()} | :error
   #
   def get_verify_change_email_token_query(token, "change:" <> _ = context) do
     case Base.url_decode64(token, padding: false) do
