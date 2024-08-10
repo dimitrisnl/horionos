@@ -684,7 +684,6 @@ defmodule Horionos.AccountsTest do
       {locked_count, locked_users} = Accounts.lock_expired_unverified_accounts()
       assert locked_count == 2
 
-
       sorted_locked_ids = Enum.map(locked_users, & &1.id) |> Enum.sort()
       expected_ids = [user1.id, user2.id] |> Enum.sort()
 
