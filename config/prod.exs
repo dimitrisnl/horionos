@@ -19,6 +19,6 @@ config :logger, level: :info
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 
-config :horionos, :notification_method, :slack
+config :horionos, :admin_notification_method, :slack
 
 config :appsignal, :config, active: true
