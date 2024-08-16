@@ -4,14 +4,12 @@ defmodule HorionosWeb.AnnouncementLive.Index do
   alias Horionos.Announcements
   alias Horionos.Announcements.Announcement
 
-  require Logger
-
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    with {:ok, announcements} <- Announcements.list_announcements(user, org.id) do
+    with {:ok, announcements} <- Announcements.list_announcements(user, org) do
       socket =
         socket
         |> assign(:current_email, user.email)
@@ -31,7 +29,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    case Announcements.get_announcement(user, id, org.id) do
+    case Announcements.get_announcement(user, org, id) do
       {:ok, announcement} ->
         socket
         |> assign(:page_title, "Edit Announcement")
@@ -74,7 +72,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    case Announcements.get_announcement(user, id, org.id) do
+    case Announcements.get_announcement(user, org, id) do
       {:ok, announcement} ->
         case Announcements.delete_announcement(user, announcement) do
           {:ok, _deleted_announcement} ->

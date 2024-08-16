@@ -19,7 +19,7 @@ defmodule Horionos.AnnouncementsFixtures do
     attrs = Map.put(attrs, :org_id, org.id)
 
     {:ok, announcement} =
-      Announcements.create_announcement(user, org.id, attrs)
+      Announcements.create_announcement(user, org, attrs)
 
     announcement
   end

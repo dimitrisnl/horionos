@@ -21,7 +21,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    case Announcements.get_announcement(user, id, org.id) do
+    case Announcements.get_announcement(user, org, id) do
       {:ok, announcement} ->
         {:noreply,
          socket
@@ -47,7 +47,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
     user = socket.assigns.current_user
     org = socket.assigns.current_org
 
-    case Announcements.get_announcement(user, id, org.id) do
+    case Announcements.get_announcement(user, org, id) do
       {:ok, announcement} ->
         case Announcements.delete_announcement(user, announcement) do
           {:ok, _deleted_announcement} ->

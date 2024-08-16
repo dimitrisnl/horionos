@@ -81,7 +81,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
 
     case Announcements.create_announcement(
            socket.assigns.current_user,
-           socket.assigns.org_id,
+           socket.assigns.current_org,
            params_with_org_id
          ) do
       {:ok, announcement} ->
