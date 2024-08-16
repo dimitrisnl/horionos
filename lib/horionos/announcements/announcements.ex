@@ -9,20 +9,21 @@ defmodule Horionos.Announcements do
   alias Horionos.Announcements.Announcement
   alias Horionos.OrgRepo
   alias Horionos.Orgs
+  alias Horionos.Orgs.Org
 
   @doc """
   Returns the list of announcements for a given organization.
   """
-  @spec list_announcements(User.t(), integer()) ::
+  @spec list_announcements(User.t(), Org.t()) ::
           {:ok, [Announcement.t()]} | {:error, :unauthorized}
   #
-  def list_announcements(%User{} = user, org_id) do
-    with :ok <- Orgs.authorize_user(user, org_id, :member) do
+  def list_announcements(%User{} = user, %Org{} = org) do
+    with :ok <- Orgs.authorize_user(user, org, :member) do
       announcements =
         Announcement
-        |> where([a], a.org_id == ^org_id)
+        |> where([a], a.org_id == ^org.id)
         |> order_by([a], desc: a.inserted_at)
-        |> OrgRepo.all(org_id)
+        |> OrgRepo.all(org.id)
 
       {:ok, announcements}
     end
@@ -31,12 +32,12 @@ defmodule Horionos.Announcements do
   @doc """
   Gets a single announcement.
   """
-  @spec get_announcement(User.t(), integer(), integer()) ::
+  @spec get_announcement(User.t(), Org.t(), integer()) ::
           {:ok, Announcement.t()} | {:error, :not_found | :unauthorized}
   #
-  def get_announcement(%User{} = user, id, org_id) do
-    with :ok <- Orgs.authorize_user(user, org_id, :member) do
-      case OrgRepo.get(Announcement, id, org_id) do
+  def get_announcement(%User{} = user, %Org{} = org, id) do
+    with :ok <- Orgs.authorize_user(user, org, :member) do
+      case OrgRepo.get(Announcement, id, org.id) do
         nil -> {:error, :not_found}
         announcement -> {:ok, announcement}
       end
@@ -46,14 +47,14 @@ defmodule Horionos.Announcements do
   @doc """
   Creates an announcement.
   """
-  @spec create_announcement(User.t(), integer(), map()) ::
+  @spec create_announcement(User.t(), Org.t(), map()) ::
           {:ok, Announcement.t()} | {:error, Ecto.Changeset.t() | :unauthorized}
   #
-  def create_announcement(%User{} = user, org_id, attrs) do
-    with :ok <- Orgs.authorize_user(user, org_id, :member) do
+  def create_announcement(%User{} = user, %Org{} = org, attrs) do
+    with :ok <- Orgs.authorize_user(user, org, :member) do
       %Announcement{}
       |> Announcement.changeset(attrs)
-      |> OrgRepo.insert(org_id)
+      |> OrgRepo.insert(org.id)
     end
   end
 
@@ -64,7 +65,7 @@ defmodule Horionos.Announcements do
           {:ok, Announcement.t()} | {:error, Ecto.Changeset.t() | :unauthorized}
   #
   def update_announcement(%User{} = user, %Announcement{} = announcement, attrs) do
-    with :ok <- Orgs.authorize_user(user, announcement.org_id, :member) do
+    with :ok <- Orgs.authorize_user(user, %Org{id: announcement.org_id}, :member) do
       announcement
       |> Announcement.changeset(attrs)
       |> OrgRepo.update(announcement.org_id)
@@ -78,7 +79,7 @@ defmodule Horionos.Announcements do
           {:ok, Announcement.t()} | {:error, Ecto.Changeset.t() | :unauthorized}
   #
   def delete_announcement(%User{} = user, %Announcement{} = announcement) do
-    with :ok <- Orgs.authorize_user(user, announcement.org_id, :member) do
+    with :ok <- Orgs.authorize_user(user, %Org{id: announcement.org_id}, :member) do
       OrgRepo.delete(announcement, announcement.org_id)
     end
   end

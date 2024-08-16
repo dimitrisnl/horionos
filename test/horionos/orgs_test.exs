@@ -242,17 +242,17 @@ defmodule Horionos.OrgsTest do
     end
 
     test "returns :ok when user has required role", %{admin: admin, org: org} do
-      assert :ok = Orgs.authorize_user(admin, org.id, :member)
-      assert :ok = Orgs.authorize_user(admin, org.id, :admin)
+      assert :ok = Orgs.authorize_user(admin, org, :member)
+      assert :ok = Orgs.authorize_user(admin, org, :admin)
     end
 
     test "returns error when user doesn't have required role", %{admin: admin, org: org} do
-      assert {:error, :unauthorized} = Orgs.authorize_user(admin, org.id, :owner)
+      assert {:error, :unauthorized} = Orgs.authorize_user(admin, org, :owner)
     end
 
     test "returns error for non-member user", %{org: org} do
       non_member = user_fixture()
-      assert {:error, :unauthorized} = Orgs.authorize_user(non_member, org.id, :member)
+      assert {:error, :unauthorized} = Orgs.authorize_user(non_member, org, :member)
     end
   end
 

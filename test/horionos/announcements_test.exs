@@ -25,7 +25,7 @@ defmodule Horionos.AnnouncementsTest do
       announcement1 = AnnouncementsFixtures.announcement_fixture(admin, org)
       announcement2 = AnnouncementsFixtures.announcement_fixture(admin, org)
 
-      assert {:ok, announcements} = Announcements.list_announcements(admin, org.id)
+      assert {:ok, announcements} = Announcements.list_announcements(admin, org)
       assert length(announcements) == 2
       assert Enum.map(announcements, & &1.id) == [announcement1.id, announcement2.id]
     end
@@ -34,25 +34,25 @@ defmodule Horionos.AnnouncementsTest do
       member: member,
       org: org
     } do
-      assert {:ok, []} = Announcements.list_announcements(member, org.id)
+      assert {:ok, []} = Announcements.list_announcements(member, org)
     end
 
     test "list_announcements/2 returns error for non-member", %{non_member: non_member, org: org} do
-      assert {:error, :unauthorized} = Announcements.list_announcements(non_member, org.id)
+      assert {:error, :unauthorized} = Announcements.list_announcements(non_member, org)
     end
 
     test "get_announcement/3 returns the announcement with given id", %{member: member, org: org} do
       announcement = AnnouncementsFixtures.announcement_fixture(member, org)
 
       assert {:ok, %Announcement{}} =
-               Announcements.get_announcement(member, announcement.id, org.id)
+               Announcements.get_announcement(member, org, announcement.id)
     end
 
     test "get_announcement/3 returns error for non-existent announcement", %{
       member: member,
       org: org
     } do
-      assert {:error, :not_found} = Announcements.get_announcement(member, -1, org.id)
+      assert {:error, :not_found} = Announcements.get_announcement(member, org, -1)
     end
 
     test "get_announcement/3 returns error for non-member", %{
@@ -63,7 +63,7 @@ defmodule Horionos.AnnouncementsTest do
       announcement = AnnouncementsFixtures.announcement_fixture(member, org)
 
       assert {:error, :unauthorized} =
-               Announcements.get_announcement(non_member, announcement.id, org.id)
+               Announcements.get_announcement(non_member, org, announcement.id)
     end
 
     test "create_announcement/3 with valid data creates an announcement", %{
@@ -73,7 +73,7 @@ defmodule Horionos.AnnouncementsTest do
       valid_attrs = %{body: "some body", title: "some title", org_id: org.id}
 
       assert {:ok, %Announcement{} = announcement} =
-               Announcements.create_announcement(admin, org.id, valid_attrs)
+               Announcements.create_announcement(admin, org, valid_attrs)
 
       assert announcement.body == "some body"
       assert announcement.title == "some title"
@@ -84,14 +84,14 @@ defmodule Horionos.AnnouncementsTest do
       admin: admin,
       org: org
     } do
-      assert {:error, %Ecto.Changeset{}} = Announcements.create_announcement(admin, org.id, %{})
+      assert {:error, %Ecto.Changeset{}} = Announcements.create_announcement(admin, org, %{})
     end
 
     test "create_announcement/3 fails for non-member user", %{non_member: non_member, org: org} do
       valid_attrs = %{body: "some body", title: "some title"}
 
       assert {:error, :unauthorized} =
-               Announcements.create_announcement(non_member, org.id, valid_attrs)
+               Announcements.create_announcement(non_member, org, valid_attrs)
     end
 
     test "update_announcement/3 with valid data updates the announcement", %{
@@ -118,7 +118,7 @@ defmodule Horionos.AnnouncementsTest do
                Announcements.update_announcement(admin, announcement, %{title: nil})
 
       assert {:ok, %Announcement{}} =
-               Announcements.get_announcement(admin, announcement.id, org.id)
+               Announcements.get_announcement(admin, org, announcement.id)
     end
 
     test "update_announcement/3 fails for non-user user", %{
@@ -136,7 +136,7 @@ defmodule Horionos.AnnouncementsTest do
     test "delete_announcement/2 deletes the announcement", %{admin: admin, org: org} do
       announcement = AnnouncementsFixtures.announcement_fixture(admin, org)
       assert {:ok, %Announcement{}} = Announcements.delete_announcement(admin, announcement)
-      assert {:error, :not_found} = Announcements.get_announcement(admin, announcement.id, org.id)
+      assert {:error, :not_found} = Announcements.get_announcement(admin, org, announcement.id)
     end
 
     test "delete_announcement/2 fails for non-admin user", %{
@@ -160,7 +160,7 @@ defmodule Horionos.AnnouncementsTest do
       long_title = String.duplicate("a", 256)
       long_body = String.duplicate("b", 10_001)
       attrs = %{title: long_title, body: long_body, org_id: org.id}
-      assert {:error, changeset} = Announcements.create_announcement(admin, org.id, attrs)
+      assert {:error, changeset} = Announcements.create_announcement(admin, org, attrs)
       assert "should be at most 255 character(s)" in errors_on(changeset).title
       assert "should be at most 10000 character(s)" in errors_on(changeset).body
     end
@@ -178,7 +178,7 @@ defmodule Horionos.AnnouncementsTest do
         AnnouncementsFixtures.announcement_fixture(admin, org, %{org_id: org.id, title: "Second"})
 
       assert {:ok, [^announcement2, ^announcement1]} =
-               Announcements.list_announcements(admin, org.id)
+               Announcements.list_announcements(admin, org)
     end
 
     test "get_announcement/3 returns error for announcement from different org", %{
@@ -190,7 +190,7 @@ defmodule Horionos.AnnouncementsTest do
       announcement =
         AnnouncementsFixtures.announcement_fixture(admin, other_org, %{org_id: other_org.id})
 
-      assert {:error, :not_found} = Announcements.get_announcement(admin, announcement.id, org.id)
+      assert {:error, :not_found} = Announcements.get_announcement(admin, org, announcement.id)
     end
   end
 end

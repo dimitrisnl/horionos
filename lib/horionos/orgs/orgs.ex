@@ -163,9 +163,9 @@ defmodule Horionos.Orgs do
   @doc """
   Authorizes a user for a specific action in an organization.
   """
-  @spec authorize_user(User.t(), integer(), MembershipRole.t()) :: :ok | {:error, :unauthorized}
+  @spec authorize_user(User.t(), Org.t(), MembershipRole.t()) :: :ok | {:error, :unauthorized}
   #
-  def authorize_user(%User{id: user_id}, org_id, required_role) do
+  def authorize_user(%User{id: user_id}, %Org{id: org_id}, required_role) do
     with {:ok, role} <- get_user_role(user_id, org_id),
          true <- MembershipRole.at_least?(role, required_role) do
       :ok
