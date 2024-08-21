@@ -45,12 +45,6 @@
             text="Announcements"
             active={@active_tab == :announcements}
           />
-          <.nav_link
-            href="/orgs"
-            icon="hero-briefcase"
-            text="Organizations"
-            active={@active_tab == :organizations}
-          />
         </div>
 
         <div aria-hidden="true" class="mt-8 flex-1"></div>
@@ -98,9 +92,18 @@
                 class="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <.icon
-                  name="hero-user-circle-micro"
+                  name="hero-user-circle"
                   class="shrink-0 text-gray-500 size-5 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white mr-2"
                 /> Settings
+              </.link>
+              <.link
+                href={~p"/org"}
+                class="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <.icon
+                  name="hero-briefcase"
+                  class="shrink-0 text-gray-500 size-5 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white mr-2"
+                /> Organization
               </.link>
               <hr class="my-1 bg-gray-100" />
               <.link
@@ -109,8 +112,8 @@
                 class="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <.icon
-                  name="hero-arrow-right-start-on-rectangle-micro"
-                  class="size-4 shrink-0 text-gray-500 sm:size-5 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white mr-2"
+                  name="hero-arrow-right-start-on-rectangle"
+                  class="shrink-0 text-gray-500 size-5 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white mr-2"
                 /> Log out
               </.link>
             </div>
@@ -138,8 +141,8 @@
     display: block;
     position: absolute;
     inset: unset;
-    top: 100%;
-    transform: translateY(-200%) translateX(16px);
+    bottom: 80px;
+    transform: translateX(16px);
     left: 0;
     margin-top: 0.5rem;
   }

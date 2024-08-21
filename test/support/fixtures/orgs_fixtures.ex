@@ -42,4 +42,9 @@ defmodule Horionos.OrgsFixtures do
         raise "Failed to create membership: #{inspect(changeset.errors)}"
     end
   end
+
+  def invitation_fixture(inviter, org, email, role \\ :member) do
+    {:ok, invitation} = Orgs.create_invitation(inviter, org, email, role)
+    invitation
+  end
 end

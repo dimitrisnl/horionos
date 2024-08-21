@@ -2,10 +2,12 @@ defmodule HorionosWeb.OrgLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
+  import Horionos.AccountsFixtures
   import Horionos.OrgsFixtures
 
-  @create_attrs %{title: "some name"}
-  @update_attrs %{title: "some updated name"}
+  alias Horionos.Orgs
+
+  @update_attrs %{title: "Updated Org Name"}
   @invalid_attrs %{title: nil}
 
   describe "Index" do
@@ -13,42 +15,19 @@ defmodule HorionosWeb.OrgLiveTest do
 
     setup %{user: user} do
       org = org_fixture(%{user: user})
-      %{org: org}
+      %{org: org, user: user}
     end
 
-    test "lists all orgs", %{conn: conn, org: org} do
-      {:ok, _index_live, html} = live(conn, ~p"/orgs")
+    test "displays current org details", %{conn: conn, org: org} do
+      {:ok, _index_live, html} = live(conn, ~p"/org")
 
-      assert html =~ "Organizations"
+      assert html =~ "Settings"
+      assert html =~ "Edit Organization"
       assert html =~ org.title
     end
 
-    test "saves new org", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/orgs")
-
-      assert index_live |> element("a", "New Organization") |> render_click() =~
-               "New Organization"
-
-      assert_patch(index_live, ~p"/orgs/new")
-
-      assert index_live
-             |> form("#org-form", org: @create_attrs)
-             |> render_submit()
-
-      assert_patch(index_live, ~p"/orgs")
-
-      html = render(index_live)
-      assert html =~ "Organization created successfully"
-      assert html =~ "some name"
-    end
-
-    test "updates org in listing", %{conn: conn, org: org} do
-      {:ok, index_live, _html} = live(conn, ~p"/orgs")
-
-      assert index_live |> element("#orgs-#{org.id} a", "Edit") |> render_click() =~
-               "Edit Org"
-
-      assert_patch(index_live, ~p"/orgs/#{org}/edit")
+    test "updates org", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/org")
 
       assert index_live
              |> form("#org-form", org: @update_attrs)
@@ -56,30 +35,11 @@ defmodule HorionosWeb.OrgLiveTest do
 
       html = render(index_live)
       assert html =~ "Organization updated successfully"
-      assert html =~ "some updated name"
+      assert html =~ "Updated Org Name"
     end
 
-    test "deletes org in listing", %{conn: conn, org: org} do
-      {:ok, index_live, _html} = live(conn, ~p"/orgs")
-
-      assert index_live |> element("#orgs-#{org.id} a", "Delete") |> render_click()
-
-      Process.sleep(100)
-
-      if Process.alive?(index_live.pid) do
-        refute has_element?(index_live, "#orgs-#{org.id}")
-      else
-        assert_redirect(index_live, "/orgs")
-      end
-    end
-
-    test "shows error message with invalid attributes", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/orgs")
-
-      assert index_live |> element("a", "New Organization") |> render_click() =~
-               "New Organization"
-
-      assert_patch(index_live, ~p"/orgs/new")
+    test "displays error message with invalid attributes", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/org")
 
       result =
         index_live
@@ -87,43 +47,43 @@ defmodule HorionosWeb.OrgLiveTest do
         |> render_submit()
 
       assert result =~ "can&#39;t be blank"
-
-      html = render(index_live)
-      refute html =~ "Organization created successfully"
-      assert html =~ "New organization"
-    end
-  end
-
-  describe "Show" do
-    setup [:register_and_log_in_user]
-
-    setup %{user: user} do
-      org = org_fixture(%{user: user})
-      %{org: org}
     end
 
-    test "displays org", %{conn: conn, org: org} do
-      {:ok, _show_live, html} = live(conn, ~p"/orgs/#{org}")
+    test "deletes org", %{conn: conn, org: org, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/org")
 
-      assert html =~ org.title
+      # Find the delete form
+      delete_form = form(view, "#delete_org_form")
+
+      # Ensure the form has the correct confirmation message
+      assert has_element?(
+               view,
+               "form[data-confirm='Are you sure you want to delete the organization? This action cannot be undone.']"
+             )
+
+      # Simulate submitting the form
+      render_submit(delete_form)
+
+      # Check for redirect after submission
+      assert_redirect(view, ~p"/")
+
+      # Verify that the org has been deleted
+      assert {:error, :unauthorized} = Orgs.get_org(user, org.id)
     end
 
-    test "updates org within modal", %{conn: conn, org: org} do
-      {:ok, show_live, _html} = live(conn, ~p"/orgs/#{org}")
+    test "lists org members", %{conn: conn, org: org, user: user} do
+      member = user_fixture()
+      Orgs.create_membership(user, %{user_id: member.id, org_id: org.id, role: :member})
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit"
+      {:ok, _index_live, html} = live(conn, ~p"/org")
 
-      assert_patch(show_live, ~p"/orgs/#{org}/show/edit")
+      assert html =~ user.full_name
+      assert html =~ user.email
+      assert html =~ "owner"
 
-      assert show_live
-             |> form("#org-form", org: @update_attrs)
-             |> render_submit()
-
-      assert_patch(show_live, ~p"/orgs/#{org}")
-
-      html = render(show_live)
-      assert html =~ "some updated name"
+      assert html =~ member.full_name
+      assert html =~ member.email
+      assert html =~ "member"
     end
   end
 end

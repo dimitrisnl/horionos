@@ -1,38 +1,15 @@
 defmodule HorionosWeb.UserSettingsLive.Security do
   use HorionosWeb, :live_view
 
-  alias Horionos.Accounts
+  import HorionosWeb.UserSettingsLive.Components.SettingsNavigation
+
   require Logger
+
+  alias Horionos.Accounts
 
   def render(assigns) do
     ~H"""
-    <.header class="text-center">
-      Account Security
-      <:actions>
-        <nav class="flex flex-row space-x-4 space-y-0">
-          <a
-            href={~p"/users/settings"}
-            class={[
-              "rounded-md px-3 py-2 text-sm font-medium",
-              "text-gray-500 hover:text-gray-700",
-              @active_tab == :user_profile && "bg-gray-100 text-gray-900"
-            ]}
-          >
-            Profile
-          </a>
-          <a
-            href={~p"/users/settings/security"}
-            class={[
-              "rounded-md px-3 py-2 text-sm font-medium",
-              "text-gray-500 hover:text-gray-700",
-              @active_tab == :user_security && "bg-gray-100 text-gray-900"
-            ]}
-          >
-            Security
-          </a>
-        </nav>
-      </:actions>
-    </.header>
+    <.settings_navigation title="Security" active_tab={:user_security} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">

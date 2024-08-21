@@ -13,7 +13,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
 
       {:ok, _lv, html} = live(conn, ~p"/users/settings/security")
 
-      assert html =~ "Account Security"
+      assert html =~ "Security"
       assert html =~ "Change your password"
     end
 

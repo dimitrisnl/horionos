@@ -84,11 +84,9 @@ defmodule HorionosWeb.Router do
       live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
 
       # Organization management
-      live "/orgs", OrgLive.Index, :index
-      live "/orgs/new", OrgLive.Index, :new
-      live "/orgs/:id/edit", OrgLive.Index, :edit
-      live "/orgs/:id", OrgLive.Show, :show
-      live "/orgs/:id/show/edit", OrgLive.Show, :edit
+      live "/org", OrgLive.Index, :index
+      # live "/orgs/new", OrgLive.Index, :new
+      live "/org/invitations", OrgLive.Invitations, :index
 
       # Announcements
       live "/announcements", AnnouncementLive.Index, :index
@@ -96,6 +94,9 @@ defmodule HorionosWeb.Router do
       live "/announcements/:id/edit", AnnouncementLive.Index, :edit
       live "/announcements/:id", AnnouncementLive.Show, :show
       live "/announcements/:id/show/edit", AnnouncementLive.Show, :edit
+
+      # Invitations
+      live "/invitations/new", InvitationLive.New, :new
     end
   end
 
@@ -109,6 +110,12 @@ defmodule HorionosWeb.Router do
       on_mount: [{UserAuthLive, :mount_current_user}] do
       live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
       live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
+    end
+
+    # New live session for invitation acceptance (both authenticated and unauthenticated users)
+    live_session :invitation_acceptance,
+      on_mount: [{UserAuthLive, :mount_current_user}] do
+      live "/invitations/:token/accept", InvitationLive.Accept, :accept
     end
   end
 end

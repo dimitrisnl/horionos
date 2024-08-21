@@ -13,7 +13,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
 
       {:ok, _lv, html} = live(conn, ~p"/users/settings")
 
-      assert html =~ "Account Settings"
+      assert html =~ "Settings"
       assert html =~ "Change your display name"
       assert html =~ "Change your email address"
     end

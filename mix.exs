@@ -84,6 +84,7 @@ defmodule Horionos.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      server: "phx.server",
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],

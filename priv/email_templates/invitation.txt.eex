@@ -1,0 +1,9 @@
+Hi <%= @email %>,
+
+You've been invited by <%= @inviter %> to join <%= @org %>.
+
+You can accept this invitation by visiting the URL below:
+
+<%= @url %>
+
+If you didn't expect this invitation, please ignore this email.

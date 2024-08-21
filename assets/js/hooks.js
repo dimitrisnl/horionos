@@ -14,4 +14,19 @@ Hooks.AutoHideFlash = {
   },
 };
 
+Hooks.LocalTime = {
+  mounted() {
+    console.log("foo");
+    this.updated();
+  },
+  updated() {
+    let dt = new Date(this.el.textContent);
+    this.el.textContent = Intl.DateTimeFormat("default", {
+      dateStyle: "medium",
+      // timeStyle: "short",
+    }).format(dt);
+    this.el.classList.remove("invisible");
+  },
+};
+
 export default Hooks;

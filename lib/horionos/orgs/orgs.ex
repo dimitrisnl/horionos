@@ -1,224 +1,202 @@
 defmodule Horionos.Orgs do
   @moduledoc """
-  The Orgs context.
-  Handles operations related to organizations and memberships,
-  with access control based on user permissions.
+  The Orgs context serves as a facade for all organization-related operations.
+
+  This module provides a simplified interface to the complex subsystem of
+  organization management, membership management, invitation management,
+  and authorization.
   """
-
-  import Ecto.Query
-
-  alias Horionos.Repo
 
   alias Horionos.Accounts.User
-  alias Horionos.Announcements.Announcement
-  alias Horionos.OrgRepo
-  alias Horionos.Orgs.{Membership, MembershipRole, Org}
+  alias Horionos.Orgs.{Invitation, Membership, MembershipRole, Org}
+  alias Horionos.Authorization
 
-  @doc """
-  Lists organizations for a given user.
-  """
-  @spec list_user_orgs(User.t()) :: [Org.t()]
-  #
-  def list_user_orgs(%User{id: user_id}) do
-    Membership
-    |> where([m], m.user_id == ^user_id)
-    |> join(:inner, [m], o in Org, on: m.org_id == o.id)
-    |> select([m, o], o)
-    |> Repo.all()
-  end
+  alias Horionos.Orgs.{
+    InvitationManagement,
+    MembershipManagement,
+    OrganizationManagement
+  }
 
-  @doc """
-  Gets a single org for a user.
-  Returns nil if the user doesn't have access to the org.
-  """
-  @spec get_org(User.t(), String.t()) :: {:ok, Org.t()} | {:error, :unauthorized}
-  #
-  def get_org(%User{id: user_id}, org_id) do
-    org =
-      Membership
-      |> where([m], m.user_id == ^user_id and m.org_id == ^org_id)
-      |> join(:inner, [m], o in Org, on: m.org_id == o.id)
-      |> select([m, o], o)
-      |> Repo.one()
+  # Organization management
 
-    case org do
-      nil -> {:error, :unauthorized}
-      org -> {:ok, org}
-    end
-  end
-
-  @doc """
-  Creates an org and adds the user as an owner.
-  """
   @spec create_org(User.t(), map()) :: {:ok, Org.t()} | {:error, Ecto.Changeset.t()}
-  #
-  def create_org(%User{id: user_id}, attrs) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:org, Org.changeset(%Org{}, attrs))
-    |> Ecto.Multi.insert(:membership, fn %{org: org} ->
-      Membership.changeset(%Membership{}, %{
-        user_id: user_id,
-        org_id: org.id,
-        role: :owner
-      })
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{org: org}} -> {:ok, org}
-      {:error, _operation, changeset, _changes} -> {:error, changeset}
-    end
+  def create_org(user, attrs) do
+    OrganizationManagement.create_org(user, attrs)
   end
 
-  @doc """
-  Updates an org if the user has appropriate permissions.
-  """
   @spec update_org(User.t(), Org.t(), map()) ::
-          {:ok, Org.t()} | {:error, Ecto.Changeset.t()} | {:error, :unauthorized}
-  #
-  def update_org(%User{id: user_id}, %Org{id: org_id} = org, attrs) do
-    with {:ok, role} <- get_user_role(user_id, org_id),
-         true <- MembershipRole.at_least?(role, :admin) do
-      org
-      |> Org.changeset(attrs)
-      |> Repo.update()
-    else
-      _ -> {:error, :unauthorized}
-    end
+          {:ok, Org.t()} | {:error, Ecto.Changeset.t()} | {:error, Authorization.error()}
+  def update_org(user, org, attrs) do
+    Authorization.with_authorization(user, org, :org_edit, fn ->
+      OrganizationManagement.update_org(org, attrs)
+    end)
   end
 
-  @doc """
-  Deletes an org if the user is the owner.
-  """
   @spec delete_org(User.t(), Org.t()) ::
-          {:ok, Org.t()} | {:error, Ecto.Changeset.t()} | {:error, :unauthorized}
-  #
-  def delete_org(%User{id: user_id}, %Org{id: org_id} = org) do
-    with {:ok, role} <- get_user_role(user_id, org_id),
-         true <- MembershipRole.owner?(role) do
-      case Repo.transaction(fn ->
-             # Delete associated records
-             Repo.delete_all(from(m in Membership, where: m.org_id == ^org_id))
-             Repo.delete_all(from(a in Announcement, where: a.org_id == ^org_id))
+          {:ok, Org.t()} | {:error, Authorization.error()} | {:error, any()}
+  def delete_org(user, org) do
+    Authorization.with_authorization(user, org, :org_delete, fn ->
+      OrganizationManagement.delete_org(org)
+    end)
+  end
 
-             # Finally, delete the org
-             Repo.delete!(org)
-           end) do
-        {:ok, _} -> {:ok, org}
-        {:error, error} -> {:error, error}
-      end
-    else
-      _ -> {:error, :unauthorized}
+  @spec list_user_orgs(User.t()) :: [Org.t()]
+  def list_user_orgs(user) do
+    OrganizationManagement.list_user_orgs(user)
+  end
+
+  @spec get_org(User.t(), integer() | String.t()) ::
+          {:ok, Org.t()} | {:error, :unauthorized} | {:error, :invalid_org_id}
+  def get_org(user, org_id) when is_binary(org_id) do
+    case Integer.parse(org_id) do
+      {id, ""} -> get_org(user, id)
+      _ -> {:error, :invalid_org_id}
     end
   end
 
-  @doc """
-  Creates a membership if the user has appropriate permissions.
-  """
-  @spec create_membership(User.t(), map()) ::
-          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()} | {:error, :unauthorized}
-  #
-  def create_membership(%User{id: user_id}, attrs) do
-    with {:ok, role} <- get_user_role(user_id, attrs.org_id),
-         true <- MembershipRole.at_least?(role, :admin) do
-      %Membership{}
-      |> Membership.changeset(attrs)
-      |> OrgRepo.insert(attrs.org_id)
-    else
-      _ -> {:error, :unauthorized}
+  def get_org(user, org_id) when is_integer(org_id) do
+    case OrganizationManagement.get_org(user, org_id) do
+      {:ok, org} ->
+        case Authorization.authorize(user, org, :org_view) do
+          :ok -> {:ok, org}
+          error -> error
+        end
+
+      error ->
+        error
     end
-  end
-
-  @doc """
-  Updates a membership if the user has appropriate permissions.
-  """
-  @spec update_membership(User.t(), Membership.t(), map()) ::
-          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()} | {:error, :unauthorized}
-  #
-  def update_membership(%User{id: user_id}, %Membership{org_id: org_id} = membership, attrs) do
-    with {:ok, role} <- get_user_role(user_id, org_id),
-         true <- MembershipRole.at_least?(role, :admin) do
-      membership
-      |> Membership.changeset(attrs)
-      |> OrgRepo.update(org_id)
-    else
-      _ -> {:error, :unauthorized}
-    end
-  end
-
-  @doc """
-  Deletes a membership if the user has appropriate permissions.
-  """
-  @spec delete_membership(User.t(), Membership.t()) ::
-          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()} | {:error, :unauthorized}
-  #
-  def delete_membership(%User{id: user_id}, %Membership{org_id: org_id} = membership) do
-    with {:ok, role} <- get_user_role(user_id, org_id),
-         true <- MembershipRole.at_least?(role, :admin) do
-      OrgRepo.delete(membership, org_id)
-    else
-      _ -> {:error, :unauthorized}
-    end
-  end
-
-  @doc """
-  Authorizes a user for a specific action in an organization.
-  """
-  @spec authorize_user(User.t(), Org.t(), MembershipRole.t()) :: :ok | {:error, :unauthorized}
-  #
-  def authorize_user(%User{id: user_id}, %Org{id: org_id}, required_role) do
-    with {:ok, role} <- get_user_role(user_id, org_id),
-         true <- MembershipRole.at_least?(role, required_role) do
-      :ok
-    else
-      _ -> {:error, :unauthorized}
-    end
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking org changes.
-
-  ## Examples
-
-      iex> build_org_changeset(org)
-      %Ecto.Changeset{data: %Org{}}
-
-  """
-  @spec build_org_changeset(Org.t(), map()) :: Ecto.Changeset.t()
-  #
-  def build_org_changeset(%Org{} = org, attrs \\ %{}) do
-    Org.changeset(org, attrs)
-  end
-
-  @spec user_has_any_membership?(User.t()) :: boolean()
-  #
-  def user_has_any_membership?(%User{id: user_id}) do
-    Repo.exists?(from m in Membership, where: m.user_id == ^user_id)
   end
 
   @spec get_user_primary_org(User.t()) :: Org.t() | nil
-  #
-  def get_user_primary_org(%User{id: user_id}) do
-    Repo.one(
-      from o in Org,
-        join: m in Membership,
-        on: m.org_id == o.id,
-        where: m.user_id == ^user_id,
-        order_by: [asc: m.inserted_at],
-        limit: 1
-    )
+  def get_user_primary_org(user) do
+    OrganizationManagement.get_user_primary_org(user)
   end
 
-  # Private functions
+  @spec build_org_changeset(Org.t(), map()) :: Ecto.Changeset.t()
+  def build_org_changeset(org, attrs \\ %{}) do
+    OrganizationManagement.build_org_changeset(org, attrs)
+  end
 
-  @spec get_user_role(integer(), integer()) :: {:ok, MembershipRole.t()} | {:error, :not_found}
-  #
-  defp get_user_role(user_id, org_id) do
-    case OrgRepo.get_by(Membership, [user_id: user_id], org_id) do
-      %Membership{role: role} ->
-        {:ok, role}
+  # Membership management
 
-      nil ->
-        {:error, :not_found}
+  @spec list_org_memberships(User.t(), Org.t()) ::
+          {:ok, [Membership.t()]} | {:error, Authorization.error()}
+  def list_org_memberships(user, org) do
+    Authorization.with_authorization(user, org, :org_view, fn ->
+      {:ok, MembershipManagement.list_org_memberships(org)}
+    end)
+  end
+
+  @spec create_membership(User.t(), map()) ::
+          {:ok, Membership.t()} | {:error, Ecto.Changeset.t() | :unauthorized | :invalid_role}
+  def create_membership(creator, attrs) do
+    with {:ok, org} <- get_org(creator, attrs.org_id),
+         :ok <- Authorization.authorize(creator, org, :org_manage_members),
+         true <- MembershipRole.valid?(attrs.role),
+         true <- role_in_assignable?(attrs.role) do
+      MembershipManagement.create_membership(attrs)
+    else
+      false -> {:error, :invalid_role}
+      error -> error
     end
+  end
+
+  @spec update_membership(User.t(), Membership.t(), map()) ::
+          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()} | {:error, Authorization.error()}
+  def update_membership(updater, membership, attrs) do
+    with {:ok, org} <- get_org(updater, membership.org_id) do
+      Authorization.with_authorization(updater, org, :org_manage_members, fn ->
+        MembershipManagement.update_membership(membership, attrs)
+      end)
+    end
+  end
+
+  @spec delete_membership(User.t(), Membership.t()) ::
+          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()} | {:error, Authorization.error()}
+  def delete_membership(deleter, membership) do
+    with {:ok, org} <- get_org(deleter, membership.org_id) do
+      Authorization.with_authorization(deleter, org, :org_manage_members, fn ->
+        MembershipManagement.delete_membership(membership)
+      end)
+    end
+  end
+
+  # Invitation management
+
+  @spec create_invitation(User.t(), Org.t(), String.t(), MembershipRole.t()) ::
+          {:ok, Invitation.t()}
+          | {:error, Ecto.Changeset.t()}
+          | {:error, Authorization.error()}
+          | {:error, :already_member}
+  def create_invitation(inviter, org, email, role) do
+    Authorization.with_authorization(inviter, org, :org_invite_members, fn ->
+      if user_in_org?(org, email) do
+        {:error, :already_member}
+      else
+        InvitationManagement.create_invitation(inviter, org, email, role)
+      end
+    end)
+  end
+
+  @spec list_org_invitations(User.t(), Org.t()) ::
+          {:ok, [Invitation.t()]} | {:error, Authorization.error()}
+  def list_org_invitations(user, org) do
+    Authorization.with_authorization(user, org, :org_invite_members, fn ->
+      {:ok, InvitationManagement.list_org_invitations(org)}
+    end)
+  end
+
+  @spec accept_invitation(Invitation.t(), map()) ::
+          {:ok, %{user: User.t(), invitation: Invitation.t(), membership: Membership.t()}}
+          | {:error, :already_accepted}
+          | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
+  def accept_invitation(invitation, user_params) do
+    InvitationManagement.accept_invitation(invitation, user_params)
+  end
+
+  @spec get_pending_invitation_by_token(String.t()) :: Invitation.t() | nil
+  def get_pending_invitation_by_token(token) do
+    InvitationManagement.get_pending_invitation_by_token(token)
+  end
+
+  @spec cancel_invitation(User.t(), Org.t(), integer()) ::
+          {:ok, Invitation.t()} | {:error, Authorization.error()} | {:error, :not_found}
+  def cancel_invitation(canceller, org, invitation_id) do
+    Authorization.with_authorization(canceller, org, :org_invite_members, fn ->
+      InvitationManagement.cancel_invitation(invitation_id)
+    end)
+  end
+
+  @spec send_invitation_email(Invitation.t(), (String.t() -> String.t())) ::
+          {:ok, Invitation.t()} | {:error, any()}
+  def send_invitation_email(invitation, url_fn) do
+    InvitationManagement.send_invitation_email(invitation, url_fn)
+  end
+
+  @spec build_invitation_changeset(Invitation.t(), map()) :: Ecto.Changeset.t()
+  def build_invitation_changeset(invitation, attrs \\ %{}) do
+    InvitationManagement.build_invitation_changeset(invitation, attrs)
+  end
+
+  # Authorization helpers
+
+  @spec user_in_org?(Org.t(), String.t()) :: boolean()
+  def user_in_org?(org, email) do
+    MembershipManagement.user_in_org?(org, email)
+  end
+
+  @spec user_has_any_membership?(String.t()) :: boolean()
+  def user_has_any_membership?(email) do
+    MembershipManagement.user_has_any_membership?(email)
+  end
+
+  @spec get_user_role(User.t(), Org.t()) :: {:ok, MembershipRole.t()} | {:error, :not_found}
+  def get_user_role(user, org) do
+    MembershipManagement.get_user_role(user.id, org.id)
+  end
+
+  @spec role_in_assignable?(MembershipRole.t()) :: boolean()
+  defp role_in_assignable?(role) do
+    role in MembershipRole.assignable()
   end
 end

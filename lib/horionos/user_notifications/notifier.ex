@@ -3,16 +3,17 @@ defmodule Horionos.UserNotifications do
   Module to send user notifications.
   """
   alias Horionos.Accounts.User
+  alias Horionos.Orgs.Invitation
   alias Horionos.UserNotifications.Channels.Email
   alias Horionos.UserNotifications.Formatters.EmailFormatter
 
   @doc """
-  Delivers a user email.
+  Delivers an email.
   """
-  @spec deliver(User.t(), atom(), map()) :: {:ok, map()} | {:error, term()}
-  def deliver(%User{} = user, template_key, assigns) do
-    {subject, template, formatted_assigns} = EmailFormatter.format(template_key, user, assigns)
-    Email.send(user.email, subject, template, formatted_assigns)
+  @spec deliver(String.t(), atom(), map()) :: {:ok, map()} | {:error, term()}
+  def deliver(email, template_key, assigns) do
+    {subject, template, formatted_assigns} = EmailFormatter.format(template_key, assigns)
+    Email.send(email, subject, template, formatted_assigns)
   end
 
   @doc """
@@ -21,7 +22,7 @@ defmodule Horionos.UserNotifications do
   @spec deliver_confirmation_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   def deliver_confirmation_instructions(user, url) do
-    deliver(user, :confirmation_instructions, %{url: url})
+    deliver(user.email, :confirmation_instructions, %{user: user, url: url})
   end
 
   @doc """
@@ -30,7 +31,7 @@ defmodule Horionos.UserNotifications do
   @spec deliver_reset_password_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   def deliver_reset_password_instructions(user, url) do
-    deliver(user, :reset_password_instructions, %{url: url})
+    deliver(user.email, :reset_password_instructions, %{user: user, url: url})
   end
 
   @doc """
@@ -39,6 +40,20 @@ defmodule Horionos.UserNotifications do
   @spec deliver_update_email_instructions(User.t(), String.t()) ::
           {:ok, map()} | {:error, term()}
   def deliver_update_email_instructions(user, url) do
-    deliver(user, :update_email_instructions, %{url: url})
+    deliver(user.email, :update_email_instructions, %{user: user, url: url})
+  end
+
+  @doc """
+  Deliver an invitation to join an organization.
+  """
+  @spec deliver_invitation(Invitation.t(), String.t()) ::
+          {:ok, map()} | {:error, term()}
+  def deliver_invitation(%Invitation{} = invitation, url) do
+    deliver(invitation.email, :invitation, %{
+      inviter: invitation.inviter,
+      email: invitation.email,
+      url: url,
+      org: invitation.org
+    })
   end
 end

@@ -20,8 +20,8 @@ defmodule HorionosWeb.LiveHelpers do
       HorionosWeb.DashboardLive -> :home
       HorionosWeb.AnnouncementLive.Index -> :announcements
       HorionosWeb.AnnouncementLive.Show -> :announcements
-      HorionosWeb.OrgLive.Index -> :organizations
-      HorionosWeb.OrgLive.Show -> :organizations
+      HorionosWeb.OrgLive.Index -> :organization_details
+      HorionosWeb.OrgLive.Invitations -> :organization_invitations
       HorionosWeb.UserSettingsLive.Index -> :user_profile
       HorionosWeb.UserSettingsLive.Security -> :user_security
       _ -> :other

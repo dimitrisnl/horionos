@@ -27,10 +27,11 @@ defmodule HorionosWeb.OrgSelectorComponent do
           </.form>
         </li>
       <% end %>
+      <!--
       <hr class="my-1 bg-gray-100" />
       <li>
         <.link
-          href={~p"/orgs/new"}
+          href={~p"/org"}
           class="flex items-center gap-x-3 px-2 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
         >
           <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
@@ -39,6 +40,7 @@ defmodule HorionosWeb.OrgSelectorComponent do
           <div class="truncate">New organization</div>
         </.link>
       </li>
+       -->
     </ul>
     """
   end
