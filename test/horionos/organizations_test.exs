@@ -300,6 +300,7 @@ defmodule Horionos.OrganizationsTest do
 
       assert user.email == invitation.email
       assert accepted_invitation.accepted_at
+      assert user.confirmed_at
       assert membership.user_id == user.id
       assert membership.organization_id == invitation.organization_id
       assert membership.role == invitation.role

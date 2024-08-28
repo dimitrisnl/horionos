@@ -76,8 +76,19 @@ defmodule Horionos.Organizations.InvitationManagement do
   def accept_invitation(invitation, user_params) do
     if is_nil(invitation.accepted_at) do
       Ecto.Multi.new()
-      |> Ecto.Multi.run(:user, fn _repo, _changes ->
-        get_or_create_user(invitation.email, user_params)
+      |> Ecto.Multi.run(:user, fn repo, _changes ->
+        case get_or_create_user(invitation.email, user_params) do
+          {:ok, user} ->
+            user
+            |> User.confirm_changeset()
+            |> repo.update()
+
+          error ->
+            error
+        end
+      end)
+      |> Ecto.Multi.update(:confirm_user, fn %{user: user} ->
+        User.confirm_changeset(user)
       end)
       |> Ecto.Multi.update(:invitation, fn %{user: _user} ->
         Invitation.changeset(invitation, %{accepted_at: DateTime.utc_now()})
