@@ -94,7 +94,6 @@ defmodule Horionos.Organizations.InvitationManagement do
         {:error, reason} -> {:error, reason}
       end
     end)
-    |> Ecto.Multi.update(:confirm_user, fn %{user: user} -> User.confirm_changeset(user) end)
     |> Ecto.Multi.update(:invitation, fn _ ->
       Invitation.changeset(invitation, %{accepted_at: DateTime.utc_now()})
     end)
