@@ -9,11 +9,11 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
       %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       {:ok, _lv, html} = live(conn, ~p"/users/settings/security")
 
-      assert html =~ "Account Security"
+      assert html =~ "Security"
       assert html =~ "Change your password"
     end
 
@@ -31,7 +31,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       %{conn: conn} =
         HorionosWeb.ConnCase.register_and_log_in_user(%{
           conn: conn,
-          create_org: true,
+          create_organization: true,
           user_attrs: %{password: current_password, email: email}
         })
 
@@ -64,7 +64,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
 
     test "renders errors with invalid data", %{conn: conn} do
       %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       {:ok, lv, _html} = live(conn, ~p"/users/settings/security")
 
@@ -84,7 +84,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn} do
       %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       {:ok, lv, _html} = live(conn, ~p"/users/settings/security")
 
@@ -107,7 +107,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
   describe "active sessions" do
     setup %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       # Create an additional session
       Accounts.create_session_token(user, %{

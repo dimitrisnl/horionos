@@ -70,9 +70,10 @@ defmodule HorionosWeb.UserLoginLiveTest do
       assert login_html =~ "Register"
     end
 
-    test "redirects to forgot password page when the Forgot Password button is clicked", %{
-      conn: conn
-    } do
+    test "redirects to forgot password page when the Forgot Password button is clicked",
+         %{
+           conn: conn
+         } do
       {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
       {:ok, conn} =

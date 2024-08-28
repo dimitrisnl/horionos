@@ -86,10 +86,11 @@ defmodule HorionosWeb.CoreComponents do
   slot :inner_block, required: true
   slot :subtitle
   slot :actions
+  slot :nav
 
   def header(assigns) do
     ~H"""
-    <header class="mx-auto mb-12 max-w-6xl border-b border-gray-100 pb-6" class={[@class]}>
+    <header class="mx-auto mb-12 max-w-6xl space-y-5 border-b border-gray-100 pb-6" class={[@class]}>
       <div class="flex items-start justify-between">
         <div class="space-y-4">
           <h1 class="text-2xl/8 font-semibold text-gray-950 dark:text-white sm:text-xl/8">
@@ -104,6 +105,10 @@ defmodule HorionosWeb.CoreComponents do
         <div :if={@actions != []}>
           <%= render_slot(@actions) %>
         </div>
+      </div>
+
+      <div :if={@nav != []}>
+        <%= render_slot(@nav) %>
       </div>
     </header>
     """
@@ -150,7 +155,7 @@ defmodule HorionosWeb.CoreComponents do
 
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
+      <table class="w-[40rem] sm:w-full">
         <thead class="text-left text-sm leading-6 text-gray-500">
           <tr>
             <th :for={col <- @col} class="px-4 py-0 pb-4 font-normal"><%= col[:label] %></th>
@@ -170,14 +175,14 @@ defmodule HorionosWeb.CoreComponents do
               phx-click={@row_click && @row_click.(row)}
               class={["relative rounded-lg p-0 px-4", @row_click && "hover:cursor-pointer"]}
             >
-              <div class="max-w-[500px] relative block truncate py-4 pr-6">
+              <div class="relative block truncate py-4">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
                 <span class={["relative", i == 0 && "font-semibold text-gray-900"]}>
                   <%= render_slot(col, @row_item.(row)) %>
                 </span>
               </div>
             </td>
-            <td :if={@action != []} class="relative w-14 p-0">
+            <td :if={@action != []} class="relative px-4">
               <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
                 <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
                 <span
@@ -430,6 +435,52 @@ defmodule HorionosWeb.CoreComponents do
     <div class="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
       <%= render_slot(@inner_block) %>
     </div>
+    """
+  end
+
+  attr :active_tab, :atom, required: true
+  attr :tabs, :list, required: true
+
+  def nav(assigns) do
+    ~H"""
+    <nav class="relative -bottom-px -mb-6 flex flex-row space-y-0">
+      <%= for tab <- @tabs do %>
+        <.nav_item href={tab.href} icon={tab.icon} label={tab.label} active?={@active_tab == tab.id} />
+      <% end %>
+    </nav>
+    """
+  end
+
+  attr :href, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :active?, :boolean, required: true
+
+  defp nav_item(assigns) do
+    ~H"""
+    <a
+      href={@href}
+      class={[
+        "flex items-center space-x-1.5 rounded-t-xl border border-b-0 border-b border-transparent border-b-transparent px-4 py-2.5 text-sm font-medium",
+        "text-gray-400 hover:text-gray-700",
+        @active? && "!border-gray-200 text-gray-900"
+      ]}
+    >
+      <.icon name={@icon} class="size-5" />
+      <div><%= @label %></div>
+    </a>
+    """
+  end
+
+  @doc """
+  Renders a local time element.
+  """
+  attr :date, :string, required: true
+  attr :id, :string
+
+  def local_time(assigns) do
+    ~H"""
+    <time phx-hook="LocalTime" id={@id} class="invisible"><%= @date %></time>
     """
   end
 end

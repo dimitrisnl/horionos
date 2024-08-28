@@ -145,7 +145,7 @@ defmodule HorionosWeb.FormComponents do
 
     * For live file uploads, see `Phoenix.Component.live_file_input/1`
 
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+  See https://developer.mozilla.organization/en-US/docs/Web/HTML/Element/input
   for more information. Unsupported types, such as hidden and radio,
   are best written directly in your templates.
 
@@ -204,7 +204,7 @@ defmodule HorionosWeb.FormComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-gray-300 text-gray-900 focus:ring-0"
+          class="rounded border-gray-300 text-gray-900"
           {@rest}
         />
         <%= @label %>
@@ -279,6 +279,7 @@ defmodule HorionosWeb.FormComponents do
           {@rest}
         />
         <button
+          tabindex="-1"
           type="button"
           class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-500"
           phx-click={

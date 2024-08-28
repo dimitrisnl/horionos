@@ -8,7 +8,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
   describe "POST /users/log_in" do
     test "logs the user in", %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       conn = delete(conn, ~p"/users/log_out")
 
@@ -30,7 +30,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "logs the user in with remember me", %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       conn = delete(conn, ~p"/users/log_out")
 
@@ -49,7 +49,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "logs the user in with return to", %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       delete(conn, ~p"/users/log_out")
 
@@ -68,7 +68,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "login following registration", %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       conn = delete(conn, ~p"/users/log_out")
 
@@ -87,7 +87,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
 
     test "login following password update", %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       conn = delete(conn, ~p"/users/log_out")
 
@@ -119,7 +119,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
   describe "DELETE /users/log_out" do
     test "logs the user out", %{conn: conn} do
       %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       conn = conn |> delete(~p"/users/log_out")
       assert redirected_to(conn) == ~p"/users/log_in"
@@ -136,7 +136,7 @@ defmodule HorionosWeb.UserSessionControllerTest do
   describe "DELETE /users/clear_sessions" do
     setup %{conn: conn} do
       %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       # Create an additional session
       Accounts.create_session_token(user, %{

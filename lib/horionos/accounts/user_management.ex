@@ -41,13 +41,14 @@ defmodule Horionos.Accounts.UserManagement do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
-    |> tap(fn
-      {:ok, user} ->
+    |> case do
+      {:ok, user} = result ->
         AdminNotifications.notify(:user_registered, user)
+        result
 
-      _ ->
-        :ok
-    end)
+      error ->
+        error
+    end
   end
 
   @spec build_registration_changeset(User.t(), map()) :: Ecto.Changeset.t()

@@ -6,7 +6,8 @@ defmodule HorionosWeb.DashboardLive do
     <.header>
       Welcome!
       <:subtitle>
-        This is your dashboard for the <span class="font-medium">"<%= @current_org.title %>"</span>
+        This is your dashboard for the
+        <span class="font-medium">"<%= @current_organization.title %>"</span>
         organization
       </:subtitle>
     </.header>

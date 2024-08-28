@@ -4,13 +4,13 @@ defmodule HorionosWeb.LiveHelpers do
   """
   import Phoenix.Component
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   def on_mount(:default, _params, _session, socket) do
     socket =
       socket
       |> assign(:active_tab, get_active_tab(socket))
-      |> assign_user_orgs()
+      |> assign_user_memberships()
 
     {:cont, socket}
   end
@@ -20,18 +20,19 @@ defmodule HorionosWeb.LiveHelpers do
       HorionosWeb.DashboardLive -> :home
       HorionosWeb.AnnouncementLive.Index -> :announcements
       HorionosWeb.AnnouncementLive.Show -> :announcements
-      HorionosWeb.OrgLive.Index -> :organizations
-      HorionosWeb.OrgLive.Show -> :organizations
+      HorionosWeb.OrganizationLive.Index -> :organization_details
+      HorionosWeb.OrganizationLive.Invitations -> :organization_invitations
       HorionosWeb.UserSettingsLive.Index -> :user_profile
       HorionosWeb.UserSettingsLive.Security -> :user_security
       _ -> :other
     end
   end
 
-  defp assign_user_orgs(%{assigns: %{current_user: user}} = socket) when not is_nil(user) do
-    orgs = Orgs.list_user_orgs(user)
-    assign(socket, :orgs, orgs)
+  defp assign_user_memberships(%{assigns: %{current_user: user}} = socket)
+       when not is_nil(user) do
+    {:ok, memberships} = Organizations.list_user_memberships(user)
+    assign(socket, :memberships, memberships)
   end
 
-  defp assign_user_orgs(socket), do: socket
+  defp assign_user_memberships(socket), do: socket
 end

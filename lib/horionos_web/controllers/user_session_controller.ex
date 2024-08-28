@@ -12,6 +12,10 @@ defmodule HorionosWeb.UserSessionController do
     |> do_create(params, "Password updated successfully!")
   end
 
+  def create(conn, %{"_action" => "invitation_accepted"} = params) do
+    do_create(conn, params, "Invitation accepted successfully!")
+  end
+
   def create(conn, %{"_action" => "registered"} = params) do
     do_create(conn, params)
   end

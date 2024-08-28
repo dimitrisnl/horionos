@@ -6,7 +6,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   alias Phoenix.LiveView
 
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
 
   setup %{conn: conn} do
     # Set up a test connection with a new session
@@ -92,16 +92,19 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
     end
   end
 
-  describe "on_mount :ensure_current_org" do
-    test "assigns current_org based on a valid org_id", %{conn: conn, user: user} do
-      # Test correct org assignment with a valid org_id
-      org = org_fixture(%{user: user})
+  describe "on_mount :ensure_current_organization" do
+    test "assigns current_organization based on a valid organization_id", %{
+      conn: conn,
+      user: user
+    } do
+      # Test correct organization assignment with a valid organization_id
+      organization = organization_fixture(%{user: user})
       user_token = Accounts.create_session_token(user)
 
       session =
         conn
         |> put_session(:user_token, user_token)
-        |> put_session(:current_org_id, org.id)
+        |> put_session(:current_organization_id, organization.id)
         |> get_session()
 
       socket = %LiveView.Socket{
@@ -110,21 +113,21 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
       }
 
       {:cont, updated_socket} =
-        UserAuthLive.on_mount(:ensure_current_org, %{}, session, socket)
+        UserAuthLive.on_mount(:ensure_current_organization, %{}, session, socket)
 
-      assert updated_socket.assigns.current_org.id == org.id
+      assert updated_socket.assigns.current_organization.id == organization.id
     end
 
-    test "handles case when user has multiple orgs", %{conn: conn, user: user} do
-      # Verify correct org assignment when user has multiple orgs
-      org_fixture(%{user: user})
-      org2 = org_fixture(%{user: user})
+    test "handles case when user has multiple organizations", %{conn: conn, user: user} do
+      # Verify correct organization assignment when user has multiple organizations
+      organization_fixture(%{user: user})
+      organization2 = organization_fixture(%{user: user})
       user_token = Accounts.create_session_token(user)
 
       session =
         conn
         |> put_session(:user_token, user_token)
-        |> put_session(:current_org_id, org2.id)
+        |> put_session(:current_organization_id, organization2.id)
         |> get_session()
 
       socket = %LiveView.Socket{
@@ -133,13 +136,16 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
       }
 
       {:cont, updated_socket} =
-        UserAuthLive.on_mount(:ensure_current_org, %{}, session, socket)
+        UserAuthLive.on_mount(:ensure_current_organization, %{}, session, socket)
 
-      assert updated_socket.assigns.current_org.id == org2.id
+      assert updated_socket.assigns.current_organization.id == organization2.id
     end
 
-    test "redirects to onboarding if there isn't a valid org_id", %{conn: conn, user: user} do
-      # Check redirection to onboarding when no valid org_id is present
+    test "redirects to onboarding if there isn't a valid organization_id", %{
+      conn: conn,
+      user: user
+    } do
+      # Check redirection to onboarding when no valid organization_id is present
       user_token = Accounts.create_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
@@ -148,8 +154,10 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
         assigns: %{__changed__: %{}, flash: %{}, current_user: user}
       }
 
-      {:halt, updated_socket} = UserAuthLive.on_mount(:ensure_current_org, %{}, session, socket)
-      assert updated_socket.assigns.current_org == nil
+      {:halt, updated_socket} =
+        UserAuthLive.on_mount(:ensure_current_organization, %{}, session, socket)
+
+      assert updated_socket.assigns.current_organization == nil
     end
   end
 

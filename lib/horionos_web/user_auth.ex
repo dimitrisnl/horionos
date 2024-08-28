@@ -10,7 +10,8 @@ defmodule HorionosWeb.UserAuth do
   import Phoenix.Controller
 
   alias Horionos.Accounts
-  alias Horionos.Orgs
+  alias Horionos.Authorization
+  alias Horionos.Organizations
 
   # Constants
   # Make the remember me cookie valid for 60 days.
@@ -76,14 +77,16 @@ defmodule HorionosWeb.UserAuth do
   @doc """
   Fetches the current organization for the user.
   """
-  def fetch_current_org(conn, _opts) do
+  def fetch_current_organization(conn, _opts) do
     with %{assigns: %{current_user: user}} when not is_nil(user) <- conn,
-         org_id when not is_nil(org_id) <- get_session(conn, :current_org_id),
-         {:ok, org} <- Orgs.get_org(user, org_id) do
-      assign_current_org(conn, org)
+         organization_id when not is_nil(organization_id) <-
+           get_session(conn, :current_organization_id),
+         {:ok, organization} <- Organizations.get_organization(organization_id),
+         :ok <- Authorization.authorize(user, organization, :organization_view) do
+      assign_current_organization(conn, organization)
     else
       %{assigns: %{current_user: nil}} -> conn
-      _ -> handle_org_not_found(conn, conn.assigns.current_user)
+      _ -> handle_organization_not_found(conn, conn.assigns.current_user)
     end
   end
 
@@ -121,8 +124,8 @@ defmodule HorionosWeb.UserAuth do
   @doc """
   Ensures the user has an associated organization.
   """
-  def require_org(conn, _opts) do
-    if conn.assigns[:current_org] do
+  def require_organization(conn, _opts) do
+    if conn.assigns[:current_organization] do
       conn
     else
       conn
@@ -133,14 +136,14 @@ defmodule HorionosWeb.UserAuth do
 
   # Private Helper Functions
   defp redirect_based_on_user_state(conn, user, user_return_to) do
-    case Orgs.get_user_primary_org(user) do
+    case Organizations.get_user_primary_organization(user) do
       nil ->
         conn
         |> redirect(to: ~p"/onboarding")
 
-      org ->
+      organization ->
         conn
-        |> put_session(:current_org_id, org.id)
+        |> put_session(:current_organization_id, organization.id)
         |> redirect(to: user_return_to || signed_in_path(conn))
     end
   end
@@ -161,21 +164,21 @@ defmodule HorionosWeb.UserAuth do
     |> clear_session()
   end
 
-  defp assign_current_org(conn, org) do
+  defp assign_current_organization(conn, organization) do
     conn
-    |> assign(:current_org, org)
-    |> put_session(:current_org_id, org.id)
+    |> assign(:current_organization, organization)
+    |> put_session(:current_organization_id, organization.id)
   end
 
-  defp handle_org_not_found(conn, user) do
-    case Orgs.get_user_primary_org(user) do
+  defp handle_organization_not_found(conn, user) do
+    case Organizations.get_user_primary_organization(user) do
       nil ->
         conn
-        |> assign(:current_org, nil)
-        |> delete_session(:current_org_id)
+        |> assign(:current_organization, nil)
+        |> delete_session(:current_organization_id)
 
-      org ->
-        assign_current_org(conn, org)
+      organization ->
+        assign_current_organization(conn, organization)
     end
   end
 

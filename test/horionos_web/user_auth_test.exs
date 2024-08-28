@@ -2,11 +2,11 @@ defmodule HorionosWeb.UserAuthTest do
   use HorionosWeb.ConnCase, async: true
 
   alias Horionos.Accounts
-  alias Horionos.Orgs
+  alias Horionos.Organizations
   alias HorionosWeb.UserAuth
 
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
   alias Horionos.Repo
 
   @remember_me_cookie "_horionos_web_user_remember_me"
@@ -71,19 +71,22 @@ defmodule HorionosWeb.UserAuthTest do
     end
 
     test "redirects to onboarding if user has no organization", %{conn: conn, user: user} do
-      # Check redirection to onboarding for users without an org
+      # Check redirection to onboarding for users without an organization
       conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
       assert redirected_to(conn) == ~p"/onboarding"
     end
 
-    test "redirects to primary org if user has an organization", %{conn: conn, user: user} do
-      # Verify redirection to home page for users with an org
-      Horionos.OrgsFixtures.org_fixture(%{user: user})
+    test "redirects to primary organization if user has an organization", %{
+      conn: conn,
+      user: user
+    } do
+      # Verify redirection to home page for users with an organization
+      Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
 
       conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
 
       assert redirected_to(conn) == ~p"/"
-      assert get_session(conn, :current_org_id)
+      assert get_session(conn, :current_organization_id)
     end
 
     test "handles race condition on session token creation", %{conn: conn, user: user} do
@@ -180,49 +183,57 @@ defmodule HorionosWeb.UserAuthTest do
     end
   end
 
-  describe "fetch_current_org/2" do
+  describe "fetch_current_organization/2" do
     setup %{user: user} do
-      org = org_fixture(%{user: user})
-      %{org: org}
+      organization = organization_fixture(%{user: user})
+      %{organization: organization}
     end
 
-    test "assigns current_org from session", %{conn: conn, user: user, org: org} do
-      # Verify current_org is correctly assigned from session
+    test "assigns current_organization from session", %{
+      conn: conn,
+      user: user,
+      organization: organization
+    } do
+      # Verify current_organization is correctly assigned from session
       conn =
         conn
         |> Map.put(:params, %{})
         |> assign(:current_user, user)
-        |> put_session(:current_org_id, org.id)
-        |> UserAuth.fetch_current_org([])
+        |> put_session(:current_organization_id, organization.id)
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org.id == org.id
-      assert get_session(conn, :current_org_id) == org.id
+      assert conn.assigns.current_organization.id == organization.id
+      assert get_session(conn, :current_organization_id) == organization.id
     end
 
-    test "assigns primary org if no org_id in session", %{conn: conn, user: user, org: org} do
-      # Check if primary org is assigned when no org_id in session
+    test "assigns primary organization if no organization_id in session", %{
+      conn: conn,
+      user: user,
+      organization: organization
+    } do
+      # Check if primary organization is assigned when no organization_id in session
       conn =
         conn
         |> Map.put(:params, %{})
         |> assign(:current_user, user)
-        |> UserAuth.fetch_current_org([])
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org.id == org.id
-      assert get_session(conn, :current_org_id) == org.id
+      assert conn.assigns.current_organization.id == organization.id
+      assert get_session(conn, :current_organization_id) == organization.id
     end
 
-    test "assigns nil if user has no orgs", %{conn: conn, user: user} do
+    test "assigns nil if user has no organizations", %{conn: conn, user: user} do
       # Ensure nil is assigned when user has no organizations
-      Orgs.delete_org(user, Orgs.get_user_primary_org(user))
+      Organizations.delete_organization(Organizations.get_user_primary_organization(user))
 
       conn =
         conn
         |> Map.put(:params, %{})
         |> assign(:current_user, user)
-        |> UserAuth.fetch_current_org([])
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org == nil
-      refute get_session(conn, :current_org_id)
+      assert conn.assigns.current_organization == nil
+      refute get_session(conn, :current_organization_id)
     end
 
     test "does nothing if no current_user", %{conn: conn} do
@@ -231,62 +242,67 @@ defmodule HorionosWeb.UserAuthTest do
         conn
         |> Map.put(:params, %{})
         |> assign(:current_user, nil)
-        |> UserAuth.fetch_current_org([])
+        |> UserAuth.fetch_current_organization([])
 
-      refute conn.assigns[:current_org]
-      refute get_session(conn, :current_org_id)
+      refute conn.assigns[:current_organization]
+      refute get_session(conn, :current_organization_id)
     end
 
     test "handles switching between organizations", %{conn: conn, user: user} do
-      # Test proper handling of org switching
-      org1 = org_fixture(%{user: user})
-      org2 = org_fixture(%{user: user})
+      # Test proper handling of organization switching
+      organization1 = organization_fixture(%{user: user})
+      organization2 = organization_fixture(%{user: user})
 
       conn =
         conn
         |> assign(:current_user, user)
-        |> put_session(:current_org_id, org1.id)
-        |> UserAuth.fetch_current_org([])
+        |> put_session(:current_organization_id, organization1.id)
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org.id == org1.id
+      assert conn.assigns.current_organization.id == organization1.id
 
       conn =
         conn
-        |> put_session(:current_org_id, org2.id)
-        |> UserAuth.fetch_current_org([])
+        |> put_session(:current_organization_id, organization2.id)
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org.id == org2.id
+      assert conn.assigns.current_organization.id == organization2.id
     end
 
-    test "handles case when org is deleted while user is logged in", %{conn: conn, user: user} do
-      # Verify correct behavior when current org is deleted
-      org1 = org_fixture(%{user: user})
-      org2 = org_fixture(%{user: user})
+    test "handles case when organization is deleted while user is logged in", %{
+      conn: conn,
+      user: user
+    } do
+      # Verify correct behavior when current organization is deleted
+      organization1 = organization_fixture(%{user: user})
+      organization2 = organization_fixture(%{user: user})
 
       conn =
         conn
         |> assign(:current_user, user)
-        |> put_session(:current_org_id, org1.id)
-        |> UserAuth.fetch_current_org([])
+        |> put_session(:current_organization_id, organization1.id)
+        |> UserAuth.fetch_current_organization([])
 
-      assert conn.assigns.current_org.id == org1.id
+      assert conn.assigns.current_organization.id == organization1.id
 
-      {:ok, _deleted_org} = Orgs.delete_org(user, org1)
-      assert {:error, :unauthorized} = Orgs.get_org(user, org1.id)
+      {:ok, _deleted_organization} = Organizations.delete_organization(organization1)
+      assert {:error, :not_found} = Organizations.get_organization(organization1.id)
 
-      updated_conn = UserAuth.fetch_current_org(conn, [])
+      updated_conn = UserAuth.fetch_current_organization(conn, [])
 
-      assert updated_conn.assigns.current_org.id != org1.id
-      assert is_integer(updated_conn.assigns.current_org.id)
-      assert get_session(updated_conn, :current_org_id) == updated_conn.assigns.current_org.id
+      assert updated_conn.assigns.current_organization.id != organization1.id
+      assert is_integer(updated_conn.assigns.current_organization.id)
 
-      {:ok, _} = Orgs.delete_org(user, org2)
-      {:ok, _} = Orgs.delete_org(user, updated_conn.assigns.current_org)
+      assert get_session(updated_conn, :current_organization_id) ==
+               updated_conn.assigns.current_organization.id
 
-      final_conn = UserAuth.fetch_current_org(updated_conn, [])
+      {:ok, _} = Organizations.delete_organization(organization2)
+      {:ok, _} = Organizations.delete_organization(updated_conn.assigns.current_organization)
 
-      assert final_conn.assigns.current_org == nil
-      refute get_session(final_conn, :current_org_id)
+      final_conn = UserAuth.fetch_current_organization(updated_conn, [])
+
+      assert final_conn.assigns.current_organization == nil
+      refute get_session(final_conn, :current_organization_id)
     end
   end
 
@@ -349,31 +365,35 @@ defmodule HorionosWeb.UserAuthTest do
     end
   end
 
-  describe "require_org/2" do
+  describe "require_organization/2" do
     setup %{user: user} do
-      org = org_fixture(%{user: user})
-      %{org: org}
+      organization = organization_fixture(%{user: user})
+      %{organization: organization}
     end
 
-    test "does not redirect if user has an org", %{conn: conn, user: user, org: org} do
-      # Verify no redirection when user has an org
+    test "does not redirect if user has an organization", %{
+      conn: conn,
+      user: user,
+      organization: organization
+    } do
+      # Verify no redirection when user has an organization
       conn =
         conn
         |> assign(:current_user, user)
-        |> assign(:current_org, org)
-        |> UserAuth.require_org([])
+        |> assign(:current_organization, organization)
+        |> UserAuth.require_organization([])
 
       refute conn.halted
       refute conn.status
     end
 
-    test "redirects to onboarding if user has no org", %{conn: conn, user: user} do
-      # Ensure redirection to onboarding when user has no org
+    test "redirects to onboarding if user has no organization", %{conn: conn, user: user} do
+      # Ensure redirection to onboarding when user has no organization
       conn =
         conn
         |> assign(:current_user, user)
-        |> assign(:current_org, nil)
-        |> UserAuth.require_org([])
+        |> assign(:current_organization, nil)
+        |> UserAuth.require_organization([])
 
       assert conn.halted
       assert redirected_to(conn) == ~p"/onboarding"

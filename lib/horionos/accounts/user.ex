@@ -27,7 +27,7 @@ defmodule Horionos.Accounts.User do
     field :confirmed_at, :naive_datetime
     field :locked_at, :utc_datetime
 
-    has_many :memberships, Horionos.Orgs.Membership
+    has_many :memberships, Horionos.Organizations.Membership
 
     timestamps(type: :utc_datetime)
   end
@@ -40,7 +40,7 @@ defmodule Horionos.Accounts.User do
           hashed_password: String.t() | nil,
           id: integer() | nil,
           inserted_at: DateTime.t() | nil,
-          memberships: [Horionos.Orgs.Membership.t()] | Ecto.Association.NotLoaded.t(),
+          memberships: [Horionos.Organizations.Membership.t()] | Ecto.Association.NotLoaded.t(),
           password: String.t() | nil,
           updated_at: DateTime.t() | nil,
           locked_at: DateTime.t() | nil

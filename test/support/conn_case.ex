@@ -44,11 +44,11 @@ defmodule HorionosWeb.ConnCase do
       setup :register_and_log_in_user
 
   It stores an updated connection, a registered user, and optionally the user's organization in the
-  test context. Use the `create_org` tag to control whether an organization is created.
+  test context. Use the `create_organization` tag to control whether an organization is created.
   """
   def register_and_log_in_user(context) do
     %{conn: conn} = context
-    create_org = Map.get(context, :create_org, false)
+    create_organization = Map.get(context, :create_organization, false)
     user_attrs = Map.get(context, :user_attrs, %{})
 
     user = Horionos.AccountsFixtures.user_fixture(user_attrs)
@@ -57,16 +57,16 @@ defmodule HorionosWeb.ConnCase do
 
     result = %{conn: conn, user: user}
 
-    if create_org do
-      org = Horionos.OrgsFixtures.org_fixture(%{user: user})
+    if create_organization do
+      organization = Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
 
       conn =
         conn
-        |> put_session(:current_org_id, org.id)
-        |> assign(:current_org, org)
+        |> put_session(:current_organization_id, organization.id)
+        |> assign(:current_organization, organization)
 
       result
-      |> Map.put(:org, org)
+      |> Map.put(:organization, organization)
       |> Map.put(:conn, conn)
     else
       result
@@ -88,12 +88,12 @@ defmodule HorionosWeb.ConnCase do
 
   def log_in_and_onboard_user(conn, user) do
     conn = log_in_user(conn, user)
-    org = Horionos.OrgsFixtures.org_fixture(%{user: user})
+    organization = Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
 
     conn =
       conn
-      |> put_session(:current_org_id, org.id)
-      |> assign(:current_org, org)
+      |> put_session(:current_organization_id, organization.id)
+      |> assign(:current_organization, organization)
 
     conn
   end
@@ -104,9 +104,9 @@ defmodule HorionosWeb.ConnCase do
     token
   end
 
-  def assign_org(conn, org) do
+  def assign_organization(conn, organization) do
     conn
-    |> Plug.Conn.assign(:current_org, org)
-    |> Plug.Conn.put_session(:current_org_id, org.id)
+    |> Plug.Conn.assign(:current_organization, organization)
+    |> Plug.Conn.put_session(:current_organization_id, organization.id)
   end
 end
