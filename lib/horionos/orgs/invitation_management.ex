@@ -74,38 +74,46 @@ defmodule Horionos.Organizations.InvitationManagement do
           | {:error, :already_accepted}
           | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
   def accept_invitation(invitation, user_params) do
-    if is_nil(invitation.accepted_at) do
-      Ecto.Multi.new()
-      |> Ecto.Multi.run(:user, fn _repo, _changes ->
-        get_or_create_user(invitation.email, user_params)
-      end)
-      |> Ecto.Multi.update(:invitation, fn %{user: _user} ->
-        Invitation.changeset(invitation, %{accepted_at: DateTime.utc_now()})
-      end)
-      |> Ecto.Multi.run(:membership, fn _repo, %{user: user} ->
-        MembershipManagement.create_membership(%{
-          user_id: user.id,
-          organization_id: invitation.organization_id,
-          role: invitation.role
-        })
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{user: user, invitation: invitation, membership: membership} = result} ->
-          AdminNotifications.notify(:user_joined_organization, %{
-            user: user,
-            invitation: invitation,
-            membership: membership
-          })
-
-          {:ok, result}
-
-        error ->
-          error
-      end
+    with true <- is_nil(invitation.accepted_at),
+         {:ok, result} <- do_accept_invitation(invitation, user_params) do
+      notify_user_joined(result)
+      {:ok, result}
     else
-      {:error, :already_accepted}
+      false -> {:error, :already_accepted}
+      error -> error
     end
+  end
+
+  defp do_accept_invitation(invitation, user_params) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:user, fn repo, _changes ->
+      with {:ok, user} <- get_or_create_user(invitation.email, user_params),
+           {:ok, updated_user} <- User.confirm_changeset(user) |> repo.update() do
+        {:ok, updated_user}
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> Ecto.Multi.update(:invitation, fn _ ->
+      Invitation.changeset(invitation, %{accepted_at: DateTime.utc_now()})
+    end)
+    |> Ecto.Multi.run(:membership, fn _repo, %{user: user} ->
+      MembershipManagement.create_membership(%{
+        user_id: user.id,
+        organization_id: invitation.organization_id,
+        role: invitation.role
+      })
+    end)
+    |> Repo.transaction()
+  end
+
+  defp notify_user_joined(%{user: user, membership: membership}) do
+    membership_with_assocs = Repo.preload(membership, [:organization, :user])
+
+    AdminNotifications.notify(:user_joined_organization, %{
+      user: user,
+      membership: membership_with_assocs
+    })
   end
 
   @doc """
@@ -169,8 +177,11 @@ defmodule Horionos.Organizations.InvitationManagement do
           {:ok, User.t()} | {:error, {:user_creation_failed, map()}}
   defp create_user(email, user_params) do
     user_params
-    |> Map.put(:email, email)
     |> normalize_params()
+    # override email with the one from the invitation
+    # to ensure the user is created with the correct email
+    # We don't allow this in the UI, but you never know
+    |> Map.put("email", email)
     |> Accounts.register_user()
     |> case do
       {:ok, user} -> {:ok, user}

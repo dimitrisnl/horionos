@@ -158,6 +158,7 @@ defmodule HorionosWeb.FormComponents do
   attr :name, :any
   attr :label, :string, default: nil
   attr :value, :any
+  attr :hidden, :boolean, default: false
 
   attr :type, :string,
     default: "text",
@@ -299,7 +300,7 @@ defmodule HorionosWeb.FormComponents do
   # All other inputs text, datetime-local, url, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div phx-feedback-for={@name} class={[@hidden && "hidden"]}>
       <div class="flex justify-between">
         <.label for={@id}><%= @label %></.label>
 

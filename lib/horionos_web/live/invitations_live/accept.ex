@@ -17,11 +17,11 @@ defmodule HorionosWeb.InvitationLive.Accept do
           method="post"
         >
           <%= if @current_user do %>
-            <.input field={@form[:email]} type="email" label="Email" readonly />
+            <.input field={@form[:email]} type="email" label="Email" readonly hidden required />
           <% else %>
             <.input field={@form[:full_name]} type="text" label="Full Name" required />
-            <.input field={@form[:email]} type="email" label="Email" required />
             <.input field={@form[:password]} type="password" label="Password" required />
+            <.input field={@form[:email]} type="email" label="Email" required hidden readonly />
           <% end %>
           <:actions>
             <.button phx-disable-with="Accepting..." class="w-full">
@@ -44,7 +44,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
         {:ok,
          socket
          |> put_flash(:error, "Invitation not found or already accepted")
-         |> redirect(to: "/users/sign_in")}
+         |> redirect(to: "/users/log_in")}
 
       invitation ->
         current_user = socket.assigns[:current_user]
