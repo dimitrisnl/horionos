@@ -10,6 +10,14 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
     "🔒 User locked: #{full_name} (#{email})"
   end
 
+  def format(:invitation_created, %{
+        inviter: inviter,
+        organization: organization,
+        invitation: invitation
+      }) do
+    "💌 Invitation created: #{inviter.full_name} (#{inviter.email}) invited #{invitation.email} to join #{organization.title} as #{invitation.role}"
+  end
+
   def format(:user_joined_organization, %{
         user: user,
         organization: organization,
@@ -17,6 +25,10 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
         inviter: inviter
       }) do
     "👥 User joined organization: #{user.full_name} (#{user.email}) joined #{organization.title} as #{role}, invited by #{inviter.full_name} (#{inviter.email})"
+  end
+
+  def format(:organization_deleted, %{organization: organization}) do
+    "🗑 Organization deleted: #{organization.title}"
   end
 
   def format(:authorization_error, %{

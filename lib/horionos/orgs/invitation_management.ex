@@ -6,6 +6,7 @@ defmodule Horionos.Organizations.InvitationManagement do
 
   alias Horionos.Accounts
   alias Horionos.Accounts.User
+  alias Horionos.AdminNotifications
   alias Horionos.Organizations.{Invitation, Membership, MembershipRole, Organization}
   alias Horionos.Organizations.MembershipManagement
   alias Horionos.Repo
@@ -37,6 +38,19 @@ defmodule Horionos.Organizations.InvitationManagement do
           organization_id: organization.id
         })
         |> Repo.insert()
+        |> case do
+          {:ok, invitation} ->
+            AdminNotifications.notify(:invitation_created, %{
+              inviter: inviter,
+              organization: organization,
+              invitation: invitation
+            })
+
+            {:ok, invitation}
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
     end
   end
 
@@ -76,6 +90,19 @@ defmodule Horionos.Organizations.InvitationManagement do
         })
       end)
       |> Repo.transaction()
+      |> case do
+        {:ok, %{user: user, invitation: invitation, membership: membership} = result} ->
+          AdminNotifications.notify(:user_joined_organization, %{
+            user: user,
+            invitation: invitation,
+            membership: membership
+          })
+
+          {:ok, result}
+
+        error ->
+          error
+      end
     else
       {:error, :already_accepted}
     end

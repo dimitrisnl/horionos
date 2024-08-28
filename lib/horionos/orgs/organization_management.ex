@@ -5,6 +5,7 @@ defmodule Horionos.Organizations.OrganizationManagement do
   import Ecto.Query
 
   alias Horionos.Accounts.User
+  alias Horionos.AdminNotifications
   alias Horionos.Announcements.Announcement
   alias Horionos.Organizations.{Invitation, Membership, Organization}
   alias Horionos.Repo
@@ -38,15 +39,25 @@ defmodule Horionos.Organizations.OrganizationManagement do
 
   @spec delete_organization(Organization.t()) :: {:ok, Organization.t()} | {:error, any()}
   def delete_organization(%Organization{id: organization_id} = organization) do
-    Repo.transaction(fn ->
-      # Delete associated records
-      Repo.delete_all(from(m in Membership, where: m.organization_id == ^organization_id))
-      Repo.delete_all(from(a in Announcement, where: a.organization_id == ^organization_id))
-      Repo.delete_all(from(i in Invitation, where: i.organization_id == ^organization_id))
+    result =
+      Repo.transaction(fn ->
+        # Delete associated records
+        Repo.delete_all(from(m in Membership, where: m.organization_id == ^organization_id))
+        Repo.delete_all(from(a in Announcement, where: a.organization_id == ^organization_id))
+        Repo.delete_all(from(i in Invitation, where: i.organization_id == ^organization_id))
 
-      # Finally, delete the organization
-      Repo.delete!(organization)
-    end)
+        # Finally, delete the organization
+        Repo.delete!(organization)
+      end)
+
+    case result do
+      {:ok, _} ->
+        AdminNotifications.notify(:organization_deleted, %{organization: organization})
+        {:ok, organization}
+
+      _ ->
+        result
+    end
   end
 
   @spec list_user_organizations(User.t()) :: [Organization.t()]
