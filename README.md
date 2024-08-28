@@ -7,8 +7,9 @@ As it stands, I have implemented the following:
 - User authentication
 - Simplified multi-tenant arch with row-level security.
 - Memberships with roles
+- Membership invitations
 - Listing and clearing sessions
 - Workers for background processing
 - Locking accounts
-- Slack notifications
+- Slack notifications (admin)
 - Rate limiting
