@@ -3,7 +3,7 @@ defmodule Horionos.UserNotifications.Formatters.EmailFormatter do
   Module to format email notifications.
   """
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.Org
+  alias Horionos.Organizations.Organization
 
   @from_email Application.compile_env(:horionos, :from_email)
   @from_name Application.compile_env(:horionos, :from_name)
@@ -41,12 +41,12 @@ defmodule Horionos.UserNotifications.Formatters.EmailFormatter do
          inviter: %User{} = inviter,
          email: email,
          url: url,
-         org: %Org{} = org
+         organization: %Organization{} = organization
        }) do
     {
-      "Invitation to join #{org.title}",
+      "Invitation to join #{organization.title}",
       "invitation",
-      %{url: url, inviter: inviter.full_name, org: org.title, email: email}
+      %{url: url, inviter: inviter.full_name, organization: organization.title, email: email}
     }
   end
 

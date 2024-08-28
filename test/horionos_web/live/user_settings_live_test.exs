@@ -9,7 +9,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
       %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
       {:ok, _lv, html} = live(conn, ~p"/users/settings")
 
@@ -27,7 +27,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
   describe "Update email form" do
     setup :register_and_log_in_user
 
-    @tag create_org: true
+    @tag create_organization: true
     test "updates the user email", %{conn: conn, user: user} do
       new_email = unique_user_email()
 
@@ -45,7 +45,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       assert Accounts.get_user_by_email(user.email)
     end
 
-    @tag create_org: true
+    @tag create_organization: true
     test "renders errors with invalid data", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
@@ -62,7 +62,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       assert result =~ "must have the @ sign and no spaces"
     end
 
-    @tag create_org: true
+    @tag create_organization: true
     test "renders errors with invalid data (phx-submit)", %{conn: conn, user: user} do
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
@@ -83,7 +83,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
   describe "Change display name" do
     setup :register_and_log_in_user
 
-    @tag create_org: true
+    @tag create_organization: true
     test "updates the user display name", %{conn: conn, user: user} do
       new_full_name = "New Display Name"
 
@@ -104,7 +104,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
              }
     end
 
-    @tag create_org: true
+    @tag create_organization: true
     test "renders errors with invalid data", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
@@ -133,7 +133,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       %{conn: conn, token: token, email: email, user: user}
     end
 
-    @tag create_org: true
+    @tag create_organization: true
     test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
 
@@ -150,7 +150,7 @@ defmodule HorionosWeb.UserSettingsLive.IndexTest do
       assert flash["error"] == "Email change link is invalid or it has expired."
     end
 
-    @tag create_org: true
+    @tag create_organization: true
     test "does not update email with invalid token", %{conn: conn, user: user} do
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/oops")
 

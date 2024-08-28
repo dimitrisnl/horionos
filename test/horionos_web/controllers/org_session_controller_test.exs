@@ -1,37 +1,39 @@
-defmodule HorionosWeb.OrgSessionControllerTest do
+defmodule HorionosWeb.OrganizationSessionControllerTest do
   require Logger
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
 
   setup %{conn: conn} do
-    %{conn: conn, user: user, org: org} =
-      HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_org: true})
+    %{conn: conn, user: user, organization: organization} =
+      HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
 
-    %{conn: conn, user: user, org: org}
+    %{conn: conn, user: user, organization: organization}
   end
 
-  describe "POST /org/select" do
+  describe "POST /organization/select" do
     test "switches to a new organization successfully", %{conn: conn, user: user} do
-      new_org = org_fixture(%{user: user})
+      new_organization = organization_fixture(%{user: user})
 
-      conn = post(conn, "/org/select", %{"org_id" => new_org.id})
+      conn = post(conn, "/organization/select", %{"organization_id" => new_organization.id})
 
       assert redirected_to(conn) == "/"
-      assert get_session(conn, :current_org_id) == new_org.id
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Switched to #{new_org.title}"
+      assert get_session(conn, :current_organization_id) == new_organization.id
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Switched to #{new_organization.title}"
     end
 
     test "fails to switch to an invalid organization ID", %{conn: conn} do
-      conn = post(conn, "/org/select", %{"org_id" => "invalid"})
+      conn = post(conn, "/organization/select", %{"organization_id" => "invalid"})
 
       assert redirected_to(conn) == "/"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid organization selected"
     end
 
-    test "fails to switch to the same organization", %{conn: conn, org: org} do
-      conn = post(conn, "/org/select", %{"org_id" => org.id})
+    test "fails to switch to the same organization", %{conn: conn, organization: organization} do
+      conn = post(conn, "/organization/select", %{"organization_id" => organization.id})
 
       assert redirected_to(conn) == "/"
 
@@ -44,9 +46,9 @@ defmodule HorionosWeb.OrgSessionControllerTest do
     } do
       # Create another user and organization they do not have access to
       other_user = user_fixture()
-      other_org = org_fixture(%{user: other_user})
+      other_organization = organization_fixture(%{user: other_user})
 
-      conn = post(conn, "/org/select", %{"org_id" => other_org.id})
+      conn = post(conn, "/organization/select", %{"organization_id" => other_organization.id})
 
       assert redirected_to(conn) == "/"
 
@@ -57,7 +59,7 @@ defmodule HorionosWeb.OrgSessionControllerTest do
     test "fails to switch to an organization that doesn't exist", %{
       conn: conn
     } do
-      conn = post(conn, "/org/select", %{"org_id" => 10_000_000})
+      conn = post(conn, "/organization/select", %{"organization_id" => 10_000_000})
 
       assert redirected_to(conn) == "/"
 

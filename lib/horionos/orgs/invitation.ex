@@ -1,4 +1,4 @@
-defmodule Horionos.Orgs.Invitation do
+defmodule Horionos.Organizations.Invitation do
   @moduledoc """
   Invitation schema.
   """
@@ -6,7 +6,7 @@ defmodule Horionos.Orgs.Invitation do
   import Ecto.Changeset
 
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.{MembershipRole, Org}
+  alias Horionos.Organizations.{MembershipRole, Organization}
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),
@@ -17,8 +17,8 @@ defmodule Horionos.Orgs.Invitation do
           role: MembershipRole.t() | nil,
           inviter: User.t() | Ecto.Association.NotLoaded.t() | nil,
           inviter_id: integer() | nil,
-          org: Org.t() | Ecto.Association.NotLoaded.t() | nil,
-          org_id: integer() | nil,
+          organization: Organization.t() | Ecto.Association.NotLoaded.t() | nil,
+          organization_id: integer() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -29,7 +29,7 @@ defmodule Horionos.Orgs.Invitation do
     field :role, Ecto.Enum, values: MembershipRole.all()
     field :accepted_at, :utc_datetime
     belongs_to :inviter, User
-    belongs_to :org, Org
+    belongs_to :organization, Organization
 
     timestamps(type: :utc_datetime)
   end
@@ -37,11 +37,13 @@ defmodule Horionos.Orgs.Invitation do
   @doc false
   def changeset(invitation, attrs) do
     invitation
-    |> cast(attrs, [:email, :token, :role, :accepted_at, :inviter_id, :org_id])
-    |> validate_required([:email, :token, :role, :inviter_id, :org_id])
+    |> cast(attrs, [:email, :token, :role, :accepted_at, :inviter_id, :organization_id])
+    |> validate_required([:email, :token, :role, :inviter_id, :organization_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> validate_inclusion(:role, MembershipRole.all())
-    |> unique_constraint([:email, :org_id], name: :invitations_email_org_id_index)
+    |> unique_constraint([:email, :organization_id],
+      name: :invitations_email_organization_id_index
+    )
   end
 
   @spec generate_token() :: String.t()

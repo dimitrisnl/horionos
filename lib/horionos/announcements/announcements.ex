@@ -6,26 +6,27 @@ defmodule Horionos.Announcements do
   import Ecto.Query
 
   alias Horionos.Announcements.Announcement
-  alias Horionos.OrgRepo
-  alias Horionos.Orgs.Org
+  alias Horionos.OrganizationRepo
+  alias Horionos.Organizations.Organization
 
   @doc """
   Returns the list of announcements for a given organization.
   """
-  @spec list_announcements(Org.t()) :: [Announcement.t()]
-  def list_announcements(%Org{} = org) do
+  @spec list_announcements(Organization.t()) :: [Announcement.t()]
+  def list_announcements(%Organization{} = organization) do
     Announcement
-    |> where([a], a.org_id == ^org.id)
+    |> where([a], a.organization_id == ^organization.id)
     |> order_by([a], desc: a.inserted_at)
-    |> OrgRepo.all(org.id)
+    |> OrganizationRepo.all(organization.id)
   end
 
   @doc """
   Gets a single announcement.
   """
-  @spec get_announcement(Org.t(), integer()) :: {:ok, Announcement.t()} | {:error, :not_found}
-  def get_announcement(%Org{} = org, id) do
-    case OrgRepo.get(Announcement, id, org.id) do
+  @spec get_announcement(Organization.t(), integer()) ::
+          {:ok, Announcement.t()} | {:error, :not_found}
+  def get_announcement(%Organization{} = organization, id) do
+    case OrganizationRepo.get(Announcement, id, organization.id) do
       nil -> {:error, :not_found}
       announcement -> {:ok, announcement}
     end
@@ -34,12 +35,12 @@ defmodule Horionos.Announcements do
   @doc """
   Creates an announcement.
   """
-  @spec create_announcement(Org.t(), map()) ::
+  @spec create_announcement(Organization.t(), map()) ::
           {:ok, Announcement.t()} | {:error, Ecto.Changeset.t()}
-  def create_announcement(%Org{} = org, attrs) do
+  def create_announcement(%Organization{} = organization, attrs) do
     %Announcement{}
     |> Announcement.changeset(attrs)
-    |> OrgRepo.insert(org.id)
+    |> OrganizationRepo.insert(organization.id)
   end
 
   @doc """
@@ -50,7 +51,7 @@ defmodule Horionos.Announcements do
   def update_announcement(%Announcement{} = announcement, attrs) do
     announcement
     |> Announcement.changeset(attrs)
-    |> OrgRepo.update(announcement.org_id)
+    |> OrganizationRepo.update(announcement.organization_id)
   end
 
   @doc """
@@ -59,7 +60,7 @@ defmodule Horionos.Announcements do
   @spec delete_announcement(Announcement.t()) ::
           {:ok, Announcement.t()} | {:error, Ecto.Changeset.t()}
   def delete_announcement(%Announcement{} = announcement) do
-    OrgRepo.delete(announcement, announcement.org_id)
+    OrganizationRepo.delete(announcement, announcement.organization_id)
   end
 
   @doc """

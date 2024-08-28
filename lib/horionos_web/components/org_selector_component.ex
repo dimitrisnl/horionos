@@ -1,4 +1,4 @@
-defmodule HorionosWeb.OrgSelectorComponent do
+defmodule HorionosWeb.OrganizationSelectorComponent do
   @moduledoc """
   Organization selector
   """
@@ -7,23 +7,23 @@ defmodule HorionosWeb.OrgSelectorComponent do
   def render(assigns) do
     ~H"""
     <ul role="list" class="py-1">
-      <%= for org <- @orgs do %>
+      <%= for organization <- @organizations do %>
         <li>
-          <.form for={%{}} method="post" action={~p"/org/select"}>
+          <.form for={%{}} method="post" action={~p"/organization/select"}>
             <button
-              disabled={org.id == @current_org.id}
+              disabled={organization.id == @current_organization.id}
               type="submit"
               class="flex w-full items-center gap-x-3 px-2 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
             >
               <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
-                <%= String.first(org.title) %>
+                <%= String.first(organization.title) %>
               </span>
-              <span class="truncate"><%= org.title %></span>
-              <%= if org.id == @current_org.id do %>
+              <span class="truncate"><%= organization.title %></span>
+              <%= if organization.id == @current_organization.id do %>
                 <.icon name="hero-check-micro" class="ml-auto h-5 w-5 text-blue-600" />
               <% end %>
             </button>
-            <input type="hidden" name="org_id" value={org.id} />
+            <input type="hidden" name="organization_id" value={organization.id} />
           </.form>
         </li>
       <% end %>
@@ -31,7 +31,7 @@ defmodule HorionosWeb.OrgSelectorComponent do
       <hr class="my-1 bg-gray-100" />
       <li>
         <.link
-          href={~p"/org"}
+          href={~p"/organization"}
           class="flex items-center gap-x-3 px-2 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-blue-600"
         >
           <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">

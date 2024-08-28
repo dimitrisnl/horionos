@@ -1,4 +1,4 @@
-defmodule Horionos.Orgs.MembershipRole do
+defmodule Horionos.Organizations.MembershipRole do
   @moduledoc """
   Defines and manages roles for organization memberships in Horionos.
   """

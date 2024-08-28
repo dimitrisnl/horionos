@@ -1,7 +1,7 @@
 defmodule HorionosWeb.OnboardingLive do
   use HorionosWeb, :live_view
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   def render(assigns) do
     ~H"""
@@ -16,7 +16,7 @@ defmodule HorionosWeb.OnboardingLive do
       </div>
 
       <div class="mt-10 sm:max-w-[420px] sm:mx-auto sm:w-full">
-        <.simple_form for={@form} id="org-form" phx-submit="save">
+        <.simple_form for={@form} id="organization-form" phx-submit="save">
           <.input field={@form[:title]} type="text" placeholder="Organization Name" required />
           <:actions>
             <.button class="w-full" phx-disable-with="Creating...">Create Organization</.button>
@@ -28,7 +28,7 @@ defmodule HorionosWeb.OnboardingLive do
   end
 
   def mount(_params, _session, socket) do
-    if socket.assigns[:current_org] do
+    if socket.assigns[:current_organization] do
       {:ok, push_navigate(socket, to: ~p"/")}
     else
       form = to_form(%{"title" => ""})
@@ -37,8 +37,8 @@ defmodule HorionosWeb.OnboardingLive do
   end
 
   def handle_event("save", %{"title" => title}, socket) do
-    case Orgs.create_org(socket.assigns.current_user, %{title: title}) do
-      {:ok, _org} ->
+    case Organizations.create_organization(socket.assigns.current_user, %{title: title}) do
+      {:ok, _organization} ->
         {:noreply,
          socket
          |> redirect(to: ~p"/")}

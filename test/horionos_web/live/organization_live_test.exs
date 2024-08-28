@@ -1,41 +1,50 @@
-defmodule HorionosWeb.OrgLiveTest do
+defmodule HorionosWeb.OrganizationLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
-  @update_attrs %{title: "Updated Org Name"}
+  @update_attrs %{title: "Updated Organization Name"}
   @invalid_attrs %{title: nil}
 
   describe "Index" do
     setup do
       owner = user_fixture()
-      org = org_fixture(%{user: owner})
+      organization = organization_fixture(%{user: owner})
       admin = user_fixture()
       member = user_fixture()
 
-      Orgs.create_membership(%{user_id: admin.id, org_id: org.id, role: :admin})
-      Orgs.create_membership(%{user_id: member.id, org_id: org.id, role: :member})
+      Organizations.create_membership(%{
+        user_id: admin.id,
+        organization_id: organization.id,
+        role: :admin
+      })
 
-      %{org: org, owner: owner, admin: admin, member: member}
+      Organizations.create_membership(%{
+        user_id: member.id,
+        organization_id: organization.id,
+        role: :member
+      })
+
+      %{organization: organization, owner: owner, admin: admin, member: member}
     end
 
-    test "displays current org details for admin and owners", %{
+    test "displays current organization details for admin and owners", %{
       conn: conn,
-      org: org,
+      organization: organization,
       admin: admin,
       owner: owner
     } do
       for user <- [admin, owner] do
         conn = log_in_user(conn, user)
-        {:ok, _index_live, html} = live(conn, ~p"/org")
+        {:ok, _index_live, html} = live(conn, ~p"/organization")
 
         assert html =~ "Settings"
         assert html =~ "Edit Organization"
-        assert html =~ org.title
+        assert html =~ organization.title
       end
     end
 
@@ -45,41 +54,41 @@ defmodule HorionosWeb.OrgLiveTest do
       {:error,
        {:live_redirect,
         %{to: "/", flash: %{"error" => "You are not authorized to access this page."}}}} =
-        live(conn, ~p"/org")
+        live(conn, ~p"/organization")
     end
 
-    test "updates org", %{conn: conn, admin: admin, owner: owner} do
+    test "updates organization", %{conn: conn, admin: admin, owner: owner} do
       for user <- [admin, owner] do
         conn = log_in_user(conn, user)
-        {:ok, index_live, _html} = live(conn, ~p"/org")
+        {:ok, index_live, _html} = live(conn, ~p"/organization")
 
         assert index_live
-               |> form("#org-form", org: @update_attrs)
+               |> form("#organization-form", organization: @update_attrs)
                |> render_submit()
 
         html = render(index_live)
         assert html =~ "Organization updated successfully"
-        assert html =~ "Updated Org Name"
+        assert html =~ "Updated Organization Name"
       end
     end
 
     test "displays error message with invalid attributes", %{conn: conn, admin: admin} do
       conn = log_in_user(conn, admin)
-      {:ok, index_live, _html} = live(conn, ~p"/org")
+      {:ok, index_live, _html} = live(conn, ~p"/organization")
 
       result =
         index_live
-        |> form("#org-form", org: @invalid_attrs)
+        |> form("#organization-form", organization: @invalid_attrs)
         |> render_submit()
 
       assert result =~ "can&#39;t be blank"
     end
 
-    test "deletes org as owner", %{conn: conn, org: org, owner: owner} do
+    test "deletes organization as owner", %{conn: conn, organization: organization, owner: owner} do
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org")
+      {:ok, view, _html} = live(conn, ~p"/organization")
 
-      delete_form = form(view, "#delete_org_form")
+      delete_form = form(view, "#delete_organization_form")
 
       assert has_element?(
                view,
@@ -89,21 +98,25 @@ defmodule HorionosWeb.OrgLiveTest do
       render_submit(delete_form)
 
       assert_redirect(view, ~p"/")
-      assert {:error, :not_found} = Orgs.get_org(org.id)
+      assert {:error, :not_found} = Organizations.get_organization(organization.id)
     end
 
-    test "cannot delete org as admin", %{conn: conn, org: org, admin: admin} do
+    test "cannot delete organization as admin", %{
+      conn: conn,
+      organization: organization,
+      admin: admin
+    } do
       conn = log_in_user(conn, admin)
-      {:ok, view, _html} = live(conn, ~p"/org")
+      {:ok, view, _html} = live(conn, ~p"/organization")
 
-      delete_form = form(view, "#delete_org_form")
+      delete_form = form(view, "#delete_organization_form")
       render_submit(delete_form)
 
       assert render(view) =~ "You are not authorized to delete this organization."
-      assert {:ok, _org} = Orgs.get_org(org.id)
+      assert {:ok, _organization} = Organizations.get_organization(organization.id)
     end
 
-    test "lists org members for admin and owner", %{
+    test "lists organization members for admin and owner", %{
       conn: conn,
       owner: owner,
       admin: admin,
@@ -111,7 +124,7 @@ defmodule HorionosWeb.OrgLiveTest do
     } do
       for user <- [admin, owner] do
         conn = log_in_user(conn, user)
-        {:ok, _index_live, html} = live(conn, ~p"/org")
+        {:ok, _index_live, html} = live(conn, ~p"/organization")
 
         assert html =~ owner.full_name
         assert html =~ owner.email

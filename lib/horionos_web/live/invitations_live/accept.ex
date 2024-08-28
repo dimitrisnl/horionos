@@ -1,12 +1,12 @@
 defmodule HorionosWeb.InvitationLive.Accept do
   use HorionosWeb, :live_view
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   @impl true
   def render(assigns) do
     ~H"""
-    <.guest_view title="Accept Invitation" subtitle={"Join #{@invitation.org.title}"}>
+    <.guest_view title="Accept Invitation" subtitle={"Join #{@invitation.organization.title}"}>
       <.card>
         <.simple_form
           for={@form}
@@ -39,7 +39,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
 
   @impl true
   def mount(%{"token" => token}, _session, socket) do
-    case Orgs.get_pending_invitation_by_token(token) do
+    case Organizations.get_pending_invitation_by_token(token) do
       nil ->
         {:ok,
          socket
@@ -71,7 +71,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
   def handle_event("accept_invitation", %{"user" => user_params}, socket) do
     %{invitation: invitation, current_user: current_user} = socket.assigns
 
-    case Orgs.accept_invitation(invitation, user_params) do
+    case Organizations.accept_invitation(invitation, user_params) do
       {:ok, %{user: _user, invitation: _invitation, membership: _membership}} ->
         {:noreply,
          socket

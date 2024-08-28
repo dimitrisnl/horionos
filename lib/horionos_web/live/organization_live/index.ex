@@ -1,15 +1,15 @@
-defmodule HorionosWeb.OrgLive.Index do
+defmodule HorionosWeb.OrganizationLive.Index do
   use HorionosWeb, :live_view
   use HorionosWeb.LiveAuthorization
 
-  import HorionosWeb.OrgLive.Components.OrgNavigation
+  import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   @impl true
   def render(assigns) do
     ~H"""
-    <.org_navigation title="Settings" active_tab={:organization_details} />
+    <.organization_navigation title="Settings" active_tab={:organization_details} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
@@ -22,7 +22,7 @@ defmodule HorionosWeb.OrgLive.Index do
           </div>
         </div>
         <div>
-          <.simple_form for={@form} id="org-form" phx-submit="save">
+          <.simple_form for={@form} id="organization-form" phx-submit="save">
             <.input field={@form[:title]} type="text" label="Name" />
             <:actions>
               <.button phx-disable-with="Saving...">Change Name</.button>
@@ -75,7 +75,7 @@ defmodule HorionosWeb.OrgLive.Index do
         </div>
         <div>
           <.form
-            id="delete_org_form"
+            id="delete_organization_form"
             for={%{}}
             phx-submit="delete"
             data-confirm="Are you sure you want to delete the organization? This action cannot be undone."
@@ -84,7 +84,7 @@ defmodule HorionosWeb.OrgLive.Index do
               <:left_icon>
                 <.icon name="hero-trash-micro" />
               </:left_icon>
-              Delete my organization <span class="font-bold"><%= @org.title %></span>
+              Delete my organization <span class="font-bold"><%= @organization.title %></span>
             </.button>
           </.form>
         </div>
@@ -95,14 +95,15 @@ defmodule HorionosWeb.OrgLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    with :ok <- authorize_user_action(socket, :org_manage_members),
-         {:ok, org} <- Orgs.get_org(socket.assigns.current_org.id),
-         {:ok, memberships} <- Orgs.list_org_memberships(org) do
-      changeset = Orgs.build_org_changeset(org)
+    with :ok <- authorize_user_action(socket, :organization_manage_members),
+         {:ok, organization} <-
+           Organizations.get_organization(socket.assigns.current_organization.id),
+         {:ok, memberships} <- Organizations.list_organization_memberships(organization) do
+      changeset = Organizations.build_organization_changeset(organization)
 
       {:ok,
        socket
-       |> assign(:org, org)
+       |> assign(:organization, organization)
        |> assign(:form, to_form(changeset))
        |> stream(:memberships, memberships), layout: {HorionosWeb.Layouts, :dashboard}}
     else
@@ -121,18 +122,21 @@ defmodule HorionosWeb.OrgLive.Index do
   end
 
   @impl true
-  def handle_event("save", %{"org" => org_params}, socket) do
-    case authorize_user_action(socket, :org_edit) do
+  def handle_event("save", %{"organization" => organization_params}, socket) do
+    case authorize_user_action(socket, :organization_edit) do
       :ok ->
-        org = socket.assigns.org
+        organization = socket.assigns.organization
 
-        case Orgs.update_org(org, org_params) do
-          {:ok, updated_org} ->
+        case Organizations.update_organization(organization, organization_params) do
+          {:ok, updated_organization} ->
             {:noreply,
              socket
-             |> assign(:org, updated_org)
-             |> assign(:current_org, updated_org)
-             |> assign(:form, to_form(Orgs.build_org_changeset(updated_org)))
+             |> assign(:organization, updated_organization)
+             |> assign(:current_organization, updated_organization)
+             |> assign(
+               :form,
+               to_form(Organizations.build_organization_changeset(updated_organization))
+             )
              |> put_flash(:info, "Organization updated successfully")}
 
           {:error, %Ecto.Changeset{} = changeset} ->
@@ -148,12 +152,12 @@ defmodule HorionosWeb.OrgLive.Index do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    case authorize_user_action(socket, :org_delete) do
+    case authorize_user_action(socket, :organization_delete) do
       :ok ->
-        org = socket.assigns.org
+        organization = socket.assigns.organization
 
-        case Orgs.delete_org(org) do
-          {:ok, _deleted_org} ->
+        case Organizations.delete_organization(organization) do
+          {:ok, _deleted_organization} ->
             {:noreply,
              socket
              |> put_flash(:info, "Organization deleted successfully.")

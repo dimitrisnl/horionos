@@ -14,11 +14,11 @@ defmodule Horionos.AnnouncementsFixtures do
     })
   end
 
-  def announcement_fixture(org, attrs \\ %{}) do
+  def announcement_fixture(organization, attrs \\ %{}) do
     attrs = valid_announcement_attributes(attrs)
-    attrs = Map.put(attrs, :org_id, org.id)
+    attrs = Map.put(attrs, :organization_id, organization.id)
 
-    {:ok, announcement} = Announcements.create_announcement(org, attrs)
+    {:ok, announcement} = Announcements.create_announcement(organization, attrs)
 
     announcement
   end

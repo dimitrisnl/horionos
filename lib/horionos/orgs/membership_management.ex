@@ -1,22 +1,22 @@
-defmodule Horionos.Orgs.MembershipManagement do
+defmodule Horionos.Organizations.MembershipManagement do
   @moduledoc """
   This module provides functions for managing memberships.
   """
   import Ecto.Query
 
   alias Horionos.Accounts.User
-  alias Horionos.OrgRepo
-  alias Horionos.Orgs.{Membership, MembershipRole, Org}
+  alias Horionos.OrganizationRepo
+  alias Horionos.Organizations.{Membership, MembershipRole, Organization}
   alias Horionos.Repo
 
   @doc """
-  Lists memberships for a given org.
+  Lists memberships for a given organization.
   """
-  @spec list_org_memberships(Org.t()) :: {:ok, [Membership.t()]}
-  def list_org_memberships(%Org{id: org_id}) do
+  @spec list_organization_memberships(Organization.t()) :: {:ok, [Membership.t()]}
+  def list_organization_memberships(%Organization{id: organization_id}) do
     memberships =
       Membership
-      |> where([m], m.org_id == ^org_id)
+      |> where([m], m.organization_id == ^organization_id)
       |> preload(:user)
       |> Repo.all()
 
@@ -31,7 +31,7 @@ defmodule Horionos.Orgs.MembershipManagement do
     if MembershipRole.valid?(attrs.role) && attrs.role in MembershipRole.assignable() do
       %Membership{}
       |> Membership.changeset(attrs)
-      |> OrgRepo.insert(attrs.org_id)
+      |> OrganizationRepo.insert(attrs.organization_id)
     else
       {:error, :invalid_role}
     end
@@ -42,10 +42,10 @@ defmodule Horionos.Orgs.MembershipManagement do
   """
   @spec update_membership(Membership.t(), map()) ::
           {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
-  def update_membership(%Membership{org_id: org_id} = membership, attrs) do
+  def update_membership(%Membership{organization_id: organization_id} = membership, attrs) do
     membership
     |> Membership.changeset(attrs)
-    |> OrgRepo.update(org_id)
+    |> OrganizationRepo.update(organization_id)
   end
 
   @doc """
@@ -53,8 +53,8 @@ defmodule Horionos.Orgs.MembershipManagement do
   """
   @spec delete_membership(Membership.t()) ::
           {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
-  def delete_membership(%Membership{org_id: org_id} = membership) do
-    OrgRepo.delete(membership, org_id)
+  def delete_membership(%Membership{organization_id: organization_id} = membership) do
+    OrganizationRepo.delete(membership, organization_id)
   end
 
   @doc """
@@ -74,25 +74,26 @@ defmodule Horionos.Orgs.MembershipManagement do
   @doc """
   Checks if a user with the given email is already a member of the specified organization.
   """
-  @spec user_in_org?(Org.t(), String.t()) :: boolean()
+  @spec user_in_organization?(Organization.t(), String.t()) :: boolean()
   #
-  def user_in_org?(%Org{id: org_id}, email) do
+  def user_in_organization?(%Organization{id: organization_id}, email) do
     Repo.exists?(
       from m in Membership,
         join: u in User,
         on: m.user_id == u.id,
-        where: m.org_id == ^org_id and u.email == ^email
+        where: m.organization_id == ^organization_id and u.email == ^email
     )
   end
 
   @doc """
   Gets the user's role in an organization.
   """
-  @spec get_user_role(User.t(), Org.t()) :: {:ok, MembershipRole.t()} | {:error, :not_found}
-  def get_user_role(%User{id: user_id}, %Org{id: org_id}) do
+  @spec get_user_role(User.t(), Organization.t()) ::
+          {:ok, MembershipRole.t()} | {:error, :not_found}
+  def get_user_role(%User{id: user_id}, %Organization{id: organization_id}) do
     case Repo.one(
            from m in Membership,
-             where: m.user_id == ^user_id and m.org_id == ^org_id,
+             where: m.user_id == ^user_id and m.organization_id == ^organization_id,
              select: m.role
          ) do
       nil -> {:error, :not_found}

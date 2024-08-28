@@ -20,7 +20,8 @@ defmodule HorionosWeb.AnnouncementLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
     with :ok <- authorize_user_action(socket, :announcement_view),
-         {:ok, announcement} <- Announcements.get_announcement(socket.assigns.current_org, id) do
+         {:ok, announcement} <-
+           Announcements.get_announcement(socket.assigns.current_organization, id) do
       {:noreply,
        socket
        |> assign(:page_title, page_title(socket.assigns.live_action))
@@ -43,7 +44,8 @@ defmodule HorionosWeb.AnnouncementLive.Show do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     with :ok <- authorize_user_action(socket, :announcement_delete),
-         {:ok, announcement} <- Announcements.get_announcement(socket.assigns.current_org, id),
+         {:ok, announcement} <-
+           Announcements.get_announcement(socket.assigns.current_organization, id),
          {:ok, _deleted_announcement} <- Announcements.delete_announcement(announcement) do
       {:noreply,
        socket

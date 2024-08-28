@@ -145,7 +145,7 @@ defmodule HorionosWeb.FormComponents do
 
     * For live file uploads, see `Phoenix.Component.live_file_input/1`
 
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+  See https://developer.mozilla.organization/en-US/docs/Web/HTML/Element/input
   for more information. Unsupported types, such as hidden and radio,
   are best written directly in your templates.
 

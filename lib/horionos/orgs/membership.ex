@@ -1,4 +1,4 @@
-defmodule Horionos.Orgs.Membership do
+defmodule Horionos.Organizations.Membership do
   @moduledoc """
   Schema and changeset for managing memberships between users and organizations.
   """
@@ -6,15 +6,15 @@ defmodule Horionos.Orgs.Membership do
   use Ecto.Schema
   import Ecto.Changeset
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.{MembershipRole, Org}
+  alias Horionos.Organizations.{MembershipRole, Organization}
 
   @type t :: %__MODULE__{
           id: integer() | nil,
           role: MembershipRole.t() | nil,
           user: User.t() | Ecto.Association.NotLoaded.t(),
           user_id: integer() | nil,
-          org: Org.t() | Ecto.Association.NotLoaded.t(),
-          org_id: integer() | nil,
+          organization: Organization.t() | Ecto.Association.NotLoaded.t(),
+          organization_id: integer() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -23,7 +23,7 @@ defmodule Horionos.Orgs.Membership do
     field :role, Ecto.Enum, values: MembershipRole.all()
 
     belongs_to :user, User
-    belongs_to :org, Org
+    belongs_to :organization, Organization
 
     timestamps(type: :utc_datetime)
   end
@@ -44,12 +44,14 @@ defmodule Horionos.Orgs.Membership do
   #
   def changeset(membership, attrs) do
     membership
-    |> cast(attrs, [:role, :user_id, :org_id])
-    |> validate_required([:role, :user_id, :org_id])
+    |> cast(attrs, [:role, :user_id, :organization_id])
+    |> validate_required([:role, :user_id, :organization_id])
     |> validate_inclusion(:role, MembershipRole.all())
     |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:org_id)
-    |> unique_constraint([:user_id, :org_id], name: :memberships_user_id_org_id_index)
+    |> foreign_key_constraint(:organization_id)
+    |> unique_constraint([:user_id, :organization_id],
+      name: :memberships_user_id_organization_id_index
+    )
   end
 
   @doc """

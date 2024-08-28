@@ -3,7 +3,7 @@ defmodule Horionos.UserNotifications do
   Module to send user notifications.
   """
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.Invitation
+  alias Horionos.Organizations.Invitation
   alias Horionos.UserNotifications.Channels.Email
   alias Horionos.UserNotifications.Formatters.EmailFormatter
 
@@ -53,7 +53,7 @@ defmodule Horionos.UserNotifications do
       inviter: invitation.inviter,
       email: invitation.email,
       url: url,
-      org: invitation.org
+      organization: invitation.organization
     })
   end
 end

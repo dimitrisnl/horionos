@@ -1,6 +1,6 @@
 Hi <%= @email %>,
 
-You've been invited by <%= @inviter %> to join <%= @org %>.
+You've been invited by <%= @inviter %> to join <%= @organization %>.
 
 You can accept this invitation by visiting the URL below:
 

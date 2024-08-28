@@ -1,17 +1,17 @@
-defmodule HorionosWeb.OrgLive.Invitations do
+defmodule HorionosWeb.OrganizationLive.Invitations do
   use HorionosWeb, :live_view
   use HorionosWeb.LiveAuthorization
 
-  import HorionosWeb.OrgLive.Components.OrgNavigation
+  import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
-  alias Horionos.Orgs
-  alias Horionos.Orgs.Invitation
-  alias Horionos.Orgs.MembershipRole
+  alias Horionos.Organizations
+  alias Horionos.Organizations.Invitation
+  alias Horionos.Organizations.MembershipRole
 
   @impl true
   def render(assigns) do
     ~H"""
-    <.org_navigation title="Settings" active_tab={:organization_invitations} />
+    <.organization_navigation title="Settings" active_tab={:organization_invitations} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
@@ -102,14 +102,14 @@ defmodule HorionosWeb.OrgLive.Invitations do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_org = socket.assigns.current_org
-    form = to_form(Orgs.build_invitation_changeset(%Invitation{role: :member}))
+    current_organization = socket.assigns.current_organization
+    form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
 
-    with :ok <- authorize_user_action(socket, :org_invite_members),
-         {:ok, invitations} <- Orgs.list_org_invitations(current_org) do
+    with :ok <- authorize_user_action(socket, :organization_invite_members),
+         {:ok, invitations} <- Organizations.list_organization_invitations(current_organization) do
       socket =
         socket
-        |> assign(:current_org, current_org)
+        |> assign(:current_organization, current_organization)
         |> assign(:form, form)
         |> stream(:invitations, invitations)
 
@@ -127,28 +127,28 @@ defmodule HorionosWeb.OrgLive.Invitations do
 
   @impl true
   def handle_event("send_invitation", %{"invitation" => invitation_params}, socket) do
-    case authorize_user_action(socket, :org_invite_members) do
+    case authorize_user_action(socket, :organization_invite_members) do
       :ok ->
-        org = socket.assigns.current_org
+        organization = socket.assigns.current_organization
         inviter = socket.assigns.current_user
         email = invitation_params["email"]
         role = String.to_existing_atom(invitation_params["role"])
 
-        case Orgs.create_invitation(inviter, org, email, role) do
+        case Organizations.create_invitation(inviter, organization, email, role) do
           {:ok, invitation} ->
-            Orgs.send_invitation_email(invitation, &url(~p"/invitations/#{&1}/accept"))
+            Organizations.send_invitation_email(invitation, &url(~p"/invitations/#{&1}/accept"))
 
             {:noreply,
              socket
              |> put_flash(:info, "Invitation sent")
-             |> push_navigate(to: ~p"/org/invitations")}
+             |> push_navigate(to: ~p"/organization/invitations")}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, assign(socket, :form, to_form(changeset))}
         end
 
       {:error, :unauthorized} ->
-        form = to_form(Orgs.build_invitation_changeset(%Invitation{role: :member}))
+        form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
 
         {:noreply,
          socket
@@ -159,9 +159,9 @@ defmodule HorionosWeb.OrgLive.Invitations do
 
   @impl true
   def handle_event("delete_invitation", %{"id" => invitation_id}, socket) do
-    case authorize_user_action(socket, :org_invite_members) do
+    case authorize_user_action(socket, :organization_invite_members) do
       :ok ->
-        case Orgs.delete_invitation(invitation_id) do
+        case Organizations.delete_invitation(invitation_id) do
           {:ok, cancelled_invitation} ->
             {:noreply,
              socket

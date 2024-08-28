@@ -2,7 +2,7 @@ defmodule HorionosWeb.AnnouncementLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
   import Horionos.AnnouncementsFixtures
 
   alias Horionos.Announcements
@@ -15,19 +15,19 @@ defmodule HorionosWeb.AnnouncementLiveTest do
     setup [:register_and_log_in_user]
 
     setup %{user: user} do
-      org = org_fixture(%{user: user})
-      other_org = org_fixture(%{user: user})
-      %{user: user, org: org, other_org: other_org}
+      organization = organization_fixture(%{user: user})
+      other_organization = organization_fixture(%{user: user})
+      %{user: user, organization: organization, other_organization: other_organization}
     end
 
-    test "lists only announcements for the current org", %{
+    test "lists only announcements for the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
-      announcement1 = announcement_fixture(org)
-      announcement2 = announcement_fixture(org)
-      other_announcement = announcement_fixture(other_org)
+      announcement1 = announcement_fixture(organization)
+      announcement2 = announcement_fixture(organization)
+      other_announcement = announcement_fixture(other_organization)
 
       {:ok, _lv, html} = live(conn, ~p"/announcements")
 
@@ -37,10 +37,10 @@ defmodule HorionosWeb.AnnouncementLiveTest do
       refute html =~ other_announcement.title
     end
 
-    test "creates announcement and persists it in the current org", %{
+    test "creates announcement and persists it in the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
       {:ok, lv, _html} = live(conn, ~p"/announcements")
 
@@ -63,23 +63,23 @@ defmodule HorionosWeb.AnnouncementLiveTest do
       assert html =~ "Announcement created successfully"
       assert html =~ "some title"
 
-      # Verify the announcement is in the current org
-      announcements = Announcements.list_announcements(org)
+      # Verify the announcement is in the current organization
+      announcements = Announcements.list_announcements(organization)
       assert length(announcements) == 1
       [announcement] = announcements
       assert announcement.title == "some title"
-      assert announcement.org_id == org.id
+      assert announcement.organization_id == organization.id
 
-      # Verify the announcement is not in the other org
-      assert Announcements.list_announcements(other_org) == []
+      # Verify the announcement is not in the other organization
+      assert Announcements.list_announcements(other_organization) == []
     end
 
-    test "updates announcement within the current org", %{
+    test "updates announcement within the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
-      announcement = announcement_fixture(org)
+      announcement = announcement_fixture(organization)
 
       {:ok, lv, _html} = live(conn, ~p"/announcements")
 
@@ -104,22 +104,22 @@ defmodule HorionosWeb.AnnouncementLiveTest do
       assert html =~ "Announcement updated successfully"
       assert html =~ "some updated title"
 
-      # Verify the update is persisted in the current org
-      {:ok, updated_announcement} = Announcements.get_announcement(org, announcement.id)
+      # Verify the update is persisted in the current organization
+      {:ok, updated_announcement} = Announcements.get_announcement(organization, announcement.id)
       assert updated_announcement.title == "some updated title"
-      assert updated_announcement.org_id == org.id
+      assert updated_announcement.organization_id == organization.id
 
-      # Verify no changes in the other org
-      assert Announcements.list_announcements(other_org) == []
+      # Verify no changes in the other organization
+      assert Announcements.list_announcements(other_organization) == []
     end
 
-    test "deletes announcement from the current org", %{
+    test "deletes announcement from the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
-      announcement = announcement_fixture(org)
-      other_announcement = announcement_fixture(other_org)
+      announcement = announcement_fixture(organization)
+      other_announcement = announcement_fixture(other_organization)
 
       {:ok, lv, _html} = live(conn, ~p"/announcements")
 
@@ -129,39 +129,39 @@ defmodule HorionosWeb.AnnouncementLiveTest do
 
       refute has_element?(lv, "#announcement-#{announcement.id}")
 
-      # Verify the announcement is deleted from the current org
-      assert {:error, :not_found} = Announcements.get_announcement(org, announcement.id)
+      # Verify the announcement is deleted from the current organization
+      assert {:error, :not_found} = Announcements.get_announcement(organization, announcement.id)
 
-      # Verify the other org's announcement is untouched
-      assert {:ok, _} = Announcements.get_announcement(other_org, other_announcement.id)
+      # Verify the other organization's announcement is untouched
+      assert {:ok, _} = Announcements.get_announcement(other_organization, other_announcement.id)
     end
 
-    test "displays announcement for the current org", %{
+    test "displays announcement for the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
-      announcement = announcement_fixture(org)
-      other_announcement = announcement_fixture(other_org)
+      announcement = announcement_fixture(organization)
+      other_announcement = announcement_fixture(other_organization)
 
-      # Can view announcement from current org
+      # Can view announcement from current organization
       {:ok, _show_live, html} = live(conn, ~p"/announcements/#{announcement}")
       assert html =~ "Show Announcement"
       assert html =~ announcement.title
 
-      # Cannot view announcement from other org
+      # Cannot view announcement from other organization
       assert {:error,
               {:live_redirect,
                %{to: "/announcements", flash: %{"error" => "Announcement not found."}}}} =
                live(conn, ~p"/announcements/#{other_announcement}")
     end
 
-    test "updates announcement within modal for the current org", %{
+    test "updates announcement within modal for the current organization", %{
       conn: conn,
-      org: org,
-      other_org: other_org
+      organization: organization,
+      other_organization: other_organization
     } do
-      announcement = announcement_fixture(org)
+      announcement = announcement_fixture(organization)
 
       {:ok, show_live, _html} = live(conn, ~p"/announcements/#{announcement}")
 
@@ -184,13 +184,13 @@ defmodule HorionosWeb.AnnouncementLiveTest do
       assert html =~ "Announcement updated successfully"
       assert html =~ "some updated title"
 
-      # Verify the update is persisted in the current org
-      {:ok, updated_announcement} = Announcements.get_announcement(org, announcement.id)
+      # Verify the update is persisted in the current organization
+      {:ok, updated_announcement} = Announcements.get_announcement(organization, announcement.id)
       assert updated_announcement.title == "some updated title"
-      assert updated_announcement.org_id == org.id
+      assert updated_announcement.organization_id == organization.id
 
-      # Verify no changes in the other org
-      assert Announcements.list_announcements(other_org) == []
+      # Verify no changes in the other organization
+      assert Announcements.list_announcements(other_organization) == []
     end
 
     test "renders errors when trying to access non-existent announcement", %{conn: conn} do

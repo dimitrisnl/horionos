@@ -10,8 +10,8 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     case authorize_user_action(socket, :announcement_view) do
       :ok ->
         user = socket.assigns.current_user
-        org = socket.assigns.current_org
-        announcements = Announcements.list_announcements(org)
+        organization = socket.assigns.current_organization
+        announcements = Announcements.list_announcements(organization)
 
         socket =
           socket
@@ -37,9 +37,9 @@ defmodule HorionosWeb.AnnouncementLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     case authorize_user_action(socket, :announcement_edit) do
       :ok ->
-        org = socket.assigns.current_org
+        organization = socket.assigns.current_organization
 
-        case Announcements.get_announcement(org, id) do
+        case Announcements.get_announcement(organization, id) do
           {:ok, announcement} ->
             socket
             |> assign(:page_title, "Edit Announcement")
@@ -89,7 +89,8 @@ defmodule HorionosWeb.AnnouncementLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     with :ok <- authorize_user_action(socket, :announcement_delete),
-         {:ok, announcement} <- Announcements.get_announcement(socket.assigns.current_org, id),
+         {:ok, announcement} <-
+           Announcements.get_announcement(socket.assigns.current_organization, id),
          {:ok, _deleted_announcement} <- Announcements.delete_announcement(announcement) do
       {:noreply,
        socket

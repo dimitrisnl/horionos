@@ -16,7 +16,7 @@ defmodule HorionosWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
-    plug :fetch_current_org
+    plug :fetch_current_organization
   end
 
   # Development routes
@@ -63,16 +63,16 @@ defmodule HorionosWeb.Router do
       :require_authenticated_user,
       :require_email_verified,
       :require_unlocked_account,
-      :require_org
+      :require_organization
     ]
 
-    post "/org/select", OrgSessionController, :update
+    post "/organization/select", OrganizationSessionController, :update
     post "/users/clear_sessions", UserSessionController, :delete_other_sessions
 
-    live_session :authenticated_with_org,
+    live_session :authenticated_with_organization,
       on_mount: [
         {UserAuthLive, :ensure_authenticated},
-        {UserAuthLive, :ensure_current_org},
+        {UserAuthLive, :ensure_current_organization},
         {UserAuthLive, :redirect_if_locked},
         {LiveHelpers, :default}
       ] do
@@ -84,9 +84,9 @@ defmodule HorionosWeb.Router do
       live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
 
       # Organization management
-      live "/org", OrgLive.Index, :index
-      # live "/orgs/new", OrgLive.Index, :new
-      live "/org/invitations", OrgLive.Invitations, :index
+      live "/organization", OrganizationLive.Index, :index
+      # live "/organizations/new", OrganizationLive.Index, :new
+      live "/organization/invitations", OrganizationLive.Invitations, :index
 
       # Announcements
       live "/announcements", AnnouncementLive.Index, :index

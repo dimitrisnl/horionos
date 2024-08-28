@@ -10,7 +10,7 @@ defmodule HorionosWeb.UserAuthLive do
 
   alias Horionos.Accounts
   alias Horionos.Authorization
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   require Logger
 
@@ -31,9 +31,9 @@ defmodule HorionosWeb.UserAuthLive do
     * `:redirect_if_user_is_authenticated` - Authenticates the user from the session.
       Redirects to signed_in_path if there's a logged user.
 
-    * `:ensure_current_org` - Assigns the current_org to socket assigns based
-      on the current_org_id session. If there's no current_org_id session,
-      it assigns the primary org to the current_org.
+    * `:ensure_current_organization` - Assigns the current_organization to socket assigns based
+      on the current_organization_id session. If there's no current_organization_id session,
+      it assigns the primary organization to the current_organization.
 
     * `:redirect_if_locked` - Redirects to the login if the user is locked.
 
@@ -76,10 +76,10 @@ defmodule HorionosWeb.UserAuthLive do
   end
 
   # Ensures that the current organization is set. Redirects to onboarding if not.
-  def on_mount(:ensure_current_org, _params, session, socket) do
-    socket = mount_current_org(socket, session)
+  def on_mount(:ensure_current_organization, _params, session, socket) do
+    socket = mount_current_organization(socket, session)
 
-    if socket.assigns.current_org do
+    if socket.assigns.current_organization do
       {:cont, socket}
     else
       {:halt,
@@ -124,21 +124,23 @@ defmodule HorionosWeb.UserAuthLive do
     end)
   end
 
-  defp mount_current_org(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_org, fn ->
+  defp mount_current_organization(socket, session) do
+    Phoenix.Component.assign_new(socket, :current_organization, fn ->
       user = socket.assigns.current_user
-      org_id = session["current_org_id"]
-      do_get_current_org(user, org_id)
+      organization_id = session["current_organization_id"]
+      do_get_current_organization(user, organization_id)
     end)
   end
 
-  defp do_get_current_org(nil, _org_id), do: nil
-  defp do_get_current_org(user, nil), do: Orgs.get_user_primary_org(user)
+  defp do_get_current_organization(nil, _organization_id), do: nil
 
-  defp do_get_current_org(user, org_id) do
-    with {:ok, org} <- Orgs.get_org(org_id),
-         :ok <- Authorization.authorize(user, org, :org_view) do
-      org
+  defp do_get_current_organization(user, nil),
+    do: Organizations.get_user_primary_organization(user)
+
+  defp do_get_current_organization(user, organization_id) do
+    with {:ok, organization} <- Organizations.get_organization(organization_id),
+         :ok <- Authorization.authorize(user, organization, :organization_view) do
+      organization
     else
       _ -> nil
     end

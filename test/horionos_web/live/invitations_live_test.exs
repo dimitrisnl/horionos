@@ -1,12 +1,12 @@
-defmodule HorionosWeb.OrgLive.InvitationsTest do
+defmodule HorionosWeb.OrganizationLive.InvitationsTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
 
-  alias Horionos.Orgs
-  alias Horionos.Orgs.Membership
+  alias Horionos.Organizations
+  alias Horionos.Organizations.Membership
   alias Horionos.Repo
 
   describe "Invitations page" do
@@ -16,18 +16,18 @@ defmodule HorionosWeb.OrgLive.InvitationsTest do
       admin = user_fixture()
       member = user_fixture()
 
-      org = org_fixture(%{user: owner})
-      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
-      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
+      organization = organization_fixture(%{user: owner})
+      membership_fixture(%{user_id: admin.id, organization_id: organization.id, role: :admin})
+      membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
 
-      %{owner: owner, admin: admin, member: member, org: org}
+      %{owner: owner, admin: admin, member: member, organization: organization}
     end
 
-    test "renders invitation page", %{conn: conn, owner: owner, org: org} do
+    test "renders invitation page", %{conn: conn, owner: owner, organization: organization} do
       conn = log_in_user(conn, owner)
-      invitation = invitation_fixture(owner, org, "test@example.com")
+      invitation = invitation_fixture(owner, organization, "test@example.com")
 
-      {:ok, _view, html} = live(conn, ~p"/org/invitations")
+      {:ok, _view, html} = live(conn, ~p"/organization/invitations")
 
       assert html =~ "Invite a new member"
       assert html =~ "Invitations"
@@ -39,9 +39,9 @@ defmodule HorionosWeb.OrgLive.InvitationsTest do
       assert html =~ "Pending"
     end
 
-    test "can send a new invitation", %{conn: conn, owner: owner, org: org} do
+    test "can send a new invitation", %{conn: conn, owner: owner, organization: organization} do
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org/invitations")
+      {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       assert view
              |> form("#invitation_form",
@@ -49,10 +49,10 @@ defmodule HorionosWeb.OrgLive.InvitationsTest do
              )
              |> render_submit()
 
-      assert_redirect(view, ~p"/org/invitations")
+      assert_redirect(view, ~p"/organization/invitations")
 
       # Verify the invitation was created
-      {:ok, invitations} = Orgs.list_org_invitations(org)
+      {:ok, invitations} = Organizations.list_organization_invitations(organization)
       assert [invitation] = invitations
       assert invitation.email == "newinvite@example.com"
       assert invitation.role == :member
@@ -60,62 +60,78 @@ defmodule HorionosWeb.OrgLive.InvitationsTest do
 
     test "shows error for invalid invitation", %{conn: conn, owner: owner} do
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org/invitations")
+      {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       assert view
              |> form("#invitation_form", invitation: %{email: "invalid-email", role: "member"})
              |> render_submit() =~ "must have the @ sign and no spaces"
     end
 
-    test "can cancel a pending invitation", %{conn: conn, owner: owner, org: org} do
-      invitation = invitation_fixture(owner, org, "cancel@example.com")
+    test "can cancel a pending invitation", %{
+      conn: conn,
+      owner: owner,
+      organization: organization
+    } do
+      invitation = invitation_fixture(owner, organization, "cancel@example.com")
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org/invitations")
+      {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       assert view
              |> element("a", "Cancel")
              |> render_click()
 
       refute render(view) =~ "cancel@example.com"
-      assert is_nil(Orgs.get_pending_invitation_by_token(invitation.token))
+      assert is_nil(Organizations.get_pending_invitation_by_token(invitation.token))
     end
 
-    test "cannot cancel an accepted invitation", %{conn: conn, owner: owner, org: org} do
-      invitation = invitation_fixture(owner, org, "accepted@example.com")
+    test "cannot cancel an accepted invitation", %{
+      conn: conn,
+      owner: owner,
+      organization: organization
+    } do
+      invitation = invitation_fixture(owner, organization, "accepted@example.com")
 
-      Orgs.accept_invitation(invitation, %{
+      Organizations.accept_invitation(invitation, %{
         full_name: "Accepted User",
         password: valid_user_password()
       })
 
       conn = log_in_user(conn, owner)
-      {:ok, _view, html} = live(conn, ~p"/org/invitations")
+      {:ok, _view, html} = live(conn, ~p"/organization/invitations")
 
       assert html =~ "accepted@example.com"
       assert html =~ "Accepted"
       refute html =~ "Cancel"
     end
 
-    test "non-admin users cannot access invitations page", %{conn: conn, org: org} do
+    test "non-admin users cannot access invitations page", %{
+      conn: conn,
+      organization: organization
+    } do
       non_admin = user_fixture()
-      Orgs.create_membership(%{user_id: non_admin.id, org_id: org.id, role: :member})
+
+      Organizations.create_membership(%{
+        user_id: non_admin.id,
+        organization_id: organization.id,
+        role: :member
+      })
 
       conn = log_in_user(conn, non_admin)
 
       assert {:error,
               {:live_redirect,
                %{to: "/", flash: %{"error" => "You are not authorized to view this page"}}}} =
-               live(conn, ~p"/org/invitations")
+               live(conn, ~p"/organization/invitations")
     end
 
     test "handles unauthorized invitation creation", %{conn: conn, owner: owner} do
       # Simulate a scenario where the owner loses admin rights after loading the page
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org/invitations")
+      {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       # Remove admin rights
       membership = Repo.get_by(Membership, user_id: owner.id)
-      Orgs.update_membership(membership, %{role: :member})
+      Organizations.update_membership(membership, %{role: :member})
 
       assert view
              |> form("#invitation_form",
@@ -124,16 +140,20 @@ defmodule HorionosWeb.OrgLive.InvitationsTest do
              |> render_submit() =~ "You are not authorized to invite users to this organization"
     end
 
-    test "handles unauthorized invitation cancelation", %{conn: conn, owner: owner, org: org} do
-      invitation_fixture(owner, org, "example@test/com")
+    test "handles unauthorized invitation cancelation", %{
+      conn: conn,
+      owner: owner,
+      organization: organization
+    } do
+      invitation_fixture(owner, organization, "example@test/com")
 
       conn = log_in_user(conn, owner)
-      {:ok, view, _html} = live(conn, ~p"/org/invitations")
+      {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       # Remove admin rights
       membership = Repo.get_by(Membership, user_id: owner.id)
 
-      Orgs.update_membership(membership, %{role: :member})
+      Organizations.update_membership(membership, %{role: :member})
 
       assert view
              |> element("a", "Cancel")

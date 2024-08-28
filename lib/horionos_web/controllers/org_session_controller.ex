@@ -1,25 +1,25 @@
-defmodule HorionosWeb.OrgSessionController do
-  alias Horionos.Orgs
+defmodule HorionosWeb.OrganizationSessionController do
+  alias Horionos.Organizations
   use HorionosWeb, :controller
   require Logger
 
   alias Horionos.Authorization
 
-  def update(conn, %{"org_id" => org_id}) do
-    current_org_id = get_session(conn, :current_org_id)
+  def update(conn, %{"organization_id" => organization_id}) do
+    current_organization_id = get_session(conn, :current_organization_id)
     current_user = conn.assigns.current_user
 
-    with {:ok, next_org_id} <- validate_org_id(org_id),
-         :ok <- org_changed?(current_org_id, next_org_id),
-         {:ok, org} <- Orgs.get_org(to_string(next_org_id)),
-         :ok <- Authorization.authorize(current_user, org, :org_view) do
+    with {:ok, next_organization_id} <- validate_organization_id(organization_id),
+         :ok <- organization_changed?(current_organization_id, next_organization_id),
+         {:ok, organization} <- Organizations.get_organization(to_string(next_organization_id)),
+         :ok <- Authorization.authorize(current_user, organization, :organization_view) do
       conn
       |> configure_session(renew: true)
-      |> put_session(:current_org_id, next_org_id)
-      |> put_flash(:info, "Switched to #{org.title}")
+      |> put_session(:current_organization_id, next_organization_id)
+      |> put_flash(:info, "Switched to #{organization.title}")
       |> redirect(to: "/")
     else
-      {:error, :invalid_org_id} ->
+      {:error, :invalid_organization_id} ->
         conn
         |> put_flash(:error, "Invalid organization selected")
         |> redirect(to: "/")
@@ -35,7 +35,9 @@ defmodule HorionosWeb.OrgSessionController do
         |> redirect(to: "/")
 
       {:error, :unauthorized} ->
-        Logger.error("User #{current_user.id} tried to switch to org #{org_id} without access")
+        Logger.error(
+          "User #{current_user.id} tried to switch to organization #{organization_id} without access"
+        )
 
         conn
         |> put_flash(:error, "Organization not found")
@@ -43,19 +45,21 @@ defmodule HorionosWeb.OrgSessionController do
     end
   end
 
-  defp validate_org_id(org_id) when is_binary(org_id) do
-    case Integer.parse(org_id) do
+  defp validate_organization_id(organization_id) when is_binary(organization_id) do
+    case Integer.parse(organization_id) do
       {id, ""} -> {:ok, id}
-      _ -> {:error, :invalid_org_id}
+      _ -> {:error, :invalid_organization_id}
     end
   end
 
-  defp validate_org_id(org_id) when is_integer(org_id), do: {:ok, org_id}
+  defp validate_organization_id(organization_id) when is_integer(organization_id),
+    do: {:ok, organization_id}
 
-  defp validate_org_id(_), do: {:error, :invalid_org_id}
+  defp validate_organization_id(_), do: {:error, :invalid_organization_id}
 
-  defp org_changed?(current_org_id, next_org_id) when current_org_id == next_org_id,
-    do: {:error, :no_change}
+  defp organization_changed?(current_organization_id, next_organization_id)
+       when current_organization_id == next_organization_id,
+       do: {:error, :no_change}
 
-  defp org_changed?(_, _), do: :ok
+  defp organization_changed?(_, _), do: :ok
 end

@@ -8,14 +8,14 @@
             <h1 class="select-none text-lg font-bold leading-6 text-gray-900">Horionos</h1>
           </div>
           <button
-            popovertarget="org-menu"
+            popovertarget="organization-menu"
             type="button"
             class="text-base/6 flex w-full items-center gap-3 rounded-xl bg-white px-2 py-2.5 text-left font-medium text-gray-950 ring-1 ring-black ring-opacity-5 hover:bg-gray-950/5 active:bg-gray-950/5 dark:text-white dark:hover:bg-white/5 dark:active:bg-white/5 sm:text-sm/5 sm:py-2"
           >
             <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
-              <%= @current_org |> Map.get(:title) |> String.first() |> String.upcase() %>
+              <%= @current_organization |> Map.get(:title) |> String.first() |> String.upcase() %>
             </span>
-            <span class="truncate"><%= @current_org |> Map.get(:title) %></span>
+            <span class="truncate"><%= @current_organization |> Map.get(:title) %></span>
             <.icon
               name="hero-chevron-down-solid"
               class="size-4 shrink-0 text-gray-500 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white ml-auto"
@@ -24,14 +24,14 @@
 
           <div
             popover
-            id="org-menu"
+            id="organization-menu"
             class="w-64 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
           >
             <.live_component
-              module={HorionosWeb.OrgSelectorComponent}
-              id="org-switcher"
-              orgs={@orgs}
-              current_org={@current_org}
+              module={HorionosWeb.OrganizationSelectorComponent}
+              id="organization-switcher"
+              organizations={@organizations}
+              current_organization={@current_organization}
             />
           </div>
         </div>
@@ -97,7 +97,7 @@
                 /> Settings
               </.link>
               <.link
-                href={~p"/org"}
+                href={~p"/organization"}
                 class="block px-2 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <.icon
@@ -147,11 +147,11 @@
     margin-top: 0.5rem;
   }
 
-  #org-menu {
+  #organization-menu {
     display: none;
   }
 
-  #org-menu:popover-open {
+  #organization-menu:popover-open {
     display: block;
     position: absolute;
     inset: unset;

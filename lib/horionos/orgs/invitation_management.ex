@@ -1,4 +1,4 @@
-defmodule Horionos.Orgs.InvitationManagement do
+defmodule Horionos.Organizations.InvitationManagement do
   @moduledoc """
   This module provides functions for managing invitations.
   """
@@ -6,22 +6,22 @@ defmodule Horionos.Orgs.InvitationManagement do
 
   alias Horionos.Accounts
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.{Invitation, Membership, MembershipRole, Org}
-  alias Horionos.Orgs.MembershipManagement
+  alias Horionos.Organizations.{Invitation, Membership, MembershipRole, Organization}
+  alias Horionos.Organizations.MembershipManagement
   alias Horionos.Repo
   alias Horionos.UserNotifications
 
   @doc """
   Creates an invitation for a user to join an organization.
   """
-  @spec create_invitation(User.t(), Org.t(), String.t(), MembershipRole.t()) ::
+  @spec create_invitation(User.t(), Organization.t(), String.t(), MembershipRole.t()) ::
           {:ok, Invitation.t()}
           | {:error, Ecto.Changeset.t()}
           | {:error, :already_member}
           | {:error, :invalid_role}
-  def create_invitation(inviter, org, email, role) do
+  def create_invitation(inviter, organization, email, role) do
     cond do
-      MembershipManagement.user_in_org?(org, email) ->
+      MembershipManagement.user_in_organization?(organization, email) ->
         {:error, :already_member}
 
       role not in MembershipRole.assignable() ->
@@ -34,7 +34,7 @@ defmodule Horionos.Orgs.InvitationManagement do
           token: Invitation.generate_token(),
           role: role,
           inviter_id: inviter.id,
-          org_id: org.id
+          organization_id: organization.id
         })
         |> Repo.insert()
     end
@@ -48,7 +48,7 @@ defmodule Horionos.Orgs.InvitationManagement do
     Invitation
     |> where([i], i.token == ^token)
     |> where([i], is_nil(i.accepted_at))
-    |> preload([:org, :inviter])
+    |> preload([:organization, :inviter])
     |> Repo.one()
   end
 
@@ -71,7 +71,7 @@ defmodule Horionos.Orgs.InvitationManagement do
       |> Ecto.Multi.run(:membership, fn _repo, %{user: user} ->
         MembershipManagement.create_membership(%{
           user_id: user.id,
-          org_id: invitation.org_id,
+          organization_id: invitation.organization_id,
           role: invitation.role
         })
       end)
@@ -87,19 +87,19 @@ defmodule Horionos.Orgs.InvitationManagement do
   @spec send_invitation_email(Invitation.t(), (String.t() -> String.t())) ::
           {:ok, Invitation.t()} | {:error, any()}
   def send_invitation_email(%Invitation{} = invitation, url_fn) do
-    invitation = Repo.preload(invitation, [:inviter, :org])
+    invitation = Repo.preload(invitation, [:inviter, :organization])
     UserNotifications.deliver_invitation(invitation, url_fn.(invitation.token))
     {:ok, invitation}
   end
 
   @doc """
-  Lists invitations for a given org.
+  Lists invitations for a given organization.
   """
-  @spec list_org_invitations(Org.t()) :: {:ok, [Invitation.t()]}
-  def list_org_invitations(%Org{id: org_id}) do
+  @spec list_organization_invitations(Organization.t()) :: {:ok, [Invitation.t()]}
+  def list_organization_invitations(%Organization{id: organization_id}) do
     invitations =
       Invitation
-      |> where([i], i.org_id == ^org_id)
+      |> where([i], i.organization_id == ^organization_id)
       |> preload([:inviter])
       |> Repo.all()
 

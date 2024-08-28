@@ -6,14 +6,14 @@ defmodule Horionos.Announcements.Announcement do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Horionos.Orgs.Org
+  alias Horionos.Organizations.Organization
 
   @type t :: %__MODULE__{
           id: integer() | nil,
           title: String.t(),
           body: String.t(),
-          org: Org.t() | Ecto.Association.NotLoaded.t(),
-          org_id: integer() | nil,
+          organization: Organization.t() | Ecto.Association.NotLoaded.t(),
+          organization_id: integer() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -21,7 +21,7 @@ defmodule Horionos.Announcements.Announcement do
   schema "announcements" do
     field :title, :string
     field :body, :string
-    belongs_to :org, Org
+    belongs_to :organization, Organization
 
     timestamps(type: :utc_datetime)
   end
@@ -31,10 +31,10 @@ defmodule Horionos.Announcements.Announcement do
   """
   def changeset(announcement, attrs) do
     announcement
-    |> cast(attrs, [:title, :body, :org_id])
-    |> validate_required([:title, :body, :org_id])
+    |> cast(attrs, [:title, :body, :organization_id])
+    |> validate_required([:title, :body, :organization_id])
     |> validate_length(:title, max: 255)
     |> validate_length(:body, max: 10_000)
-    |> foreign_key_constraint(:org_id)
+    |> foreign_key_constraint(:organization_id)
   end
 end

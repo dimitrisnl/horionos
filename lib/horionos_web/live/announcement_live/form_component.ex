@@ -34,7 +34,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:org_id, assigns.current_org.id)
+     |> assign(:organization_id, assigns.current_organization.id)
      |> assign_form(changeset)}
   end
 
@@ -79,9 +79,13 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
   defp save_announcement(socket, :new, announcement_params) do
     case authorize_user_action(socket, :announcement_create) do
       :ok ->
-        params_with_org_id = Map.put(announcement_params, "org_id", socket.assigns.org_id)
+        params_with_organization_id =
+          Map.put(announcement_params, "organization_id", socket.assigns.organization_id)
 
-        case Announcements.create_announcement(socket.assigns.current_org, params_with_org_id) do
+        case Announcements.create_announcement(
+               socket.assigns.current_organization,
+               params_with_organization_id
+             ) do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 

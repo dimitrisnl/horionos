@@ -16,7 +16,7 @@ defmodule HorionosWeb.LiveAuthorization do
   def authorize_user_action(socket, permission) do
     Authorization.authorize(
       socket.assigns.current_user,
-      socket.assigns.current_org,
+      socket.assigns.current_organization,
       permission
     )
   end

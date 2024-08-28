@@ -7,19 +7,19 @@ defmodule Horionos.Authorization do
 
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
-  alias Horionos.Orgs
-  alias Horionos.Orgs.Org
+  alias Horionos.Organizations
+  alias Horionos.Organizations.Organization
   alias Horionos.Repo
 
   @type error :: :unauthorized | :invalid_resource | :role_not_found
 
   @permissions %{
-    # Org permissions
-    org_view: [:member, :admin, :owner],
-    org_edit: [:admin, :owner],
-    org_delete: [:owner],
-    org_invite_members: [:admin, :owner],
-    org_manage_members: [:admin, :owner],
+    # Organization permissions
+    organization_view: [:member, :admin, :owner],
+    organization_edit: [:admin, :owner],
+    organization_delete: [:owner],
+    organization_invite_members: [:admin, :owner],
+    organization_manage_members: [:admin, :owner],
 
     # Announcement permissions
     announcement_view: [:member, :admin, :owner],
@@ -29,11 +29,11 @@ defmodule Horionos.Authorization do
   }
 
   @type permission ::
-          :org_view
-          | :org_edit
-          | :org_delete
-          | :org_invite_members
-          | :org_manage_members
+          :organization_view
+          | :organization_edit
+          | :organization_delete
+          | :organization_invite_members
+          | :organization_manage_members
           | :announcement_view
           | :announcement_create
           | :announcement_edit
@@ -45,8 +45,8 @@ defmodule Horionos.Authorization do
   @spec authorize(User.t(), resource :: struct(), permission()) ::
           :ok | {:error, error()}
   def authorize(user, resource, permission) do
-    with {:ok, org} <- get_org_from_resource(resource),
-         {:ok, role} <- Orgs.get_user_role(user, org),
+    with {:ok, organization} <- get_organization_from_resource(resource),
+         {:ok, role} <- Organizations.get_user_role(user, organization),
          true <- has_permission?(role, permission) do
       :ok
     else
@@ -68,15 +68,15 @@ defmodule Horionos.Authorization do
 
   # Private functions
 
-  defp get_org_from_resource(resource) do
+  def get_organization_from_resource(resource) do
     case resource do
-      %Org{} = org -> {:ok, org}
-      %{org_id: org_id} -> {:ok, Repo.get(Org, org_id)}
+      %Organization{} = organization -> {:ok, organization}
+      %{organization_id: organization_id} -> {:ok, Repo.get(Organization, organization_id)}
       _ -> {:error, :invalid_resource}
     end
   end
 
-  defp has_permission?(role, permission) do
+  def has_permission?(role, permission) do
     allowed_roles = @permissions[permission] || []
     role in allowed_roles
   end

@@ -3,22 +3,26 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
-  import Horionos.OrgsFixtures
+  import Horionos.OrganizationsFixtures
 
-  alias Horionos.Orgs
+  alias Horionos.Organizations
 
   describe "Accept Invitation" do
     setup do
       owner = user_fixture()
-      org = org_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, org, "new_user@example.com")
-      %{owner: owner, org: org, invitation: invitation}
+      organization = organization_fixture(%{user: owner})
+      invitation = invitation_fixture(owner, organization, "new_user@example.com")
+      %{owner: owner, organization: organization, invitation: invitation}
     end
 
-    test "renders invitation accept page", %{conn: conn, invitation: invitation, org: org} do
+    test "renders invitation accept page", %{
+      conn: conn,
+      invitation: invitation,
+      organization: organization
+    } do
       {:ok, _lv, html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
       assert html =~ "Accept Invitation"
-      assert html =~ org.title
+      assert html =~ organization.title
     end
 
     test "allows a new user to accept invitation", %{conn: conn, invitation: invitation} do
@@ -62,7 +66,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
     end
 
     test "shows error for already accepted invitation", %{conn: conn, invitation: invitation} do
-      Orgs.accept_invitation(invitation, %{
+      Organizations.accept_invitation(invitation, %{
         full_name: "Test User",
         password: valid_user_password()
       })
@@ -89,7 +93,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
 
     test "handles invitation acceptance failure", %{conn: conn, invitation: invitation} do
       # Simulate a failure in accepting the invitation
-      Orgs.accept_invitation(invitation, %{
+      Organizations.accept_invitation(invitation, %{
         full_name: "Test User",
         password: valid_user_password()
       })

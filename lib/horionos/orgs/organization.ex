@@ -1,4 +1,4 @@
-defmodule Horionos.Orgs.Org do
+defmodule Horionos.Organizations.Organization do
   @moduledoc """
   Schema and functions for managing organizations in Horionos.
   An organization can have multiple members through memberships.
@@ -8,7 +8,7 @@ defmodule Horionos.Orgs.Org do
   import Ecto.Changeset
 
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.Membership
+  alias Horionos.Organizations.Membership
   alias Horionos.Repo
 
   @type t :: %__MODULE__{
@@ -20,7 +20,7 @@ defmodule Horionos.Orgs.Org do
           updated_at: DateTime.t() | nil
         }
 
-  schema "orgs" do
+  schema "organizations" do
     field :title, :string
     field :slug, :string
 
@@ -35,7 +35,7 @@ defmodule Horionos.Orgs.Org do
 
   ## Parameters
 
-    - org: The organization struct to change
+    - organization: The organization struct to change
     - attrs: The attributes to apply to the organization
 
   ## Returns
@@ -43,8 +43,8 @@ defmodule Horionos.Orgs.Org do
     A changeset.
   """
   @spec changeset(t() | %__MODULE__{}, map()) :: Ecto.Changeset.t()
-  def changeset(org, attrs) do
-    org
+  def changeset(organization, attrs) do
+    organization
     |> cast(attrs, [:title])
     |> validate_required([:title])
     |> validate_length(:title, min: 2, max: 255)
@@ -57,7 +57,7 @@ defmodule Horionos.Orgs.Org do
 
   ## Parameters
 
-    - org: The organization struct
+    - organization: The organization struct
     - user: The user struct to add
     - role: The role of the user in the organization (default: :member)
 
@@ -67,16 +67,16 @@ defmodule Horionos.Orgs.Org do
   """
   @spec add_user_changeset(t(), User.t(), atom()) :: Ecto.Changeset.t()
   #
-  def add_user_changeset(org, user, role) do
-    org
+  def add_user_changeset(organization, user, role) do
+    organization
     |> change()
     |> put_assoc(:memberships, [%Membership{user_id: user.id, role: role}])
   end
 
   @spec add_user_changeset(t(), User.t()) :: Ecto.Changeset.t()
   #
-  def add_user_changeset(org, user) do
-    add_user_changeset(org, user, :member)
+  def add_user_changeset(organization, user) do
+    add_user_changeset(organization, user, :member)
   end
 
   # Private functions
@@ -104,7 +104,7 @@ defmodule Horionos.Orgs.Org do
       nil ->
         {:ok, slug}
 
-      _org ->
+      _organization ->
         if attempt < 100 do
           find_unique_slug(base_slug, attempt + 1)
         else
