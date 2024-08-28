@@ -1,5 +1,6 @@
 defmodule HorionosWeb.OrgLive.Index do
   use HorionosWeb, :live_view
+  use HorionosWeb.LiveAuthorization
 
   import HorionosWeb.OrgLive.Components.OrgNavigation
 
@@ -94,51 +95,49 @@ defmodule HorionosWeb.OrgLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_user = socket.assigns.current_user
-    current_org = socket.assigns.current_org
+    with :ok <- authorize_user_action(socket, :org_manage_members),
+         {:ok, org} <- Orgs.get_org(socket.assigns.current_org.id),
+         {:ok, memberships} <- Orgs.list_org_memberships(org) do
+      changeset = Orgs.build_org_changeset(org)
 
-    case Orgs.get_org(current_user, current_org.id) do
+      {:ok,
+       socket
+       |> assign(:org, org)
+       |> assign(:form, to_form(changeset))
+       |> stream(:memberships, memberships), layout: {HorionosWeb.Layouts, :dashboard}}
+    else
       {:error, :unauthorized} ->
         {:ok,
          socket
          |> put_flash(:error, "You are not authorized to access this page.")
          |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
 
-      {:ok, org} ->
-        case Orgs.list_org_memberships(current_user, org) do
-          {:ok, memberships} ->
-            changeset = Orgs.build_org_changeset(org)
-
-            {:ok,
-             socket
-             |> assign(:org, org)
-             |> assign(:form, to_form(changeset))
-             |> stream(:memberships, memberships), layout: {HorionosWeb.Layouts, :dashboard}}
-
-          {:error, :unauthorized} ->
-            {:ok,
-             socket
-             |> put_flash(:error, "You are not authorized to view this organization.")
-             |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
-        end
+      {:error, _} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Unable to load organization details.")
+         |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
     end
   end
 
   @impl true
   def handle_event("save", %{"org" => org_params}, socket) do
-    user = socket.assigns.current_user
-    org = socket.assigns.org
+    case authorize_user_action(socket, :org_edit) do
+      :ok ->
+        org = socket.assigns.org
 
-    case Orgs.update_org(user, org, org_params) do
-      {:ok, updated_org} ->
-        {:noreply,
-         socket
-         |> assign(:org, updated_org)
-         |> assign(:form, to_form(Orgs.build_org_changeset(updated_org)))
-         |> put_flash(:info, "Organization updated successfully")}
+        case Orgs.update_org(org, org_params) do
+          {:ok, updated_org} ->
+            {:noreply,
+             socket
+             |> assign(:org, updated_org)
+             |> assign(:current_org, updated_org)
+             |> assign(:form, to_form(Orgs.build_org_changeset(updated_org)))
+             |> put_flash(:info, "Organization updated successfully")}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset))}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign(socket, :form, to_form(changeset))}
+        end
 
       {:error, :unauthorized} ->
         {:noreply,
@@ -149,20 +148,27 @@ defmodule HorionosWeb.OrgLive.Index do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    org = socket.assigns.org
-    user = socket.assigns.current_user
+    case authorize_user_action(socket, :org_delete) do
+      :ok ->
+        org = socket.assigns.org
 
-    case Orgs.delete_org(user, org) do
-      {:ok, _deleted_org} ->
+        case Orgs.delete_org(org) do
+          {:ok, _deleted_org} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Organization deleted successfully.")
+             |> push_navigate(to: ~p"/")}
+
+          {:error, _} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to delete organization.")}
+        end
+
+      {:error, :unauthorized} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Organization deleted successfully.")
-         |> push_navigate(to: ~p"/")}
-
-      {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to delete organization.")}
+         |> put_flash(:error, "You are not authorized to delete this organization.")}
     end
   end
 end

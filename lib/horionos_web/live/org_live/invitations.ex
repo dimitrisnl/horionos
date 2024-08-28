@@ -1,5 +1,6 @@
 defmodule HorionosWeb.OrgLive.Invitations do
   use HorionosWeb, :live_view
+  use HorionosWeb.LiveAuthorization
 
   import HorionosWeb.OrgLive.Components.OrgNavigation
 
@@ -83,7 +84,7 @@ defmodule HorionosWeb.OrgLive.Invitations do
               <%= if is_nil(invitation.accepted_at) do %>
                 <.link
                   phx-click={
-                    JS.push("cancel_invitation", value: %{id: invitation.id}) |> hide("##{id}")
+                    JS.push("delete_invitation", value: %{id: invitation.id}) |> hide("##{id}")
                   }
                   data-confirm="Are you sure you want to cancel this invitation?"
                   class="text-rose-600"
@@ -101,21 +102,20 @@ defmodule HorionosWeb.OrgLive.Invitations do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
     form = to_form(Orgs.build_invitation_changeset(%Invitation{role: :member}))
 
-    case Orgs.list_org_invitations(current_user, current_org) do
-      {:ok, invitations} ->
-        socket =
-          socket
-          |> assign(:current_org, current_org)
-          |> assign(:form, form)
-          |> stream(:invitations, invitations)
+    with :ok <- authorize_user_action(socket, :org_invite_members),
+         {:ok, invitations} <- Orgs.list_org_invitations(current_org) do
+      socket =
+        socket
+        |> assign(:current_org, current_org)
+        |> assign(:form, form)
+        |> stream(:invitations, invitations)
 
-        {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
-
-      {:error, _} ->
+      {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    else
+      {:error, :unauthorized} ->
         socket =
           socket
           |> put_flash(:error, "You are not authorized to view this page")
@@ -127,22 +127,25 @@ defmodule HorionosWeb.OrgLive.Invitations do
 
   @impl true
   def handle_event("send_invitation", %{"invitation" => invitation_params}, socket) do
-    org = socket.assigns.current_org
-    inviter = socket.assigns.current_user
-    email = invitation_params["email"]
-    role = String.to_existing_atom(invitation_params["role"])
+    case authorize_user_action(socket, :org_invite_members) do
+      :ok ->
+        org = socket.assigns.current_org
+        inviter = socket.assigns.current_user
+        email = invitation_params["email"]
+        role = String.to_existing_atom(invitation_params["role"])
 
-    case Orgs.create_invitation(inviter, org, email, role) do
-      {:ok, invitation} ->
-        Orgs.send_invitation_email(invitation, &url(~p"/invitations/#{&1}/accept"))
+        case Orgs.create_invitation(inviter, org, email, role) do
+          {:ok, invitation} ->
+            Orgs.send_invitation_email(invitation, &url(~p"/invitations/#{&1}/accept"))
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Invitation sent")
-         |> push_navigate(to: ~p"/org/invitations")}
+            {:noreply,
+             socket
+             |> put_flash(:info, "Invitation sent")
+             |> push_navigate(to: ~p"/org/invitations")}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset))}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign(socket, :form, to_form(changeset))}
+        end
 
       {:error, :unauthorized} ->
         form = to_form(Orgs.build_invitation_changeset(%Invitation{role: :member}))
@@ -155,26 +158,26 @@ defmodule HorionosWeb.OrgLive.Invitations do
   end
 
   @impl true
-  def handle_event("cancel_invitation", %{"id" => invitation_id}, socket) do
-    current_org = socket.assigns.current_org
-    current_user = socket.assigns.current_user
+  def handle_event("delete_invitation", %{"id" => invitation_id}, socket) do
+    case authorize_user_action(socket, :org_invite_members) do
+      :ok ->
+        case Orgs.delete_invitation(invitation_id) do
+          {:ok, cancelled_invitation} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Invitation cancelled successfully")
+             |> stream_delete(:invitations, cancelled_invitation)}
 
-    case Orgs.cancel_invitation(current_user, current_org, invitation_id) do
-      {:ok, cancelled_invitation} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Invitation cancelled successfully")
-         |> stream_delete(:invitations, cancelled_invitation)}
+          {:error, _changeset} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to cancel invitation")}
+        end
 
       {:error, :unauthorized} ->
         {:noreply,
          socket
          |> put_flash(:error, "You are not authorized to cancel this invitation")}
-
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to cancel invitation")}
     end
   end
 end

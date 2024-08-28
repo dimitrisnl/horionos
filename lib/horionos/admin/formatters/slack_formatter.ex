@@ -13,4 +13,13 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
   def format(:user_joined_org, %{user: user, org: org, role: role, inviter: inviter}) do
     "👥 User joined organization: #{user.full_name} (#{user.email}) joined #{org.title} as #{role}, invited by #{inviter.full_name} (#{inviter.email})"
   end
+
+  def format(:authorization_error, %{
+        user: user,
+        resource: resource,
+        permission: permission,
+        error: error
+      }) do
+    "⚠️ Authorization error: #{user.full_name} (#{user.email}) tried to '#{permission}' on #{inspect(resource)} but failed with error: #{inspect(error)}"
+  end
 end

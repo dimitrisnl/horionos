@@ -12,12 +12,15 @@ defmodule Horionos.Orgs.MembershipManagement do
   @doc """
   Lists memberships for a given org.
   """
-  @spec list_org_memberships(Org.t()) :: [Membership.t()]
+  @spec list_org_memberships(Org.t()) :: {:ok, [Membership.t()]}
   def list_org_memberships(%Org{id: org_id}) do
-    Membership
-    |> where([m], m.org_id == ^org_id)
-    |> preload(:user)
-    |> Repo.all()
+    memberships =
+      Membership
+      |> where([m], m.org_id == ^org_id)
+      |> preload(:user)
+      |> Repo.all()
+
+    {:ok, memberships}
   end
 
   @doc """
@@ -25,9 +28,13 @@ defmodule Horionos.Orgs.MembershipManagement do
   """
   @spec create_membership(map()) :: {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
   def create_membership(attrs) do
-    %Membership{}
-    |> Membership.changeset(attrs)
-    |> OrgRepo.insert(attrs.org_id)
+    if MembershipRole.valid?(attrs.role) && attrs.role in MembershipRole.assignable() do
+      %Membership{}
+      |> Membership.changeset(attrs)
+      |> OrgRepo.insert(attrs.org_id)
+    else
+      {:error, :invalid_role}
+    end
   end
 
   @doc """
@@ -81,8 +88,8 @@ defmodule Horionos.Orgs.MembershipManagement do
   @doc """
   Gets the user's role in an organization.
   """
-  @spec get_user_role(integer(), integer()) :: {:ok, MembershipRole.t()} | {:error, :not_found}
-  def get_user_role(user_id, org_id) do
+  @spec get_user_role(User.t(), Org.t()) :: {:ok, MembershipRole.t()} | {:error, :not_found}
+  def get_user_role(%User{id: user_id}, %Org{id: org_id}) do
     case Repo.one(
            from m in Membership,
              where: m.user_id == ^user_id and m.org_id == ^org_id,

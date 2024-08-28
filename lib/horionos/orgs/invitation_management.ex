@@ -15,20 +15,28 @@ defmodule Horionos.Orgs.InvitationManagement do
   Creates an invitation for a user to join an organization.
   """
   @spec create_invitation(User.t(), Org.t(), String.t(), MembershipRole.t()) ::
-          {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, Invitation.t()}
+          | {:error, Ecto.Changeset.t()}
+          | {:error, :already_member}
+          | {:error, :invalid_role}
   def create_invitation(inviter, org, email, role) do
-    if role in MembershipRole.assignable() do
-      %Invitation{}
-      |> Invitation.changeset(%{
-        email: email,
-        token: Invitation.generate_token(),
-        role: role,
-        inviter_id: inviter.id,
-        org_id: org.id
-      })
-      |> Repo.insert()
-    else
-      {:error, :invalid_role}
+    cond do
+      MembershipManagement.user_in_org?(org, email) ->
+        {:error, :already_member}
+
+      role not in MembershipRole.assignable() ->
+        {:error, :invalid_role}
+
+      true ->
+        %Invitation{}
+        |> Invitation.changeset(%{
+          email: email,
+          token: Invitation.generate_token(),
+          role: role,
+          inviter_id: inviter.id,
+          org_id: org.id
+        })
+        |> Repo.insert()
     end
   end
 
@@ -87,12 +95,15 @@ defmodule Horionos.Orgs.InvitationManagement do
   @doc """
   Lists invitations for a given org.
   """
-  @spec list_org_invitations(Org.t()) :: [Invitation.t()]
+  @spec list_org_invitations(Org.t()) :: {:ok, [Invitation.t()]}
   def list_org_invitations(%Org{id: org_id}) do
-    Invitation
-    |> where([i], i.org_id == ^org_id)
-    |> preload([:inviter])
-    |> Repo.all()
+    invitations =
+      Invitation
+      |> where([i], i.org_id == ^org_id)
+      |> preload([:inviter])
+      |> Repo.all()
+
+    {:ok, invitations}
   end
 
   @doc """
@@ -104,11 +115,11 @@ defmodule Horionos.Orgs.InvitationManagement do
   end
 
   @doc """
-  Cancels an invitation.
+  Delete an invitation.
   """
-  @spec cancel_invitation(integer()) ::
+  @spec delete_invitation(integer()) ::
           {:ok, Invitation.t()} | {:error, Ecto.Changeset.t()} | {:error, :not_found}
-  def cancel_invitation(invitation_id) do
+  def delete_invitation(invitation_id) do
     case Repo.get(Invitation, invitation_id) do
       nil -> {:error, :not_found}
       invitation -> Repo.delete(invitation)

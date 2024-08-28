@@ -56,17 +56,18 @@ defmodule Horionos.Orgs.OrganizationManagement do
     |> Repo.all()
   end
 
-  @spec get_org(User.t(), integer()) :: {:ok, Org.t()} | {:error, :unauthorized}
-  def get_org(%User{id: user_id}, org_id) do
-    org =
-      Membership
-      |> where([m], m.user_id == ^user_id and m.org_id == ^org_id)
-      |> join(:inner, [m], o in Org, on: m.org_id == o.id)
-      |> select([m, o], o)
-      |> Repo.one()
+  @spec get_org(integer() | String.t()) ::
+          {:ok, Org.t()} | {:error, :invalid_org_id} | {:error, :not_found}
+  def get_org(org_id) when is_binary(org_id) do
+    case Integer.parse(org_id) do
+      {id, ""} -> get_org(id)
+      _ -> {:error, :invalid_org_id}
+    end
+  end
 
-    case org do
-      nil -> {:error, :unauthorized}
+  def get_org(org_id) when is_integer(org_id) do
+    case Repo.get(Org, org_id) do
+      nil -> {:error, :not_found}
       org -> {:ok, org}
     end
   end

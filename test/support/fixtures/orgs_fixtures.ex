@@ -30,13 +30,10 @@ defmodule Horionos.OrgsFixtures do
     end
   end
 
-  def membership_fixture(creator, attrs \\ %{}) do
-    case Orgs.create_membership(creator, attrs) do
+  def membership_fixture(attrs \\ %{}) do
+    case Orgs.create_membership(attrs) do
       {:ok, membership} ->
         membership
-
-      {:error, :unauthorized} ->
-        raise "Unauthorized to create membership"
 
       {:error, %Ecto.Changeset{} = changeset} ->
         raise "Failed to create membership: #{inspect(changeset.errors)}"

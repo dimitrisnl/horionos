@@ -9,6 +9,7 @@ defmodule HorionosWeb.UserAuthLive do
   import Phoenix.LiveView
 
   alias Horionos.Accounts
+  alias Horionos.Authorization
   alias Horionos.Orgs
 
   require Logger
@@ -135,8 +136,10 @@ defmodule HorionosWeb.UserAuthLive do
   defp do_get_current_org(user, nil), do: Orgs.get_user_primary_org(user)
 
   defp do_get_current_org(user, org_id) do
-    case Orgs.get_org(user, org_id) do
-      {:ok, org} -> org
+    with {:ok, org} <- Orgs.get_org(org_id),
+         :ok <- Authorization.authorize(user, org, :org_view) do
+      org
+    else
       _ -> nil
     end
   end

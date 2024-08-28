@@ -51,7 +51,18 @@ defmodule HorionosWeb.OrgSessionControllerTest do
       assert redirected_to(conn) == "/"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "You do not have access to this organization"
+               "Organization not found"
+    end
+
+    test "fails to switch to an organization that doesn't exist", %{
+      conn: conn
+    } do
+      conn = post(conn, "/org/select", %{"org_id" => 10_000_000})
+
+      assert redirected_to(conn) == "/"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Organization not found"
     end
   end
 end

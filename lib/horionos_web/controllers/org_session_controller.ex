@@ -3,13 +3,16 @@ defmodule HorionosWeb.OrgSessionController do
   use HorionosWeb, :controller
   require Logger
 
+  alias Horionos.Authorization
+
   def update(conn, %{"org_id" => org_id}) do
     current_org_id = get_session(conn, :current_org_id)
     current_user = conn.assigns.current_user
 
     with {:ok, next_org_id} <- validate_org_id(org_id),
          :ok <- org_changed?(current_org_id, next_org_id),
-         {:ok, org} <- Orgs.get_org(current_user, to_string(next_org_id)) do
+         {:ok, org} <- Orgs.get_org(to_string(next_org_id)),
+         :ok <- Authorization.authorize(current_user, org, :org_view) do
       conn
       |> configure_session(renew: true)
       |> put_session(:current_org_id, next_org_id)
@@ -26,11 +29,16 @@ defmodule HorionosWeb.OrgSessionController do
         |> put_flash(:info, "You are already viewing this organization")
         |> redirect(to: "/")
 
+      {:error, :not_found} ->
+        conn
+        |> put_flash(:error, "Organization not found")
+        |> redirect(to: "/")
+
       {:error, :unauthorized} ->
         Logger.error("User #{current_user.id} tried to switch to org #{org_id} without access")
 
         conn
-        |> put_flash(:error, "You do not have access to this organization")
+        |> put_flash(:error, "Organization not found")
         |> redirect(to: "/")
     end
   end

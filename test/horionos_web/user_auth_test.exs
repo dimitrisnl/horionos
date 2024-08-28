@@ -213,7 +213,7 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "assigns nil if user has no orgs", %{conn: conn, user: user} do
       # Ensure nil is assigned when user has no organizations
-      Orgs.delete_org(user, Orgs.get_user_primary_org(user))
+      Orgs.delete_org(Orgs.get_user_primary_org(user))
 
       conn =
         conn
@@ -271,8 +271,8 @@ defmodule HorionosWeb.UserAuthTest do
 
       assert conn.assigns.current_org.id == org1.id
 
-      {:ok, _deleted_org} = Orgs.delete_org(user, org1)
-      assert {:error, :unauthorized} = Orgs.get_org(user, org1.id)
+      {:ok, _deleted_org} = Orgs.delete_org(org1)
+      assert {:error, :not_found} = Orgs.get_org(org1.id)
 
       updated_conn = UserAuth.fetch_current_org(conn, [])
 
@@ -280,8 +280,8 @@ defmodule HorionosWeb.UserAuthTest do
       assert is_integer(updated_conn.assigns.current_org.id)
       assert get_session(updated_conn, :current_org_id) == updated_conn.assigns.current_org.id
 
-      {:ok, _} = Orgs.delete_org(user, org2)
-      {:ok, _} = Orgs.delete_org(user, updated_conn.assigns.current_org)
+      {:ok, _} = Orgs.delete_org(org2)
+      {:ok, _} = Orgs.delete_org(updated_conn.assigns.current_org)
 
       final_conn = UserAuth.fetch_current_org(updated_conn, [])
 

@@ -25,21 +25,14 @@ defmodule Horionos.OrgsTest do
     end
   end
 
-  describe "get_org/2" do
-    test "returns the org for a user with access" do
+  describe "get_org/1" do
+    test "returns the org" do
       owner = user_fixture()
       user = user_fixture()
       org = org_fixture(%{user: owner})
-      membership_fixture(owner, %{user_id: user.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: user.id, org_id: org.id, role: :member})
 
-      assert {:ok, ^org} = Orgs.get_org(user, org.id)
-    end
-
-    test "returns error for a user without access" do
-      user = user_fixture()
-      org = org_fixture()
-
-      assert {:error, :unauthorized} = Orgs.get_org(user, org.id)
+      assert {:ok, ^org} = Orgs.get_org(org.id)
     end
   end
 
@@ -61,108 +54,76 @@ defmodule Horionos.OrgsTest do
     end
   end
 
-  describe "update_org/3" do
+  describe "update_org/2" do
     setup do
       owner = user_fixture()
       org = org_fixture(%{user: owner})
       %{owner: owner, org: org}
     end
 
-    test "updates the org when user has permissions", %{owner: owner, org: org} do
+    test "updates the org when user has permissions", %{org: org} do
       update_attrs = %{title: "Updated Org"}
-      assert {:ok, %Org{} = updated_org} = Orgs.update_org(owner, org, update_attrs)
+      assert {:ok, %Org{} = updated_org} = Orgs.update_org(org, update_attrs)
       assert updated_org.title == "Updated Org"
     end
 
-    test "returns an error when user doesn't have permissions", %{org: org} do
-      non_member = user_fixture()
-      update_attrs = %{title: "Updated Org"}
-      assert {:error, :unauthorized} = Orgs.update_org(non_member, org, update_attrs)
-    end
-
-    test "returns an error changeset with invalid data", %{owner: owner, org: org} do
-      assert {:error, %Ecto.Changeset{}} = Orgs.update_org(owner, org, %{title: nil})
+    test "returns an error changeset with invalid data", %{org: org} do
+      assert {:error, %Ecto.Changeset{}} = Orgs.update_org(org, %{title: nil})
     end
   end
 
-  describe "delete_org/2" do
+  describe "delete_org/1" do
     setup do
       owner = user_fixture()
       org = org_fixture(%{user: owner})
       %{owner: owner, org: org}
     end
 
-    test "deletes the org when user is owner", %{owner: owner, org: org} do
-      assert {:ok, %Org{}} = Orgs.delete_org(owner, org)
-      assert {:error, :unauthorized} = Orgs.get_org(owner, org.id)
-    end
-
-    test "returns an error when user is not owner", %{org: org, owner: owner} do
-      non_owner = user_fixture()
-      membership_fixture(owner, %{user_id: non_owner.id, org_id: org.id, role: :admin})
-      assert {:error, :unauthorized} = Orgs.delete_org(non_owner, org)
+    test "deletes the org", %{org: org} do
+      assert {:ok, %Org{}} = Orgs.delete_org(org)
+      assert {:error, :not_found} = Orgs.get_org(org.id)
     end
   end
 
-  describe "list_org_memberships/2" do
+  describe "list_org_memberships/1" do
     setup do
       owner = user_fixture()
       member = user_fixture()
       org = org_fixture(%{user: owner})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
       %{owner: owner, member: member, org: org}
     end
 
-    test "returns memberships when user has permissions", %{owner: owner, org: org} do
-      assert {:ok, memberships} = Orgs.list_org_memberships(owner, org)
+    test "returns memberships", %{org: org} do
+      assert {:ok, memberships} = Orgs.list_org_memberships(org)
       # owner and member
       assert length(memberships) == 2
     end
-
-    test "returns error when user doesn't have permissions", %{org: org} do
-      non_member = user_fixture()
-      assert {:error, :unauthorized} = Orgs.list_org_memberships(non_member, org)
-    end
   end
 
-  describe "create_membership/2" do
+  describe "create_membership/1" do
     setup do
       owner = user_fixture()
       admin = user_fixture()
       member = user_fixture()
       org = org_fixture(%{user: owner})
-      membership_fixture(owner, %{user_id: admin.id, org_id: org.id, role: :admin})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
       %{admin: admin, member: member, org: org}
     end
 
-    test "creates a membership when user has permissions", %{admin: admin, org: org} do
+    test "creates a membership", %{org: org} do
       new_user = user_fixture()
       attrs = %{user_id: new_user.id, org_id: org.id, role: :member}
 
-      assert {:ok, %Membership{} = membership} = Orgs.create_membership(admin, attrs)
+      assert {:ok, %Membership{} = membership} = Orgs.create_membership(attrs)
       assert membership.user_id == new_user.id
       assert membership.org_id == org.id
       assert membership.role == :member
     end
-
-    test "returns an error when user is a member", %{member: member, org: org} do
-      new_user = user_fixture()
-      attrs = %{user_id: new_user.id, org_id: org.id, role: :member}
-
-      assert {:error, :unauthorized} = Orgs.create_membership(member, attrs)
-    end
-
-    test "returns an error when user doesn't have permissions", %{org: org} do
-      non_admin = user_fixture()
-      new_user = user_fixture()
-      attrs = %{user_id: new_user.id, org_id: org.id, role: :member}
-
-      assert {:error, :unauthorized} = Orgs.create_membership(non_admin, attrs)
-    end
   end
 
-  describe "update_membership/3" do
+  describe "update_membership/2" do
     setup do
       owner = user_fixture()
       admin = user_fixture()
@@ -171,43 +132,26 @@ defmodule Horionos.OrgsTest do
 
       org = org_fixture(%{user: owner})
 
-      membership_fixture(owner, %{user_id: admin.id, org_id: org.id, role: :admin})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
-      membership = membership_fixture(owner, %{user_id: user.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
+      membership = membership_fixture(%{user_id: user.id, org_id: org.id, role: :member})
 
       %{member: member, admin: admin, user: user, org: org, membership: membership}
     end
 
     test "updates the membership when user has permissions", %{
-      admin: admin,
       membership: membership
     } do
       update_attrs = %{role: :admin}
 
       assert {:ok, %Membership{} = updated_membership} =
-               Orgs.update_membership(admin, membership, update_attrs)
+               Orgs.update_membership(membership, update_attrs)
 
       assert updated_membership.role == :admin
     end
-
-    test "returns an error when user doesn't have permissions as member", %{
-      member: member,
-      membership: membership
-    } do
-      update_attrs = %{role: :admin}
-
-      assert {:error, :unauthorized} = Orgs.update_membership(member, membership, update_attrs)
-    end
-
-    test "returns an error when user doesn't have permissions", %{membership: membership} do
-      non_admin = user_fixture()
-      update_attrs = %{role: :admin}
-
-      assert {:error, :unauthorized} = Orgs.update_membership(non_admin, membership, update_attrs)
-    end
   end
 
-  describe "delete_membership/2" do
+  describe "delete_membership/1" do
     setup do
       owner = user_fixture()
       admin = user_fixture()
@@ -216,31 +160,18 @@ defmodule Horionos.OrgsTest do
 
       org = org_fixture(%{user: owner})
 
-      membership_fixture(owner, %{user_id: admin.id, org_id: org.id, role: :admin})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
-      membership = membership_fixture(owner, %{user_id: user.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
+      membership = membership_fixture(%{user_id: user.id, org_id: org.id, role: :member})
 
       %{member: member, admin: admin, user: user, org: org, membership: membership}
     end
 
     test "deletes the membership when user has permissions", %{
-      admin: admin,
       membership: membership
     } do
-      assert {:ok, %Membership{}} = Orgs.delete_membership(admin, membership)
+      assert {:ok, %Membership{}} = Orgs.delete_membership(membership)
       assert is_nil(Repo.get(Membership, membership.id))
-    end
-
-    test "returns an error when user doesn't have permissions as member", %{
-      member: member,
-      membership: membership
-    } do
-      assert {:error, :unauthorized} = Orgs.delete_membership(member, membership)
-    end
-
-    test "returns an error when user doesn't have permissions", %{membership: membership} do
-      non_admin = user_fixture()
-      assert {:error, :unauthorized} = Orgs.delete_membership(non_admin, membership)
     end
   end
 
@@ -249,7 +180,7 @@ defmodule Horionos.OrgsTest do
       owner = user_fixture()
       member = user_fixture()
       org = org_fixture(%{user: owner})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
       %{owner: owner, member: member, org: org}
     end
 
@@ -281,23 +212,16 @@ defmodule Horionos.OrgsTest do
       assert invitation.role == :member
     end
 
-    test "returns an error when user doesn't have permissions", %{org: org} do
-      non_member = user_fixture()
-
-      assert {:error, :unauthorized} =
-               Orgs.create_invitation(non_member, org, "test@example.com", :member)
-    end
-
     test "returns an error when inviting an existing member", %{owner: owner, org: org} do
       existing_member = user_fixture()
-      membership_fixture(owner, %{user_id: existing_member.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: existing_member.id, org_id: org.id, role: :member})
 
       assert {:error, :already_member} =
                Orgs.create_invitation(owner, org, existing_member.email, :member)
     end
   end
 
-  describe "list_org_invitations/2" do
+  describe "list_org_invitations/1" do
     setup do
       owner = user_fixture()
       org = org_fixture(%{user: owner})
@@ -305,19 +229,13 @@ defmodule Horionos.OrgsTest do
       %{owner: owner, org: org, invitation: invitation}
     end
 
-    test "returns invitations when user has permissions", %{
-      owner: owner,
+    test "returns invitations", %{
       org: org,
       invitation: invitation
     } do
-      assert {:ok, invitations} = Orgs.list_org_invitations(owner, org)
+      assert {:ok, invitations} = Orgs.list_org_invitations(org)
       assert length(invitations) == 1
       assert hd(invitations).id == invitation.id
-    end
-
-    test "returns error when user doesn't have permissions", %{org: org} do
-      non_member = user_fixture()
-      assert {:error, :unauthorized} = Orgs.list_org_invitations(non_member, org)
     end
   end
 
@@ -386,7 +304,7 @@ defmodule Horionos.OrgsTest do
     end
   end
 
-  describe "cancel_invitation/3" do
+  describe "delete_invitation/2" do
     setup do
       owner = user_fixture()
       org = org_fixture(%{user: owner})
@@ -394,25 +312,15 @@ defmodule Horionos.OrgsTest do
       %{owner: owner, org: org, invitation: invitation}
     end
 
-    test "cancels the invitation when user has permissions", %{
-      owner: owner,
-      org: org,
+    test "deletes the invitation", %{
       invitation: invitation
     } do
-      assert {:ok, %Invitation{}} = Orgs.cancel_invitation(owner, org, invitation.id)
+      assert {:ok, %Invitation{}} = Orgs.delete_invitation(invitation.id)
       assert is_nil(Repo.get(Invitation, invitation.id))
     end
 
-    test "returns an error when user doesn't have permissions", %{
-      org: org,
-      invitation: invitation
-    } do
-      non_admin = user_fixture()
-      assert {:error, :unauthorized} = Orgs.cancel_invitation(non_admin, org, invitation.id)
-    end
-
-    test "returns an error when invitation doesn't exist", %{owner: owner, org: org} do
-      assert {:error, :not_found} = Orgs.cancel_invitation(owner, org, -1)
+    test "returns an error when invitation doesn't exist" do
+      assert {:error, :not_found} = Orgs.delete_invitation(-1)
     end
   end
 
@@ -427,8 +335,6 @@ defmodule Horionos.OrgsTest do
     test "sends the invitation email", %{invitation: invitation} do
       url_fn = fn token -> "http://example.com/invitations/#{token}" end
       assert {:ok, %Invitation{}} = Orgs.send_invitation_email(invitation, url_fn)
-      # You might want to add more assertions here to check if the email was actually sent
-      # This could involve checking a test mailbox or mocking the email sending function
     end
   end
 
@@ -516,134 +422,15 @@ defmodule Horionos.OrgsTest do
     end
   end
 
-  describe "edge cases and integration scenarios" do
+  describe "edge cases" do
     setup do
       owner = user_fixture()
       admin = user_fixture()
       member = user_fixture()
       org = org_fixture(%{user: owner})
-      membership_fixture(owner, %{user_id: admin.id, org_id: org.id, role: :admin})
-      membership_fixture(owner, %{user_id: member.id, org_id: org.id, role: :member})
+      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
       %{owner: owner, admin: admin, member: member, org: org}
-    end
-
-    test "owner can perform all actions", %{owner: owner, org: org} do
-      new_user = user_fixture()
-
-      # Create invitation
-      assert {:ok, invitation} = Orgs.create_invitation(owner, org, "test@example.com", :member)
-
-      # List invitations
-      assert {:ok, all_invitations} = Orgs.list_org_invitations(owner, org)
-      assert length(all_invitations) == 1
-      assert hd(all_invitations).id == invitation.id
-
-      # Cancel invitation
-      assert {:ok, _} = Orgs.cancel_invitation(owner, org, invitation.id)
-
-      # Create membership
-      assert {:ok, membership} =
-               Orgs.create_membership(owner, %{
-                 user_id: new_user.id,
-                 org_id: org.id,
-                 role: :member
-               })
-
-      # Update membership
-      assert {:ok, updated_membership} =
-               Orgs.update_membership(owner, membership, %{role: :admin})
-
-      assert updated_membership.role == :admin
-
-      # Delete membership
-      assert {:ok, _} = Orgs.delete_membership(owner, updated_membership)
-
-      # Update org
-      assert {:ok, updated_org} = Orgs.update_org(owner, org, %{title: "Updated Org"})
-      assert updated_org.title == "Updated Org"
-
-      # Delete org
-      assert {:ok, _} = Orgs.delete_org(owner, updated_org)
-    end
-
-    test "admin can perform most actions except deleting the org", %{admin: admin, org: org} do
-      new_user = user_fixture()
-
-      # Create invitation
-      assert {:ok, invitation} = Orgs.create_invitation(admin, org, "test@example.com", :member)
-
-      # List invitations
-      assert {:ok, all_invitations} = Orgs.list_org_invitations(admin, org)
-      assert length(all_invitations) == 1
-      assert hd(all_invitations).id == invitation.id
-
-      # Cancel invitation
-      assert {:ok, _} = Orgs.cancel_invitation(admin, org, invitation.id)
-
-      # Create membership
-      assert {:ok, membership} =
-               Orgs.create_membership(admin, %{
-                 user_id: new_user.id,
-                 org_id: org.id,
-                 role: :member
-               })
-
-      # Update membership
-      assert {:ok, updated_membership} =
-               Orgs.update_membership(admin, membership, %{role: :admin})
-
-      assert updated_membership.role == :admin
-
-      # Delete membership
-      assert {:ok, _} = Orgs.delete_membership(admin, updated_membership)
-
-      # Update org
-      assert {:ok, updated_org} = Orgs.update_org(admin, org, %{title: "Updated Org"})
-      assert updated_org.title == "Updated Org"
-
-      # Try to delete org (should fail)
-      assert {:error, :unauthorized} = Orgs.delete_org(admin, updated_org)
-    end
-
-    test "member can only view org and list memberships", %{member: member, org: org} do
-      # Get org
-      assert {:ok, _} = Orgs.get_org(member, org.id)
-
-      # List memberships
-      assert {:ok, memberships} = Orgs.list_org_memberships(member, org)
-      # owner, admin, member
-      assert length(memberships) == 3
-
-      # Try to create invitation (should fail)
-      assert {:error, :unauthorized} =
-               Orgs.create_invitation(member, org, "test@example.com", :member)
-
-      # Try to create membership (should fail)
-      new_user = user_fixture()
-
-      assert {:error, :unauthorized} =
-               Orgs.create_membership(member, %{
-                 user_id: new_user.id,
-                 org_id: org.id,
-                 role: :member
-               })
-
-      # Try to update org (should fail)
-      assert {:error, :unauthorized} = Orgs.update_org(member, org, %{title: "Updated Org"})
-    end
-
-    test "user cannot access org after membership is deleted", %{
-      owner: owner,
-      member: member,
-      org: org
-    } do
-      membership = Repo.get_by(Membership, user_id: member.id, org_id: org.id)
-
-      # Delete membership
-      assert {:ok, _} = Orgs.delete_membership(owner, membership)
-
-      # Try to access org (should fail)
-      assert {:error, :unauthorized} = Orgs.get_org(member, org.id)
     end
 
     test "invitation can only be accepted once", %{owner: owner, org: org} do
@@ -659,69 +446,22 @@ defmodule Horionos.OrgsTest do
       assert {:error, :already_accepted} = Orgs.accept_invitation(updated_invitation, user_params)
     end
 
-    test "user roles are properly enforced", %{
-      owner: owner,
-      admin: admin,
-      member: member,
-      org: org
-    } do
-      new_user = user_fixture()
-
-      # Owner can create admin
-      assert {:ok, _admin_membership} =
-               Orgs.create_membership(owner, %{
-                 user_id: new_user.id,
-                 org_id: org.id,
-                 role: :admin
-               })
-
-      # Admin can create member
-      another_user = user_fixture()
-
-      assert {:ok, _member_membership} =
-               Orgs.create_membership(admin, %{
-                 user_id: another_user.id,
-                 org_id: org.id,
-                 role: :member
-               })
-
-      # Admin cannot create owner
-      yet_another_user = user_fixture()
-
-      assert {:error, _} =
-               Orgs.create_membership(admin, %{
-                 user_id: yet_another_user.id,
-                 org_id: org.id,
-                 role: :owner
-               })
-
-      # Member cannot create any role
-      final_user = user_fixture()
-
-      assert {:error, :unauthorized} =
-               Orgs.create_membership(member, %{
-                 user_id: final_user.id,
-                 org_id: org.id,
-                 role: :member
-               })
-    end
-
     test "deleting an org cascades to memberships and invitations", %{owner: owner, org: org} do
       # Create some memberships and invitations
       user1 = user_fixture()
       user2 = user_fixture()
 
       {:ok, _} =
-        Orgs.create_membership(owner, %{user_id: user1.id, org_id: org.id, role: :member})
+        Orgs.create_membership(%{user_id: user1.id, org_id: org.id, role: :member})
 
       {:ok, _} =
-        Orgs.create_membership(owner, %{user_id: user2.id, org_id: org.id, role: :member})
+        Orgs.create_membership(%{user_id: user2.id, org_id: org.id, role: :member})
 
       {:ok, _} = Orgs.create_invitation(owner, org, "test1@example.com", :member)
       {:ok, _} = Orgs.create_invitation(owner, org, "test2@example.com", :member)
 
       # Delete org
-      assert {:ok, _} = Orgs.delete_org(owner, org)
+      assert {:ok, _} = Orgs.delete_org(org)
 
       # Check that memberships are deleted
       assert Repo.all(Membership) == []
@@ -737,51 +477,10 @@ defmodule Horionos.OrgsTest do
       assert Orgs.user_has_any_membership?(owner.email)
 
       # Delete the org (which cascades to delete all memberships)
-      assert {:ok, _} = Orgs.delete_org(owner, org)
+      assert {:ok, _} = Orgs.delete_org(org)
 
       # Check that user no longer has any memberships
       refute Orgs.user_has_any_membership?(owner.email)
-    end
-  end
-
-  describe "integration scenarios" do
-    test "full lifecycle of an org" do
-      # Create a user and an org
-      owner = user_fixture()
-      {:ok, org} = Orgs.create_org(owner, %{title: "New Org"})
-
-      # Invite a new user
-      {:ok, invitation} = Orgs.create_invitation(owner, org, "newuser@example.com", :member)
-
-      # Accept the invitation
-      {:ok, %{user: new_user}} =
-        Orgs.accept_invitation(invitation, %{
-          full_name: "New User",
-          password: valid_user_password()
-        })
-
-      # Owner updates the new user's role to admin
-      membership = Repo.get_by(Membership, user_id: new_user.id, org_id: org.id)
-      {:ok, _} = Orgs.update_membership(owner, membership, %{role: :admin})
-
-      # New admin invites another user
-      {:ok, another_invitation} =
-        Orgs.create_invitation(new_user, org, "another@example.com", :member)
-
-      # Owner decides to cancel the invitation
-      {:ok, _} = Orgs.cancel_invitation(owner, org, another_invitation.id)
-
-      # Owner updates org details
-      {:ok, updated_org} = Orgs.update_org(owner, org, %{title: "Updated Org Title"})
-      assert updated_org.title == "Updated Org Title"
-
-      # Owner deletes the org
-      {:ok, _} = Orgs.delete_org(owner, updated_org)
-
-      # Verify that the org and all related data are deleted
-      assert {:error, :unauthorized} = Orgs.get_org(owner, org.id)
-      assert Repo.all(Membership) == []
-      assert Repo.all(Invitation) == []
     end
   end
 end

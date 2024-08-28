@@ -10,6 +10,7 @@ defmodule HorionosWeb.UserAuth do
   import Phoenix.Controller
 
   alias Horionos.Accounts
+  alias Horionos.Authorization
   alias Horionos.Orgs
 
   # Constants
@@ -79,7 +80,8 @@ defmodule HorionosWeb.UserAuth do
   def fetch_current_org(conn, _opts) do
     with %{assigns: %{current_user: user}} when not is_nil(user) <- conn,
          org_id when not is_nil(org_id) <- get_session(conn, :current_org_id),
-         {:ok, org} <- Orgs.get_org(user, org_id) do
+         {:ok, org} <- Orgs.get_org(org_id),
+         :ok <- Authorization.authorize(user, org, :org_view) do
       assign_current_org(conn, org)
     else
       %{assigns: %{current_user: nil}} -> conn

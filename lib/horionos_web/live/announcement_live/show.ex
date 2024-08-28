@@ -1,5 +1,6 @@
 defmodule HorionosWeb.AnnouncementLive.Show do
   use HorionosWeb, :live_view
+  use HorionosWeb.LiveAuthorization
 
   alias Horionos.Announcements
 
@@ -18,15 +19,42 @@ defmodule HorionosWeb.AnnouncementLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    user = socket.assigns.current_user
-    org = socket.assigns.current_org
-
-    case Announcements.get_announcement(user, org, id) do
-      {:ok, announcement} ->
+    with :ok <- authorize_user_action(socket, :announcement_view),
+         {:ok, announcement} <- Announcements.get_announcement(socket.assigns.current_org, id) do
+      {:noreply,
+       socket
+       |> assign(:page_title, page_title(socket.assigns.live_action))
+       |> assign(:announcement, announcement)}
+    else
+      {:error, :unauthorized} ->
         {:noreply,
          socket
-         |> assign(:page_title, page_title(socket.assigns.live_action))
-         |> assign(:announcement, announcement)}
+         |> put_flash(:error, "You are not authorized to view this announcement.")
+         |> push_navigate(to: ~p"/announcements")}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Announcement not found.")
+         |> push_navigate(to: ~p"/announcements")}
+    end
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    with :ok <- authorize_user_action(socket, :announcement_delete),
+         {:ok, announcement} <- Announcements.get_announcement(socket.assigns.current_org, id),
+         {:ok, _deleted_announcement} <- Announcements.delete_announcement(announcement) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Announcement deleted successfully.")
+       |> push_navigate(to: ~p"/announcements")}
+    else
+      {:error, :unauthorized} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "You are not authorized to delete this announcement.")
+         |> push_navigate(to: ~p"/announcements")}
 
       {:error, :not_found} ->
         {:noreply,
@@ -34,39 +62,10 @@ defmodule HorionosWeb.AnnouncementLive.Show do
          |> put_flash(:error, "Announcement not found.")
          |> push_navigate(to: ~p"/announcements")}
 
-      {:error, :unauthorized} ->
+      {:error, _} ->
         {:noreply,
          socket
-         |> put_flash(:error, "You are not authorized to view this announcement.")
-         |> push_navigate(to: ~p"/announcements")}
-    end
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    user = socket.assigns.current_user
-    org = socket.assigns.current_org
-
-    case Announcements.get_announcement(user, org, id) do
-      {:ok, announcement} ->
-        case Announcements.delete_announcement(user, announcement) do
-          {:ok, _deleted_announcement} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Announcement deleted successfully.")
-             |> push_navigate(to: ~p"/announcements")}
-
-          {:error, _changeset} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to delete announcement. Please try again.")}
-        end
-
-      {:error, _reason} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Unable to delete announcement.")
-         |> push_navigate(to: ~p"/announcements")}
+         |> put_flash(:error, "Failed to delete announcement. Please try again.")}
     end
   end
 

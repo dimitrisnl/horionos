@@ -1,9 +1,9 @@
 defmodule Horionos.AuthorizationTest do
   use Horionos.DataCase
 
-  alias Horionos.Authorization
   alias Horionos.Accounts.User
-  alias Horionos.Orgs.{Org, Membership}
+  alias Horionos.Authorization
+  alias Horionos.Orgs.{Membership, Org}
   alias Horionos.Repo
 
   describe "authorize/3" do
@@ -13,10 +13,10 @@ defmodule Horionos.AuthorizationTest do
       member = user_fixture()
       non_member = user_fixture()
 
-      org = org_fixture(user: owner)
+      org = org_fixture(%{user: owner})
 
-      membership_fixture(admin, org, :admin)
-      membership_fixture(member, org, :member)
+      membership_fixture(%{user_id: admin.id, org_id: org.id, role: :admin})
+      membership_fixture(%{user_id: member.id, org_id: org.id, role: :member})
 
       %{owner: owner, admin: admin, member: member, non_member: non_member, org: org}
     end
@@ -63,49 +63,10 @@ defmodule Horionos.AuthorizationTest do
     end
   end
 
-  describe "with_authorization/4" do
-    setup do
-      owner = user_fixture()
-      admin = user_fixture()
-      org = org_fixture(user: owner)
-
-      membership_fixture(admin, org, :admin)
-
-      %{user: admin, org: org}
-    end
-
-    test "executes the given function when authorized", %{user: user, org: org} do
-      result =
-        Authorization.with_authorization(user, org, :org_edit, fn ->
-          {:ok, "Action performed"}
-        end)
-
-      assert result == {:ok, "Action performed"}
-    end
-
-    test "returns error when not authorized", %{user: user, org: org} do
-      result =
-        Authorization.with_authorization(user, org, :org_delete, fn ->
-          {:ok, "This should not be reached"}
-        end)
-
-      assert result == {:error, :unauthorized}
-    end
-
-    test "handles errors in the given function", %{user: user, org: org} do
-      result =
-        Authorization.with_authorization(user, org, :org_edit, fn ->
-          {:error, "Some error occurred"}
-        end)
-
-      assert result == {:error, "Some error occurred"}
-    end
-  end
-
   describe "get_org_from_resource/1" do
     setup do
       owner = user_fixture()
-      org = org_fixture(user: owner)
+      org = org_fixture(%{user: owner})
       %{org: org}
     end
 

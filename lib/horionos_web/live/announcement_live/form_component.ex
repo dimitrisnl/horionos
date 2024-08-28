@@ -1,5 +1,6 @@
 defmodule HorionosWeb.AnnouncementLive.FormComponent do
   use HorionosWeb, :live_component
+  use HorionosWeb.LiveAuthorization
 
   alias Horionos.Announcements
 
@@ -52,21 +53,20 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
   end
 
   defp save_announcement(socket, :edit, announcement_params) do
-    case Announcements.update_announcement(
-           socket.assigns.current_user,
-           socket.assigns.announcement,
-           announcement_params
-         ) do
-      {:ok, announcement} ->
-        notify_parent({:saved, announcement})
+    case authorize_user_action(socket, :announcement_edit) do
+      :ok ->
+        case Announcements.update_announcement(socket.assigns.announcement, announcement_params) do
+          {:ok, announcement} ->
+            notify_parent({:saved, announcement})
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Announcement updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
+            {:noreply,
+             socket
+             |> put_flash(:info, "Announcement updated successfully")
+             |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign_form(socket, changeset)}
+        end
 
       {:error, :unauthorized} ->
         {:noreply,
@@ -77,23 +77,22 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
   end
 
   defp save_announcement(socket, :new, announcement_params) do
-    params_with_org_id = Map.put(announcement_params, "org_id", socket.assigns.org_id)
+    case authorize_user_action(socket, :announcement_create) do
+      :ok ->
+        params_with_org_id = Map.put(announcement_params, "org_id", socket.assigns.org_id)
 
-    case Announcements.create_announcement(
-           socket.assigns.current_user,
-           socket.assigns.current_org,
-           params_with_org_id
-         ) do
-      {:ok, announcement} ->
-        notify_parent({:saved, announcement})
+        case Announcements.create_announcement(socket.assigns.current_org, params_with_org_id) do
+          {:ok, announcement} ->
+            notify_parent({:saved, announcement})
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Announcement created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+            {:noreply,
+             socket
+             |> put_flash(:info, "Announcement created successfully")
+             |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign_form(socket, changeset)}
+        end
 
       {:error, :unauthorized} ->
         {:noreply,

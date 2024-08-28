@@ -11,34 +11,60 @@ defmodule HorionosWeb.OrgLiveTest do
   @invalid_attrs %{title: nil}
 
   describe "Index" do
-    setup [:register_and_log_in_user]
+    setup do
+      owner = user_fixture()
+      org = org_fixture(%{user: owner})
+      admin = user_fixture()
+      member = user_fixture()
 
-    setup %{user: user} do
-      org = org_fixture(%{user: user})
-      %{org: org, user: user}
+      Orgs.create_membership(%{user_id: admin.id, org_id: org.id, role: :admin})
+      Orgs.create_membership(%{user_id: member.id, org_id: org.id, role: :member})
+
+      %{org: org, owner: owner, admin: admin, member: member}
     end
 
-    test "displays current org details", %{conn: conn, org: org} do
-      {:ok, _index_live, html} = live(conn, ~p"/org")
+    test "displays current org details for admin and owners", %{
+      conn: conn,
+      org: org,
+      admin: admin,
+      owner: owner
+    } do
+      for user <- [admin, owner] do
+        conn = log_in_user(conn, user)
+        {:ok, _index_live, html} = live(conn, ~p"/org")
 
-      assert html =~ "Settings"
-      assert html =~ "Edit Organization"
-      assert html =~ org.title
+        assert html =~ "Settings"
+        assert html =~ "Edit Organization"
+        assert html =~ org.title
+      end
     end
 
-    test "updates org", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/org")
+    test "cannot visit the page as member", %{conn: conn, member: member} do
+      conn = log_in_user(conn, member)
 
-      assert index_live
-             |> form("#org-form", org: @update_attrs)
-             |> render_submit()
-
-      html = render(index_live)
-      assert html =~ "Organization updated successfully"
-      assert html =~ "Updated Org Name"
+      {:error,
+       {:live_redirect,
+        %{to: "/", flash: %{"error" => "You are not authorized to access this page."}}}} =
+        live(conn, ~p"/org")
     end
 
-    test "displays error message with invalid attributes", %{conn: conn} do
+    test "updates org", %{conn: conn, admin: admin, owner: owner} do
+      for user <- [admin, owner] do
+        conn = log_in_user(conn, user)
+        {:ok, index_live, _html} = live(conn, ~p"/org")
+
+        assert index_live
+               |> form("#org-form", org: @update_attrs)
+               |> render_submit()
+
+        html = render(index_live)
+        assert html =~ "Organization updated successfully"
+        assert html =~ "Updated Org Name"
+      end
+    end
+
+    test "displays error message with invalid attributes", %{conn: conn, admin: admin} do
+      conn = log_in_user(conn, admin)
       {:ok, index_live, _html} = live(conn, ~p"/org")
 
       result =
@@ -49,41 +75,56 @@ defmodule HorionosWeb.OrgLiveTest do
       assert result =~ "can&#39;t be blank"
     end
 
-    test "deletes org", %{conn: conn, org: org, user: user} do
+    test "deletes org as owner", %{conn: conn, org: org, owner: owner} do
+      conn = log_in_user(conn, owner)
       {:ok, view, _html} = live(conn, ~p"/org")
 
-      # Find the delete form
       delete_form = form(view, "#delete_org_form")
 
-      # Ensure the form has the correct confirmation message
       assert has_element?(
                view,
                "form[data-confirm='Are you sure you want to delete the organization? This action cannot be undone.']"
              )
 
-      # Simulate submitting the form
       render_submit(delete_form)
 
-      # Check for redirect after submission
       assert_redirect(view, ~p"/")
-
-      # Verify that the org has been deleted
-      assert {:error, :unauthorized} = Orgs.get_org(user, org.id)
+      assert {:error, :not_found} = Orgs.get_org(org.id)
     end
 
-    test "lists org members", %{conn: conn, org: org, user: user} do
-      member = user_fixture()
-      Orgs.create_membership(user, %{user_id: member.id, org_id: org.id, role: :member})
+    test "cannot delete org as admin", %{conn: conn, org: org, admin: admin} do
+      conn = log_in_user(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/org")
 
-      {:ok, _index_live, html} = live(conn, ~p"/org")
+      delete_form = form(view, "#delete_org_form")
+      render_submit(delete_form)
 
-      assert html =~ user.full_name
-      assert html =~ user.email
-      assert html =~ "owner"
+      assert render(view) =~ "You are not authorized to delete this organization."
+      assert {:ok, _org} = Orgs.get_org(org.id)
+    end
 
-      assert html =~ member.full_name
-      assert html =~ member.email
-      assert html =~ "member"
+    test "lists org members for admin and owner", %{
+      conn: conn,
+      owner: owner,
+      admin: admin,
+      member: member
+    } do
+      for user <- [admin, owner] do
+        conn = log_in_user(conn, user)
+        {:ok, _index_live, html} = live(conn, ~p"/org")
+
+        assert html =~ owner.full_name
+        assert html =~ owner.email
+        assert html =~ "owner"
+
+        assert html =~ admin.full_name
+        assert html =~ admin.email
+        assert html =~ "admin"
+
+        assert html =~ member.full_name
+        assert html =~ member.email
+        assert html =~ "member"
+      end
     end
   end
 end

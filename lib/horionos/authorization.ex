@@ -6,6 +6,7 @@ defmodule Horionos.Authorization do
   require Logger
 
   alias Horionos.Accounts.User
+  alias Horionos.AdminNotifications
   alias Horionos.Orgs
   alias Horionos.Orgs.Org
   alias Horionos.Repo
@@ -27,10 +28,21 @@ defmodule Horionos.Authorization do
     announcement_delete: [:member, :admin, :owner]
   }
 
+  @type permission ::
+          :org_view
+          | :org_edit
+          | :org_delete
+          | :org_invite_members
+          | :org_manage_members
+          | :announcement_view
+          | :announcement_create
+          | :announcement_edit
+          | :announcement_delete
+
   @doc """
   Authorizes a user for a specific action on a resource.
   """
-  @spec authorize(User.t(), resource :: struct(), permission :: atom()) ::
+  @spec authorize(User.t(), resource :: struct(), permission()) ::
           :ok | {:error, error()}
   def authorize(user, resource, permission) do
     with {:ok, org} <- get_org_from_resource(resource),
@@ -54,19 +66,6 @@ defmodule Horionos.Authorization do
     end
   end
 
-  @doc """
-  Executes the given action if the user is authorized.
-  """
-  @spec with_authorization(User.t(), resource :: struct(), permission :: atom(), (-> result)) ::
-          result | {:error, error()}
-        when result: var
-  def with_authorization(user, resource, permission, action) when is_function(action, 0) do
-    case authorize(user, resource, permission) do
-      :ok -> action.()
-      error -> error
-    end
-  end
-
   # Private functions
 
   defp get_org_from_resource(resource) do
@@ -83,8 +82,11 @@ defmodule Horionos.Authorization do
   end
 
   defp log_authorization_failure(user, resource, permission, error) do
-    Logger.warning(
-      "Authorization failed for user #{user.id}, resource #{inspect(resource)}, permission #{permission}: #{inspect(error)}"
-    )
+    AdminNotifications.notify(:authorization_error, %{
+      user: user,
+      resource: resource,
+      permission: permission,
+      error: error
+    })
   end
 end
