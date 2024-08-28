@@ -86,7 +86,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
     test "shows error for invalid token", %{conn: conn} do
       {:error,
        {:redirect,
-        %{to: "/users/sign_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
+        %{to: "/users/log_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
         live(conn, ~p"/invitations/invalid_token/accept")
     end
 
@@ -98,7 +98,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
 
       {:error,
        {:redirect,
-        %{to: "/users/sign_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
+        %{to: "/users/log_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
         live(conn, ~p"/invitations/#{invitation.token}/accept")
     end
 
@@ -125,7 +125,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
 
       {:error,
        {:redirect,
-        %{to: "/users/sign_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
+        %{to: "/users/log_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
         live(conn, ~p"/invitations/#{invitation.token}/accept")
     end
   end

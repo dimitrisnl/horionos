@@ -44,7 +44,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
         {:ok,
          socket
          |> put_flash(:error, "Invitation not found or already accepted")
-         |> redirect(to: "/users/sign_in")}
+         |> redirect(to: "/users/log_in")}
 
       invitation ->
         current_user = socket.assigns[:current_user]
