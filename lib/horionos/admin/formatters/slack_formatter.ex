@@ -20,10 +20,9 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
 
   def format(:user_joined_organization, %{
         user: user,
-        invitation: invitation,
         membership: membership
       }) do
-    "👥 User joined organization: #{user.full_name} (#{user.email}) joined organization #{membership.organization_id} as #{membership.role}, invited by #{invitation.inviter_id}"
+    "👥 User joined organization: #{user.full_name} (#{user.email}) joined organization #{membership.organization.title} as #{membership.role}, invited by #{membership.user.full_name} (#{membership.user.email})"
   end
 
   def format(:organization_deleted, %{organization: organization}) do
@@ -33,9 +32,8 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
   def format(:authorization_error, %{
         user: user,
         resource: resource,
-        permission: permission,
-        error: error
+        permission: permission
       }) do
-    "⚠️ Authorization error: #{user.full_name} (#{user.email}) tried to '#{permission}' on #{inspect(resource)} but failed with error: #{inspect(error)}"
+    "⚠️ Authorization error: #{user.full_name} (#{user.email}) tried action `#{permission}` on resource with id #{resource.id}"
   end
 end

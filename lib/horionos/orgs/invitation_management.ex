@@ -102,11 +102,12 @@ defmodule Horionos.Organizations.InvitationManagement do
       end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{user: user, invitation: invitation, membership: membership} = result} ->
+        {:ok, %{user: user, invitation: _invitation, membership: membership} = result} ->
+          membership_with_assocs = Repo.preload(membership, [:organization, :user])
+
           AdminNotifications.notify(:user_joined_organization, %{
             user: user,
-            invitation: invitation,
-            membership: membership
+            membership: membership_with_assocs
           })
 
           {:ok, result}
