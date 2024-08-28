@@ -87,9 +87,11 @@ defmodule Horionos.Organizations.InvitationManagement do
   defp do_accept_invitation(invitation, user_params) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:user, fn repo, _changes ->
-      case get_or_create_user(invitation.email, user_params) do
-        {:ok, user} -> user |> User.confirm_changeset() |> repo.update()
-        error -> error
+      with {:ok, user} <- get_or_create_user(invitation.email, user_params),
+           {:ok, updated_user} <- User.confirm_changeset(user) |> repo.update() do
+        {:ok, updated_user}
+      else
+        {:error, reason} -> {:error, reason}
       end
     end)
     |> Ecto.Multi.update(:confirm_user, fn %{user: user} -> User.confirm_changeset(user) end)
