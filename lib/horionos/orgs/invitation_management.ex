@@ -180,8 +180,11 @@ defmodule Horionos.Organizations.InvitationManagement do
           {:ok, User.t()} | {:error, {:user_creation_failed, map()}}
   defp create_user(email, user_params) do
     user_params
-    |> Map.put(:email, email)
     |> normalize_params()
+    # override email with the one from the invitation
+    # to ensure the user is created with the correct email
+    # We don't allow this in the UI, but you never know
+    |> Map.put("email", email)
     |> Accounts.register_user()
     |> case do
       {:ok, user} -> {:ok, user}

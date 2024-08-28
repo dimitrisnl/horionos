@@ -17,11 +17,11 @@ defmodule HorionosWeb.InvitationLive.Accept do
           method="post"
         >
           <%= if @current_user do %>
-            <.input field={@form[:email]} type="email" label="Email" readonly />
+            <.input field={@form[:email]} type="email" label="Email" readonly hidden required />
           <% else %>
             <.input field={@form[:full_name]} type="text" label="Full Name" required />
-            <.input field={@form[:email]} type="email" label="Email" required />
             <.input field={@form[:password]} type="password" label="Password" required />
+            <.input field={@form[:email]} type="email" label="Email" required hidden readonly />
           <% end %>
           <:actions>
             <.button phx-disable-with="Accepting..." class="w-full">
