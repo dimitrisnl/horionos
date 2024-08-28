@@ -20,11 +20,10 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
 
   def format(:user_joined_organization, %{
         user: user,
-        organization: organization,
-        role: role,
-        inviter: inviter
+        invitation: invitation,
+        membership: membership
       }) do
-    "👥 User joined organization: #{user.full_name} (#{user.email}) joined #{organization.title} as #{role}, invited by #{inviter.full_name} (#{inviter.email})"
+    "👥 User joined organization: #{user.full_name} (#{user.email}) joined organization #{membership.organization_id} as #{membership.role}, invited by #{invitation.inviter_id}"
   end
 
   def format(:organization_deleted, %{organization: organization}) do

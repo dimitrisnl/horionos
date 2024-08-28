@@ -28,8 +28,8 @@ defmodule HorionosWeb.OnboardingLiveTest do
       # Check that we're redirected to the root path
       assert conn.request_path == "/"
 
-      assert [organization] = Organizations.list_user_organizations(user)
-      assert organization.title == "Test Organization"
+      assert {:ok, memberships} = Organizations.list_user_memberships(user)
+      assert hd(memberships).organization.title == "Test Organization"
     end
 
     @tag create_organization: false

@@ -60,15 +60,6 @@ defmodule Horionos.Organizations.OrganizationManagement do
     end
   end
 
-  @spec list_user_organizations(User.t()) :: [Organization.t()]
-  def list_user_organizations(%User{id: user_id}) do
-    Membership
-    |> where([m], m.user_id == ^user_id)
-    |> join(:inner, [m], o in Organization, on: m.organization_id == o.id)
-    |> select([m, o], o)
-    |> Repo.all()
-  end
-
   @spec get_organization(integer() | String.t()) ::
           {:ok, Organization.t()} | {:error, :invalid_organization_id} | {:error, :not_found}
   def get_organization(organization_id) when is_binary(organization_id) do

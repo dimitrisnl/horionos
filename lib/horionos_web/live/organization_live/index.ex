@@ -40,6 +40,9 @@ defmodule HorionosWeb.OrganizationLive.Index do
           </div>
           <div class="text-base/6 max-w-md text-gray-500 dark:text-gray-400 sm:text-sm/6">
             Manage the users in your organization.
+            <div class="mt-1.5 max-w-xs leading-snug">
+              If you want to kick a user out of the organization, please contact support.
+            </div>
           </div>
         </div>
         <div>

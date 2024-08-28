@@ -20,17 +20,20 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
             Invite a new member
           </div>
           <div class="text-base/6 max-w-md text-gray-500 dark:text-gray-400 sm:text-sm/6">
-            <div class="mt-2 space-y-1">
-              <ul class="list-inside list-disc">
+            <div class="mt-4">
+              <ul class="space-y-2.5">
                 <li>
-                  <span class="font-medium">Owner:</span>
-                  Can manage organization settings, resources and billing
+                  <span class="font-medium text-gray-800">Member:</span>
+                  Can view and manage organization resources.
                 </li>
                 <li>
-                  <span class="font-medium">Admin:</span>
-                  Can manage organization settings, and resources
+                  <span class="font-medium text-gray-800">Admin:</span>
+                  Can update organization settings, invite new members, and manage organization resources.
                 </li>
-                <li><span class="font-medium">Member:</span> Can view organization resources</li>
+                <li>
+                  <span class="font-medium text-gray-800">Owner:</span>
+                  Every organization has a single owner, who can manage billing, and delete the organization. If you wish to transfer ownership, please contact support.
+                </li>
               </ul>
             </div>
           </div>
@@ -72,7 +75,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
               </div>
             </:col>
             <:col :let={{_id, invitation}} label="Role">
-              <div class="inline-flex rounded-lg bg-gray-200 px-1.5 py-1 uppercase leading-none text-gray-900">
+              <div class="inline-flex rounded-lg bg-gray-200 px-1.5 py-1 text-xs uppercase leading-none text-gray-900">
                 <%= invitation.role %>
               </div>
             </:col>

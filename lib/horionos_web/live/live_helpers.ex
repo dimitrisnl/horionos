@@ -10,7 +10,7 @@ defmodule HorionosWeb.LiveHelpers do
     socket =
       socket
       |> assign(:active_tab, get_active_tab(socket))
-      |> assign_user_organizations()
+      |> assign_user_memberships()
 
     {:cont, socket}
   end
@@ -28,11 +28,11 @@ defmodule HorionosWeb.LiveHelpers do
     end
   end
 
-  defp assign_user_organizations(%{assigns: %{current_user: user}} = socket)
+  defp assign_user_memberships(%{assigns: %{current_user: user}} = socket)
        when not is_nil(user) do
-    organizations = Organizations.list_user_organizations(user)
-    assign(socket, :organizations, organizations)
+    {:ok, memberships} = Organizations.list_user_memberships(user)
+    assign(socket, :memberships, memberships)
   end
 
-  defp assign_user_organizations(socket), do: socket
+  defp assign_user_memberships(socket), do: socket
 end

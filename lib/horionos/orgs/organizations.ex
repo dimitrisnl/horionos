@@ -16,12 +16,12 @@ defmodule Horionos.Organizations do
   defdelegate create_organization(user, attrs), to: OrganizationManagement
   defdelegate update_organization(organization, attrs), to: OrganizationManagement
   defdelegate delete_organization(organization), to: OrganizationManagement
-  defdelegate list_user_organizations(user), to: OrganizationManagement
   defdelegate get_user_primary_organization(user), to: OrganizationManagement
   defdelegate build_organization_changeset(organization, attrs \\ %{}), to: OrganizationManagement
   defdelegate get_organization(organization_id), to: OrganizationManagement
 
   # Membership management
+  defdelegate list_user_memberships(user), to: MembershipManagement
   defdelegate list_organization_memberships(organization), to: MembershipManagement
   defdelegate update_membership(membership, attrs), to: MembershipManagement
   defdelegate delete_membership(membership), to: MembershipManagement

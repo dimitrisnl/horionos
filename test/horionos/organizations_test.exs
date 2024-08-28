@@ -8,23 +8,23 @@ defmodule Horionos.OrganizationsTest do
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
 
-  describe "list_user_organizations/1" do
-    test "returns all organizations for a given user" do
+  describe "list_user_memberships/1" do
+    test "returns all memberships for a given user" do
       owner = user_fixture()
       organization1 = organization_fixture(%{user: owner})
       organization2 = organization_fixture(%{user: owner})
 
-      user_organizations = Organizations.list_user_organizations(owner)
-      assert length(user_organizations) == 2
+      {:ok, memberships} = Organizations.list_user_memberships(owner)
+      assert length(memberships) == 2
 
-      assert Enum.all?(user_organizations, fn organization ->
-               organization.id in [organization1.id, organization2.id]
+      assert Enum.all?(memberships, fn membership ->
+               membership.organization.id in [organization1.id, organization2.id]
              end)
     end
 
     test "returns an empty list for a user with no organizations" do
       user = user_fixture()
-      assert Organizations.list_user_organizations(user) == []
+      assert Organizations.list_user_memberships(user) == {:ok, []}
     end
   end
 

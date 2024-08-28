@@ -24,6 +24,20 @@ defmodule Horionos.Organizations.MembershipManagement do
   end
 
   @doc """
+  Lists memberships for a given user.
+  """
+  @spec list_user_memberships(User.t()) :: {:ok, [Membership.t()]}
+  def list_user_memberships(%User{id: user_id}) do
+    memberships =
+      Membership
+      |> where([m], m.user_id == ^user_id)
+      |> preload(:organization)
+      |> Repo.all()
+
+    {:ok, memberships}
+  end
+
+  @doc """
   Creates a membership.
   """
   @spec create_membership(map()) :: {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
