@@ -56,11 +56,11 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
         <div class="space-y-1">
           <div class="text-base/7 font-semibold text-gray-950 dark:text-white sm:text-sm/6">
-            Invitations
+            Pending Invitations
           </div>
           <div class="text-base/6 max-w-md text-gray-500 dark:text-gray-400 sm:text-sm/6">
             <div class="mt-2 space-y-1">
-              Accepted and declined invitations will be automatically removed after 7 days. You can cancel pending invitations at any time.
+              Invitations are pending until the recipient accepts them. You can cancel an invitation at any time.
             </div>
           </div>
         </div>
@@ -79,22 +79,17 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
                 <%= invitation.role %>
               </div>
             </:col>
-            <:col :let={{_id, invitation}} label="Status">
-              <%= if invitation.accepted_at, do: "Accepted", else: "Pending" %>
-            </:col>
 
             <:action :let={{id, invitation}}>
-              <%= if is_nil(invitation.accepted_at) do %>
-                <.link
-                  phx-click={
-                    JS.push("delete_invitation", value: %{id: invitation.id}) |> hide("##{id}")
-                  }
-                  data-confirm="Are you sure you want to cancel this invitation?"
-                  class="text-rose-600"
-                >
-                  Cancel
-                </.link>
-              <% end %>
+              <.link
+                phx-click={
+                  JS.push("delete_invitation", value: %{id: invitation.id}) |> hide("##{id}")
+                }
+                data-confirm="Are you sure you want to cancel this invitation?"
+                class="text-rose-600"
+              >
+                Cancel
+              </.link>
             </:action>
           </.table>
         </div>
@@ -109,7 +104,8 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
     form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
 
     with :ok <- authorize_user_action(socket, :organization_invite_members),
-         {:ok, invitations} <- Organizations.list_organization_invitations(current_organization) do
+         {:ok, invitations} <-
+           Organizations.list_pending_organization_invitations(current_organization) do
       socket =
         socket
         |> assign(:current_organization, current_organization)

@@ -154,8 +154,8 @@ defmodule HorionosWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] sm:w-full">
+    <div class="overflow-y-auto sm:overflow-visible">
+      <table class="w-full">
         <thead class="text-left text-sm leading-6 text-gray-500">
           <tr>
             <th :for={col <- @col} class="px-4 py-0 pb-4 font-normal"><%= col[:label] %></th>

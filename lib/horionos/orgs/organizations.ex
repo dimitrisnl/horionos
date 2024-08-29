@@ -28,7 +28,7 @@ defmodule Horionos.Organizations do
   defdelegate create_membership(attrs), to: MembershipManagement
 
   # Invitation management
-  defdelegate list_organization_invitations(organization), to: InvitationManagement
+  defdelegate list_pending_organization_invitations(organization), to: InvitationManagement
   defdelegate accept_invitation(invitation, user_params), to: InvitationManagement
   defdelegate get_pending_invitation_by_token(token), to: InvitationManagement
   defdelegate delete_invitation(invitation_id), to: InvitationManagement
