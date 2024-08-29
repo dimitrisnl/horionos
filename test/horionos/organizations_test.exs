@@ -266,11 +266,19 @@ defmodule Horionos.OrganizationsTest do
     end
   end
 
-  describe "list_organization_invitations/1" do
+  describe "list_pending_organization_invitations/1" do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
+      invitation = invitation_fixture(owner, organization, "test1@example.com")
+      invitation2 = invitation_fixture(owner, organization, "test2@example.com")
+
+      Repo.update!(
+        Ecto.Changeset.change(invitation2,
+          accepted_at: DateTime.truncate(DateTime.utc_now(), :second)
+        )
+      )
+
       %{owner: owner, organization: organization, invitation: invitation}
     end
 
@@ -278,7 +286,9 @@ defmodule Horionos.OrganizationsTest do
       organization: organization,
       invitation: invitation
     } do
-      assert {:ok, invitations} = Organizations.list_organization_invitations(organization)
+      assert {:ok, invitations} =
+               Organizations.list_pending_organization_invitations(organization)
+
       assert length(invitations) == 1
       assert hd(invitations).id == invitation.id
     end

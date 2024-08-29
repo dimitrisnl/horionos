@@ -130,11 +130,12 @@ defmodule Horionos.Organizations.InvitationManagement do
   @doc """
   Lists invitations for a given organization.
   """
-  @spec list_organization_invitations(Organization.t()) :: {:ok, [Invitation.t()]}
-  def list_organization_invitations(%Organization{id: organization_id}) do
+  @spec list_pending_organization_invitations(Organization.t()) :: {:ok, [Invitation.t()]}
+  def list_pending_organization_invitations(%Organization{id: organization_id}) do
     invitations =
       Invitation
       |> where([i], i.organization_id == ^organization_id)
+      |> where([i], is_nil(i.accepted_at))
       |> preload([:inviter])
       |> Repo.all()
 

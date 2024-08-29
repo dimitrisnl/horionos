@@ -52,7 +52,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       assert_redirect(view, ~p"/organization/invitations")
 
       # Verify the invitation was created
-      {:ok, invitations} = Organizations.list_organization_invitations(organization)
+      {:ok, invitations} = Organizations.list_pending_organization_invitations(organization)
       assert [invitation] = invitations
       assert invitation.email == "newinvite@example.com"
       assert invitation.role == :member
@@ -82,26 +82,6 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
 
       refute render(view) =~ "cancel@example.com"
       assert is_nil(Organizations.get_pending_invitation_by_token(invitation.token))
-    end
-
-    test "cannot cancel an accepted invitation", %{
-      conn: conn,
-      owner: owner,
-      organization: organization
-    } do
-      invitation = invitation_fixture(owner, organization, "accepted@example.com")
-
-      Organizations.accept_invitation(invitation, %{
-        full_name: "Accepted User",
-        password: valid_user_password()
-      })
-
-      conn = log_in_user(conn, owner)
-      {:ok, _view, html} = live(conn, ~p"/organization/invitations")
-
-      assert html =~ "accepted@example.com"
-      assert html =~ "Accepted"
-      refute html =~ "Cancel"
     end
 
     test "non-admin users cannot access invitations page", %{
@@ -140,7 +120,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
              |> render_submit() =~ "You are not authorized to invite users to this organization"
     end
 
-    test "handles unauthorized invitation cancelation", %{
+    test "handles unauthorized invitation cancellation", %{
       conn: conn,
       owner: owner,
       organization: organization
