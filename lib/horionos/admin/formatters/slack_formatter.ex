@@ -2,6 +2,7 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
   @moduledoc """
   Module to format Slack notifications.
   """
+  # User events
   def format(:user_registered, %{full_name: full_name, email: email}) do
     "✨ New user registered: #{full_name} (#{email})"
   end
@@ -29,11 +30,25 @@ defmodule Horionos.Admin.Formatters.SlackFormatter do
     "🗑 Organization deleted: #{organization.title}"
   end
 
+  # Authorization errors
   def format(:authorization_error, %{
         user: user,
         resource: resource,
         permission: permission
       }) do
     "⚠️ Authorization error: #{user.full_name} (#{user.email}) tried action `#{permission}` on resource with id #{resource.id}"
+  end
+
+  # Cron jobs
+  def format(:cron_job_started, %{job: job}) do
+    "🕒 Cron job started: #{job.name}"
+  end
+
+  def format(:cron_job_succeeded, %{job: job}) do
+    "✅ Cron job succeeded: '#{job.name}', #{job.details}"
+  end
+
+  def format(:cron_job_failed, %{job: job}) do
+    "🚨 Cron job failed: #{job.name}"
   end
 end
