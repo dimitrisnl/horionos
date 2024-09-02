@@ -1,6 +1,6 @@
 defmodule HorionosWeb.AnnouncementLive.FormComponent do
   use HorionosWeb, :live_component
-  use HorionosWeb.LiveAuthorization
+  import HorionosWeb.LiveAuthorization
 
   alias Horionos.Announcements
 

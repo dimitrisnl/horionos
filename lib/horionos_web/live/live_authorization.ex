@@ -4,12 +4,6 @@ defmodule HorionosWeb.LiveAuthorization do
   """
   alias Horionos.Authorization
 
-  defmacro __using__(_opts) do
-    quote do
-      import HorionosWeb.LiveAuthorization
-    end
-  end
-
   @doc """
   Authorizes a user for a specific action.
   """

@@ -1,7 +1,7 @@
 defmodule HorionosWeb.OrganizationLive.Index do
   use HorionosWeb, :live_view
-  use HorionosWeb.LiveAuthorization
 
+  import HorionosWeb.LiveAuthorization
   import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
   alias Horionos.Organizations

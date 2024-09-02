@@ -208,7 +208,7 @@ defmodule Horionos.OrganizationsTest do
         |> where([m], m.user_id == ^member2.id)
         |> Repo.all()
 
-      assert length(member2_memberships) == 0
+      assert member2_memberships == []
     end
   end
 
