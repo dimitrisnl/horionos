@@ -171,32 +171,44 @@ defmodule Horionos.OrganizationsTest do
   describe "delete_membership/1" do
     setup do
       owner = user_fixture()
-      admin = user_fixture()
-      member = user_fixture()
-      user = user_fixture()
+      member1 = user_fixture()
+      member2 = user_fixture()
 
       organization = organization_fixture(%{user: owner})
 
-      membership_fixture(%{user_id: admin.id, organization_id: organization.id, role: :admin})
-      membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
+      membership_fixture(%{user_id: member1.id, organization_id: organization.id, role: :member})
 
       membership =
-        membership_fixture(%{user_id: user.id, organization_id: organization.id, role: :member})
+        membership_fixture(%{user_id: member2.id, organization_id: organization.id, role: :member})
 
       %{
-        member: member,
-        admin: admin,
-        user: user,
         organization: organization,
+        member1: member1,
+        member2: member2,
         membership: membership
       }
     end
 
     test "deletes the membership when user has permissions", %{
-      membership: membership
+      membership: membership,
+      member1: member1,
+      member2: member2
     } do
       assert {:ok, %Membership{}} = Organizations.delete_membership(membership)
-      assert is_nil(Repo.get(Membership, membership.id))
+
+      member1_memberships =
+        Membership
+        |> where([m], m.user_id == ^member1.id)
+        |> Repo.all()
+
+      assert length(member1_memberships) == 1
+
+      member2_memberships =
+        Membership
+        |> where([m], m.user_id == ^member2.id)
+        |> Repo.all()
+
+      assert length(member2_memberships) == 0
     end
   end
 

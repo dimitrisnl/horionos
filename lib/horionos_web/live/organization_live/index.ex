@@ -59,7 +59,10 @@ defmodule HorionosWeb.OrganizationLive.Index do
               </div>
             </:col>
             <:col :let={{_id, membership}} label="Joined">
-              <.local_time date={membership.inserted_at} id={"membership-inserted-#{membership.id}"} />
+              <.local_time
+                date={membership.inserted_at}
+                id={"membership-inserted-#{membership.organization_id}-#{membership.user_id}"}
+              />
             </:col>
           </.table>
         </div>
