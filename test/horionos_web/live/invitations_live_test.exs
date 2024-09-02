@@ -25,7 +25,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
 
     test "renders invitation page", %{conn: conn, owner: owner, organization: organization} do
       conn = log_in_user(conn, owner)
-      invitation = invitation_fixture(owner, organization, "test@example.com")
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
 
       {:ok, _view, html} = live(conn, ~p"/organization/invitations")
 
@@ -81,7 +81,9 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
              |> render_click()
 
       refute render(view) =~ "cancel@example.com"
-      assert is_nil(Organizations.get_pending_invitation_by_token(invitation.token))
+
+      assert {:error, :invalid_token} =
+               Organizations.get_pending_invitation_by_token(invitation.token)
     end
 
     test "non-admin users cannot access invitations page", %{

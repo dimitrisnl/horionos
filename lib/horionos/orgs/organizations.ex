@@ -32,7 +32,8 @@ defmodule Horionos.Organizations do
   defdelegate accept_invitation(invitation, user_params), to: InvitationManagement
   defdelegate get_pending_invitation_by_token(token), to: InvitationManagement
   defdelegate delete_invitation(invitation_id), to: InvitationManagement
-  defdelegate send_invitation_email(invitation, url_fn), to: InvitationManagement
+  defdelegate delete_expired_invitations(), to: InvitationManagement
+  defdelegate send_invitation_email(invitation, invitation_url), to: InvitationManagement
   defdelegate build_invitation_changeset(invitation, attrs \\ %{}), to: InvitationManagement
   defdelegate create_invitation(inviter, organization, email, role), to: InvitationManagement
 

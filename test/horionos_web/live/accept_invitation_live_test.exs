@@ -22,13 +22,17 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
       invitation: invitation,
       organization: organization
     } do
-      {:ok, _lv, html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
+      %{token: token} = invitation
+
+      {:ok, _lv, html} = live(conn, ~p"/invitations/#{token}/accept")
       assert html =~ "Accept Invitation"
       assert html =~ organization.title
     end
 
     test "allows a new user to accept invitation", %{conn: conn, invitation: invitation} do
-      {:ok, lv, _html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
+      %{token: token} = invitation
+
+      {:ok, lv, _html} = live(conn, ~p"/invitations/#{token}/accept")
 
       form =
         form(lv, "#invitation_form", %{
@@ -49,7 +53,8 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
       conn: conn,
       invitation: invitation
     } do
-      {:ok, lv, _html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
+      %{token: token, invitation: invitation_content} = invitation
+      {:ok, lv, _html} = live(conn, ~p"/invitations/#{token}/accept")
 
       result =
         lv
@@ -64,15 +69,16 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
 
       assert result =~ "Accepting..."
 
-      assert Repo.get_by(User, email: invitation.email)
+      assert Repo.get_by(User, email: invitation_content.email)
       assert is_nil(Repo.get_by(User, email: "new_user_other_email@example.com"))
     end
 
     test "allows an existing user to accept invitation", %{conn: conn, invitation: invitation} do
-      user = user_fixture(email: invitation.email)
+      %{token: token, invitation: invitation_content} = invitation
+      user = user_fixture(email: invitation_content.email)
       conn = log_in_user(conn, user)
 
-      {:ok, lv, _html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
+      {:ok, lv, _html} = live(conn, ~p"/invitations/#{token}/accept")
 
       form =
         form(lv, "#invitation_form", %{})
@@ -91,7 +97,9 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
     end
 
     test "shows error for already accepted invitation", %{conn: conn, invitation: invitation} do
-      Organizations.accept_invitation(invitation, %{
+      %{invitation: invitation_content, token: token} = invitation
+
+      Organizations.accept_invitation(invitation_content, %{
         full_name: "Test User",
         password: valid_user_password()
       })
@@ -99,11 +107,13 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
       {:error,
        {:redirect,
         %{to: "/users/log_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
-        live(conn, ~p"/invitations/#{invitation.token}/accept")
+        live(conn, ~p"/invitations/#{token}/accept")
     end
 
     test "handles user creation failure", %{conn: conn, invitation: invitation} do
-      {:ok, lv, _html} = live(conn, ~p"/invitations/#{invitation.token}/accept")
+      %{token: token} = invitation
+
+      {:ok, lv, _html} = live(conn, ~p"/invitations/#{token}/accept")
 
       result =
         lv
@@ -117,8 +127,10 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
     end
 
     test "handles invitation acceptance failure", %{conn: conn, invitation: invitation} do
+      %{invitation: invitation_content, token: token} = invitation
+
       # Simulate a failure in accepting the invitation
-      Organizations.accept_invitation(invitation, %{
+      Organizations.accept_invitation(invitation_content, %{
         full_name: "Test User",
         password: valid_user_password()
       })
@@ -126,7 +138,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
       {:error,
        {:redirect,
         %{to: "/users/log_in", flash: %{"error" => "Invitation not found or already accepted"}}}} =
-        live(conn, ~p"/invitations/#{invitation.token}/accept")
+        live(conn, ~p"/invitations/#{token}/accept")
     end
   end
 end

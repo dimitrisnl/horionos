@@ -4,9 +4,10 @@ defmodule Horionos.Repo.Migrations.CreateInvitations do
   def change do
     create table(:invitations) do
       add :email, :string, null: false
-      add :token, :string, null: false
+      add :token, :binary, null: false
       add :role, :string, null: false
       add :accepted_at, :utc_datetime
+      add :expires_at, :utc_datetime
       add :inviter_id, references(:users, on_delete: :nothing), null: false
       add :organization_id, references(:organizations, on_delete: :nothing), null: false
 

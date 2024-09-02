@@ -237,11 +237,14 @@ defmodule Horionos.OrganizationsTest do
     } do
       email = "test@example.com"
 
-      assert {:ok, %Invitation{} = invitation} =
+      assert {:ok, %{invitation: invitation, token: token}} =
                Organizations.create_invitation(owner, organization, email, :member)
 
       assert invitation.email == email
       assert invitation.role == :member
+      assert is_binary(invitation.token)
+      assert is_binary(token)
+      assert invitation.expires_at
     end
 
     test "returns an error when inviting an existing member", %{
@@ -270,16 +273,17 @@ defmodule Horionos.OrganizationsTest do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test1@example.com")
-      invitation2 = invitation_fixture(owner, organization, "test2@example.com")
+      %{invitation: invitation1} = invitation_fixture(owner, organization, "test1@example.com")
+      %{invitation: invitation2} = invitation_fixture(owner, organization, "test2@example.com")
 
-      Repo.update!(
-        Ecto.Changeset.change(invitation2,
-          accepted_at: DateTime.truncate(DateTime.utc_now(), :second)
+      {:ok, _updated_invitation} =
+        Repo.update(
+          Ecto.Changeset.change(invitation2,
+            accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          )
         )
-      )
 
-      %{owner: owner, organization: organization, invitation: invitation}
+      %{owner: owner, organization: organization, invitation: invitation1}
     end
 
     test "returns invitations", %{
@@ -298,7 +302,7 @@ defmodule Horionos.OrganizationsTest do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
       %{invitation: invitation}
     end
 
@@ -329,42 +333,67 @@ defmodule Horionos.OrganizationsTest do
                  password: valid_user_password()
                })
     end
+
+    test "returns an error when invitation has expired", %{invitation: invitation} do
+      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+
+      {:ok, expired_invitation} =
+        Repo.update(Ecto.Changeset.change(invitation, expires_at: expired_at))
+
+      assert {:error, :expired} =
+               Organizations.accept_invitation(expired_invitation, %{
+                 full_name: "Test User",
+                 password: valid_user_password()
+               })
+    end
   end
 
   describe "get_pending_invitation_by_token/1" do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
-      %{invitation: invitation}
+
+      %{invitation: invitation, token: token} =
+        invitation_fixture(owner, organization, "test@example.com")
+
+      %{invitation: invitation, token: token}
     end
 
-    test "returns the invitation when token is valid", %{invitation: invitation} do
-      assert %Invitation{} =
-               found_invitation = Organizations.get_pending_invitation_by_token(invitation.token)
-
+    test "returns the invitation when token is valid", %{invitation: invitation, token: token} do
+      assert {:ok, found_invitation} = Organizations.get_pending_invitation_by_token(token)
       assert found_invitation.id == invitation.id
     end
 
-    test "returns nil when token is invalid" do
-      assert is_nil(Organizations.get_pending_invitation_by_token("invalid_token"))
+    test "returns error when token is invalid" do
+      assert {:error, :invalid_token} =
+               Organizations.get_pending_invitation_by_token("invalid_token")
     end
 
-    test "returns nil when invitation is already accepted", %{invitation: invitation} do
+    test "returns error when invitation is already accepted", %{
+      invitation: invitation,
+      token: token
+    } do
       Organizations.accept_invitation(invitation, %{
         full_name: "Test User",
         password: valid_user_password()
       })
 
-      assert is_nil(Organizations.get_pending_invitation_by_token(invitation.token))
+      assert {:error, :invalid_token} = Organizations.get_pending_invitation_by_token(token)
+    end
+
+    test "returns error when invitation has expired", %{invitation: invitation, token: token} do
+      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      Repo.update!(Ecto.Changeset.change(invitation, expires_at: expired_at))
+
+      assert {:error, :invalid_token} = Organizations.get_pending_invitation_by_token(token)
     end
   end
 
-  describe "delete_invitation/2" do
+  describe "delete_invitation/1" do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
       %{owner: owner, organization: organization, invitation: invitation}
     end
 
@@ -384,13 +413,82 @@ defmodule Horionos.OrganizationsTest do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
-      %{invitation: invitation}
+
+      %{invitation: invitation, token: token} =
+        invitation_fixture(owner, organization, "test@example.com")
+
+      %{invitation: invitation, token: token}
     end
 
-    test "sends the invitation email", %{invitation: invitation} do
-      url_fn = fn token -> "http://example.com/invitations/#{token}" end
-      assert {:ok, %Invitation{}} = Organizations.send_invitation_email(invitation, url_fn)
+    test "sends the invitation email", %{invitation: invitation, token: token} do
+      url = "http://example.com/invitations/#{token}"
+      assert {:ok, %Invitation{}} = Organizations.send_invitation_email(invitation, url)
+    end
+  end
+
+  describe "delete_expired_invitations/0" do
+    setup do
+      owner = user_fixture()
+      organization = organization_fixture(%{user: owner})
+
+      # Create an expired invitation
+      %{invitation: expired_invitation} =
+        invitation_fixture(owner, organization, "expired@example.com")
+
+      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      Repo.update!(Ecto.Changeset.change(expired_invitation, expires_at: expired_at))
+
+      # Create a valid invitation
+      %{invitation: valid_invitation} =
+        invitation_fixture(owner, organization, "valid@example.com")
+
+      # Create an accepted invitation
+      %{invitation: accepted_invitation} =
+        invitation_fixture(owner, organization, "accepted@example.com")
+
+      Repo.update!(
+        Ecto.Changeset.change(accepted_invitation,
+          accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+      )
+
+      %{
+        expired_invitation: expired_invitation,
+        valid_invitation: valid_invitation,
+        accepted_invitation: accepted_invitation
+      }
+    end
+
+    test "deletes only expired and unaccepted invitations", %{
+      expired_invitation: expired_invitation,
+      valid_invitation: valid_invitation,
+      accepted_invitation: accepted_invitation
+    } do
+      assert {1, nil} = Organizations.delete_expired_invitations()
+
+      assert is_nil(Repo.get(Invitation, expired_invitation.id))
+      assert Repo.get(Invitation, valid_invitation.id)
+      assert Repo.get(Invitation, accepted_invitation.id)
+    end
+
+    test "returns 0 when no expired invitations exist" do
+      # First, delete the expired invitation
+      Organizations.delete_expired_invitations()
+
+      # Now, there should be no expired invitations left
+      assert {0, nil} = Organizations.delete_expired_invitations()
+    end
+
+    test "doesn't delete accepted invitations even if they're expired", %{
+      accepted_invitation: accepted_invitation
+    } do
+      # Make the accepted invitation expired
+      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      Repo.update!(Ecto.Changeset.change(accepted_invitation, expires_at: expired_at))
+
+      Organizations.delete_expired_invitations()
+
+      assert Repo.get(Invitation, accepted_invitation.id)
     end
   end
 
@@ -398,7 +496,7 @@ defmodule Horionos.OrganizationsTest do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      invitation = invitation_fixture(owner, organization, "test@example.com")
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
       %{invitation: invitation}
     end
 
@@ -490,8 +588,7 @@ defmodule Horionos.OrganizationsTest do
     end
 
     test "invitation can only be accepted once", %{owner: owner, organization: organization} do
-      {:ok, invitation} =
-        Organizations.create_invitation(owner, organization, "test@example.com", :member)
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
 
       # Accept invitation
       user_params = %{full_name: "Test User", password: valid_user_password()}
