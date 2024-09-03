@@ -17,6 +17,7 @@ defmodule HorionosWeb.AnnouncementLiveTest do
     setup %{user: user} do
       organization = organization_fixture(%{user: user})
       other_organization = organization_fixture(%{user: user})
+
       %{user: user, organization: organization, other_organization: other_organization}
     end
 

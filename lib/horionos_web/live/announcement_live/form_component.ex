@@ -34,28 +34,27 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:organization_id, assigns.current_organization.id)
      |> assign_form(changeset)}
   end
 
   @impl true
-  def handle_event("validate", %{"announcement" => announcement_params}, socket) do
+  def handle_event("validate", %{"announcement" => params}, socket) do
     changeset =
       socket.assigns.announcement
-      |> Announcements.build_announcement_changeset(announcement_params)
+      |> Announcements.build_announcement_changeset(params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
   end
 
-  def handle_event("save", %{"announcement" => announcement_params}, socket) do
-    save_announcement(socket, socket.assigns.action, announcement_params)
+  def handle_event("save", %{"announcement" => params}, socket) do
+    save_announcement(socket, socket.assigns.action, params)
   end
 
-  defp save_announcement(socket, :edit, announcement_params) do
+  defp save_announcement(socket, :edit, params) do
     case authorize_user_action(socket, :announcement_edit) do
       :ok ->
-        case Announcements.update_announcement(socket.assigns.announcement, announcement_params) do
+        case Announcements.update_announcement(socket.assigns.announcement, params) do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 
@@ -76,15 +75,12 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     end
   end
 
-  defp save_announcement(socket, :new, announcement_params) do
+  defp save_announcement(socket, :new, params) do
     case authorize_user_action(socket, :announcement_create) do
       :ok ->
-        params_with_organization_id =
-          Map.put(announcement_params, "organization_id", socket.assigns.organization_id)
-
         case Announcements.create_announcement(
                socket.assigns.current_organization,
-               params_with_organization_id
+               params
              ) do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})

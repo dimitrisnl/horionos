@@ -40,6 +40,7 @@ defmodule Horionos.Announcements do
   def create_announcement(%Organization{} = organization, attrs) do
     %Announcement{}
     |> Announcement.changeset(attrs)
+    |> Ecto.Changeset.put_change(:organization_id, organization.id)
     |> OrganizationRepo.insert(organization.id)
   end
 

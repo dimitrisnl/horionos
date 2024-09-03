@@ -75,6 +75,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       organization: organization
     } do
       invitation = invitation_fixture(owner, organization, "cancel@example.com")
+
       conn = log_in_user(conn, owner)
       {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 

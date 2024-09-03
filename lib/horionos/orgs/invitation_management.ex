@@ -22,6 +22,10 @@ defmodule Horionos.Organizations.InvitationManagement do
           | {:error, :invalid_role}
   def create_invitation(inviter, organization, email, role) do
     cond do
+      # Not exhaustive authorization check, just a double check to prevent any mistakes
+      not MembershipManagement.user_in_organization?(organization, inviter.email) ->
+        {:error, :unauthorized}
+
       MembershipManagement.user_in_organization?(organization, email) ->
         {:error, :already_member}
 

@@ -11,6 +11,7 @@ defmodule HorionosWeb.OnboardingLiveTest do
     @tag create_organization: false
     test "renders onboarding page for user without organization", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/onboarding")
+
       assert html =~ "Create Your Organization"
       assert html =~ "Organization Name"
     end
