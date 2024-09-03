@@ -111,6 +111,14 @@ defmodule Horionos.Organizations.Invitation do
     end
   end
 
+  @doc """
+  Returns the inviter's name or "<Deleted user>" if the inviter has been deleted.
+  """
+  @spec inviter_name(t()) :: String.t()
+  def inviter_name(%__MODULE__{inviter: %User{email: email}}), do: email
+  def inviter_name(%__MODULE__{inviter: %Ecto.Association.NotLoaded{}}), do: "Unknown"
+  def inviter_name(%__MODULE__{inviter: nil}), do: "<Deleted user>"
+
   @spec expired?(invitation :: t) :: boolean()
   def expired?(invitation) do
     DateTime.compare(DateTime.utc_now(), invitation.expires_at) == :gt

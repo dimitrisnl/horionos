@@ -613,6 +613,19 @@ defmodule Horionos.OrganizationsTest do
                Organizations.accept_invitation(updated_invitation, user_params)
     end
 
+    test "deleting the inviter doesn't delete their invitations", %{
+      admin: admin,
+      organization: organization
+    } do
+      %{invitation: invitation} = invitation_fixture(admin, organization, "example@email.com")
+
+      assert invitation.inviter_id == admin.id
+      Repo.delete(admin)
+
+      updated_invitation = Repo.get(Invitation, invitation.id)
+      assert updated_invitation.inviter_id == nil
+    end
+
     test "deleting an organization cascades to memberships and invitations", %{
       owner: owner,
       organization: organization

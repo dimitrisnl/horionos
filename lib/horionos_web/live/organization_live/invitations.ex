@@ -70,7 +70,8 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
               <div class="space-y-1">
                 <div><%= invitation.email %></div>
                 <div class="font-normal">
-                  Invited by: <span class="font-medium"><%= invitation.inviter.full_name %></span>
+                  Invited by:
+                  <span class="font-medium"><%= Invitation.inviter_name(invitation) %></span>
                 </div>
               </div>
             </:col>
