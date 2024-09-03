@@ -11,9 +11,10 @@ config :horionos,
   reset_password_validity_in_days: 1,
   confirm_validity_in_days: 7,
   change_email_validity_in_days: 7,
-  session_validity_in_days: 60,
   unconfirmed_email_deadline_in_days: 7,
-  unconfirmed_email_lock_deadline_in_days: 30
+  invitation_validity_in_days: 7,
+  unconfirmed_email_lock_deadline_in_days: 30,
+  session_validity_in_days: 60
 
 config :horionos, :notification_method, :log
 
@@ -21,7 +22,13 @@ config :horionos, :notification_method, :log
 config :horionos, Oban,
   repo: Horionos.Repo,
   plugins: [Oban.Plugins.Pruner, {Oban.Plugins.Cron, crontab: []}],
-  queues: [emails: 10, default: 10, notifications: 10, unverified_accounts: 10]
+  queues: [
+    emails: 10,
+    default: 10,
+    notifications: 10,
+    unverified_accounts: 10,
+    expired_invitations: 5
+  ]
 
 # Configures the endpoint
 config :horionos, HorionosWeb.Endpoint,

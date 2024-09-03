@@ -40,13 +40,13 @@ defmodule HorionosWeb.InvitationLive.Accept do
   @impl true
   def mount(%{"token" => token}, _session, socket) do
     case Organizations.get_pending_invitation_by_token(token) do
-      nil ->
+      {:error, :invalid_token} ->
         {:ok,
          socket
          |> put_flash(:error, "Invitation not found or already accepted")
          |> redirect(to: "/users/log_in")}
 
-      invitation ->
+      {:ok, invitation} ->
         current_user = socket.assigns[:current_user]
 
         if can_accept_invitation?(current_user, invitation) do

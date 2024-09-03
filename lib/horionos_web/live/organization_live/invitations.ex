@@ -1,7 +1,7 @@
 defmodule HorionosWeb.OrganizationLive.Invitations do
   use HorionosWeb, :live_view
-  use HorionosWeb.LiveAuthorization
 
+  import HorionosWeb.LiveAuthorization
   import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
   alias Horionos.Organizations
@@ -70,7 +70,8 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
               <div class="space-y-1">
                 <div><%= invitation.email %></div>
                 <div class="font-normal">
-                  Invited by: <span class="font-medium"><%= invitation.inviter.full_name %></span>
+                  Invited by:
+                  <span class="font-medium"><%= Invitation.inviter_name(invitation) %></span>
                 </div>
               </div>
             </:col>
@@ -134,13 +135,24 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
         role = String.to_existing_atom(invitation_params["role"])
 
         case Organizations.create_invitation(inviter, organization, email, role) do
-          {:ok, invitation} ->
-            Organizations.send_invitation_email(invitation, &url(~p"/invitations/#{&1}/accept"))
+          {:ok, %{invitation: invitation, token: token}} ->
+            accept_url = url(socket, ~p"/invitations/#{token}/accept")
+            Organizations.send_invitation_email(invitation, accept_url)
 
             {:noreply,
              socket
              |> put_flash(:info, "Invitation sent")
              |> push_navigate(to: ~p"/organization/invitations")}
+
+          {:error, :already_member} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "User is already a member of this organization")}
+
+          {:error, :invalid_role} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Invalid role selected")}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, assign(socket, :form, to_form(changeset))}

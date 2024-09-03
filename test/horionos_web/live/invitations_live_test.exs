@@ -12,20 +12,21 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
   describe "Invitations page" do
     setup do
       owner = user_fixture()
+      organization = organization_fixture(%{user: owner})
 
       admin = user_fixture()
-      member = user_fixture()
-
-      organization = organization_fixture(%{user: owner})
       membership_fixture(%{user_id: admin.id, organization_id: organization.id, role: :admin})
+
+      member = user_fixture()
       membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
 
       %{owner: owner, admin: admin, member: member, organization: organization}
     end
 
     test "renders invitation page", %{conn: conn, owner: owner, organization: organization} do
+      %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
+
       conn = log_in_user(conn, owner)
-      invitation = invitation_fixture(owner, organization, "test@example.com")
 
       {:ok, _view, html} = live(conn, ~p"/organization/invitations")
 
@@ -41,6 +42,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
 
     test "can send a new invitation", %{conn: conn, owner: owner, organization: organization} do
       conn = log_in_user(conn, owner)
+
       {:ok, view, _html} = live(conn, ~p"/organization/invitations")
 
       assert view
@@ -81,7 +83,9 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
              |> render_click()
 
       refute render(view) =~ "cancel@example.com"
-      assert is_nil(Organizations.get_pending_invitation_by_token(invitation.token))
+
+      assert {:error, :invalid_token} =
+               Organizations.get_pending_invitation_by_token(invitation.token)
     end
 
     test "non-admin users cannot access invitations page", %{
@@ -138,6 +142,30 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       assert view
              |> element("a", "Cancel")
              |> render_click() =~ "You are not authorized to cancel this invitation"
+    end
+
+    test "displays who invited the user", %{
+      owner: owner,
+      admin: admin,
+      conn: conn,
+      organization: organization
+    } do
+      invitation_fixture(admin, organization, "test@example.com")
+
+      conn = log_in_user(conn, owner)
+      {:ok, _view, html} = live(conn, ~p"/organization/invitations")
+
+      # Show who created the invitation
+      assert html =~ admin.email
+      refute html =~ "Deleted user"
+
+      # Delete/kick the admin user
+      Repo.delete(admin)
+
+      {:ok, _view, html} = live(conn, ~p"/organization/invitations")
+
+      refute html =~ admin.email
+      assert html =~ "Deleted user"
     end
   end
 end

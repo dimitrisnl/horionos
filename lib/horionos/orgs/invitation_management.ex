@@ -16,7 +16,7 @@ defmodule Horionos.Organizations.InvitationManagement do
   Creates an invitation for a user to join an organization.
   """
   @spec create_invitation(User.t(), Organization.t(), String.t(), MembershipRole.t()) ::
-          {:ok, Invitation.t()}
+          {:ok, %{invitation: Invitation.t(), token: String.t()}}
           | {:error, Ecto.Changeset.t()}
           | {:error, :already_member}
           | {:error, :invalid_role}
@@ -29,24 +29,20 @@ defmodule Horionos.Organizations.InvitationManagement do
         {:error, :invalid_role}
 
       true ->
-        %Invitation{}
-        |> Invitation.changeset(%{
-          email: email,
-          token: Invitation.generate_token(),
-          role: role,
-          inviter_id: inviter.id,
-          organization_id: organization.id
-        })
-        |> Repo.insert()
-        |> case do
-          {:ok, invitation} ->
+        {token, invitation_attrs} =
+          Invitation.build_invitation_token(inviter, organization, email, role)
+
+        changeset = Invitation.changeset(%Invitation{}, invitation_attrs)
+
+        case Repo.insert(changeset) do
+          {:ok, saved_invitation} ->
             AdminNotifications.notify(:invitation_created, %{
               inviter: inviter,
               organization: organization,
-              invitation: invitation
+              invitation: saved_invitation
             })
 
-            {:ok, invitation}
+            {:ok, %{invitation: saved_invitation, token: token}}
 
           {:error, changeset} ->
             {:error, changeset}
@@ -57,13 +53,10 @@ defmodule Horionos.Organizations.InvitationManagement do
   @doc """
   Gets a pending invitation by its token.
   """
-  @spec get_pending_invitation_by_token(String.t()) :: Invitation.t() | nil
+  @spec get_pending_invitation_by_token(String.t()) ::
+          {:ok, Invitation.t()} | {:error, :invalid_token}
   def get_pending_invitation_by_token(token) do
-    Invitation
-    |> where([i], i.token == ^token)
-    |> where([i], is_nil(i.accepted_at))
-    |> preload([:organization, :inviter])
-    |> Repo.one()
+    Invitation.verify_invitation_token(token)
   end
 
   @doc """
@@ -72,15 +65,27 @@ defmodule Horionos.Organizations.InvitationManagement do
   @spec accept_invitation(Invitation.t(), map()) ::
           {:ok, %{user: User.t(), invitation: Invitation.t(), membership: Membership.t()}}
           | {:error, :already_accepted}
+          | {:error, :expired}
           | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
   def accept_invitation(invitation, user_params) do
-    with true <- is_nil(invitation.accepted_at),
-         {:ok, result} <- do_accept_invitation(invitation, user_params) do
-      notify_user_joined(result)
-      {:ok, result}
-    else
-      false -> {:error, :already_accepted}
-      error -> error
+    cond do
+      not is_nil(invitation.accepted_at) ->
+        {:error, :already_accepted}
+
+      Invitation.expired?(invitation) ->
+        {:error, :expired}
+
+      true ->
+        result = do_accept_invitation(invitation, user_params)
+
+        case result do
+          {:ok, data} ->
+            notify_user_joined(data)
+            {:ok, data}
+
+          error ->
+            error
+        end
     end
   end
 
@@ -119,11 +124,11 @@ defmodule Horionos.Organizations.InvitationManagement do
   @doc """
   Sends an invitation email.
   """
-  @spec send_invitation_email(Invitation.t(), (String.t() -> String.t())) ::
+  @spec send_invitation_email(Invitation.t(), String.t()) ::
           {:ok, Invitation.t()} | {:error, any()}
-  def send_invitation_email(%Invitation{} = invitation, url_fn) do
+  def send_invitation_email(%Invitation{} = invitation, invitation_url) do
     invitation = Repo.preload(invitation, [:inviter, :organization])
-    UserNotifications.deliver_invitation(invitation, url_fn.(invitation.token))
+    UserNotifications.deliver_invitation(invitation, invitation_url)
     {:ok, invitation}
   end
 
@@ -136,6 +141,7 @@ defmodule Horionos.Organizations.InvitationManagement do
       Invitation
       |> where([i], i.organization_id == ^organization_id)
       |> where([i], is_nil(i.accepted_at))
+      |> where([i], i.expires_at > ^DateTime.utc_now())
       |> preload([:inviter])
       |> Repo.all()
 
@@ -160,6 +166,17 @@ defmodule Horionos.Organizations.InvitationManagement do
       nil -> {:error, :not_found}
       invitation -> Repo.delete(invitation)
     end
+  end
+
+  @doc """
+  Deletes expired invitations.
+  """
+  @spec delete_expired_invitations() :: {non_neg_integer(), nil | [term()]}
+  def delete_expired_invitations do
+    Invitation
+    |> where([i], i.expires_at <= ^DateTime.utc_now())
+    |> where([i], is_nil(i.accepted_at))
+    |> Repo.delete_all()
   end
 
   # Private functions

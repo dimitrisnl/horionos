@@ -51,13 +51,20 @@ if config_env() == :prod do
 
   config :horionos, Oban,
     repo: Horionos.Repo,
-    queues: [emails: 10, default: 10, notifications: 10, unverified_accounts: 10],
+    queues: [
+      emails: 10,
+      default: 10,
+      notifications: 10,
+      unverified_accounts: 10,
+      expired_invitations: 5
+    ],
     plugins: [
       # Prune jobs older than 7 days
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
       {Oban.Plugins.Cron,
        crontab: [
-         {"@daily", Horionos.Workers.LockUnverifiedAccountsWorker}
+         {"@daily", Horionos.Workers.LockUnverifiedAccountsWorker},
+         {"@daily", Horionos.Workers.DeleteExpiredInvitationsWorker}
        ]},
       Oban.Plugins.Lifeline
     ]
