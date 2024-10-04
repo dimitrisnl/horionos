@@ -102,7 +102,7 @@ defmodule Horionos.Accounts.UserEmailManagement do
 
   @spec email_verification_pending?(User.t()) :: boolean()
   def email_verification_pending?(user) do
-    now = truncate_datetime(DateTime.utc_now())
+    now = DateTime.utc_now(:second)
 
     is_nil(user.confirmed_at) &&
       DateTime.compare(get_email_verification_deadline(user), now) == :gt
@@ -138,10 +138,5 @@ defmodule Horionos.Accounts.UserEmailManagement do
       :tokens,
       EmailToken.get_user_tokens_by_contexts_query(user, ["confirm"])
     )
-  end
-
-  @spec truncate_datetime(DateTime.t()) :: DateTime.t()
-  defp truncate_datetime(datetime) do
-    DateTime.truncate(datetime, :second)
   end
 end

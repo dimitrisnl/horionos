@@ -73,7 +73,7 @@ defmodule Horionos.Accounts.UserManagement do
 
   @spec lock_user(User.t()) :: user_operation_result()
   def lock_user(user) do
-    now = truncate_datetime(DateTime.utc_now())
+    now = DateTime.utc_now(:second)
 
     user
     |> Ecto.Changeset.change(locked_at: now)
@@ -93,7 +93,7 @@ defmodule Horionos.Accounts.UserManagement do
   """
   @spec lock_expired_unverified_accounts() :: {integer(), [User.t()]}
   def lock_expired_unverified_accounts do
-    now = truncate_datetime(DateTime.utc_now())
+    now = DateTime.utc_now(:second)
     lock_threshold = DateTime.add(now, -@unconfirmed_email_lock_deadline_in_days, :day)
 
     query =
@@ -107,12 +107,5 @@ defmodule Horionos.Accounts.UserManagement do
     {locked_count, locked_users} = Repo.update_all(query, set: [locked_at: now])
 
     {locked_count, locked_users}
-  end
-
-  # Private functions
-
-  @spec truncate_datetime(DateTime.t()) :: DateTime.t()
-  defp truncate_datetime(datetime) do
-    DateTime.truncate(datetime, :second)
   end
 end
