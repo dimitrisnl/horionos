@@ -1,9 +1,6 @@
 defmodule HorionosWeb.AnnouncementLive.FormComponent do
   use HorionosWeb, :live_component
 
-  import HorionosWeb.LiveAuthorization
-  import HorionosWeb.LiveResPipes
-
   alias Horionos.Announcements
 
   @impl Phoenix.LiveComponent

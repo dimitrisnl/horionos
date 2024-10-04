@@ -1,6 +1,5 @@
 defmodule HorionosWeb.AnnouncementLive.Show do
   use HorionosWeb, :live_view
-  import HorionosWeb.LiveAuthorization
 
   alias Horionos.Announcements
 

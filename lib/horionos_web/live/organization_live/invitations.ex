@@ -1,7 +1,6 @@
 defmodule HorionosWeb.OrganizationLive.Invitations do
   use HorionosWeb, :live_view
 
-  import HorionosWeb.LiveAuthorization
   import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
   alias Horionos.Organizations
