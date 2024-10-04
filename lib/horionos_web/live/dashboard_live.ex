@@ -48,10 +48,8 @@ defmodule HorionosWeb.DashboardLive do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
-    socket =
-      socket
-      |> assign(:current_email, user.email)
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_email, user.email)
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 end

@@ -53,6 +53,8 @@ defmodule HorionosWeb do
     quote do
       use Phoenix.LiveView
 
+      import HorionosWeb.LiveResPipes
+
       unquote(html_helpers())
     end
   end

@@ -42,8 +42,10 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"), instructions_sent: false),
-     layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(instructions_sent: false)
+    |> assign(form: to_form(%{}, as: "user"))
+    |> ok(layout: {HorionosWeb.Layouts, :guest})
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
@@ -62,16 +64,16 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
           )
         end
 
-        {:noreply,
-         socket
-         |> assign(instructions_sent: true)
-         |> assign(form: to_form(%{}, as: "user"))}
+        socket
+        |> assign(instructions_sent: true)
+        |> assign(form: to_form(%{}, as: "user"))
+        |> noreply()
 
       :error ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Too many requests. Please try again later.")
-         |> assign(form: to_form(%{"email" => email}, as: "user"))}
+        socket
+        |> put_flash(:error, "Too many requests. Please try again later.")
+        |> assign(form: to_form(%{"email" => email}, as: "user"))
+        |> noreply()
     end
   end
 end

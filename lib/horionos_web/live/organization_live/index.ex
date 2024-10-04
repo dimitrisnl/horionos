@@ -107,23 +107,23 @@ defmodule HorionosWeb.OrganizationLive.Index do
          {:ok, memberships} <- Organizations.list_organization_memberships(organization) do
       changeset = Organizations.build_organization_changeset(organization)
 
-      {:ok,
-       socket
-       |> assign(:organization, organization)
-       |> assign(:form, to_form(changeset))
-       |> stream(:memberships, memberships), layout: {HorionosWeb.Layouts, :dashboard}}
+      socket
+      |> assign(:organization, organization)
+      |> assign(:form, to_form(changeset))
+      |> stream(:memberships, memberships)
+      |> ok(layout: {HorionosWeb.Layouts, :dashboard})
     else
       {:error, :unauthorized} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "You are not authorized to access this page.")
-         |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
+        socket
+        |> put_flash(:error, "You are not authorized to access this page.")
+        |> push_navigate(to: ~p"/")
+        |> ok(layout: {HorionosWeb.Layouts, :dashboard})
 
       {:error, _} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Unable to load organization details.")
-         |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
+        socket
+        |> put_flash(:error, "Unable to load organization details.")
+        |> push_navigate(to: ~p"/")
+        |> ok(layout: {HorionosWeb.Layouts, :dashboard})
     end
   end
 
@@ -135,24 +135,26 @@ defmodule HorionosWeb.OrganizationLive.Index do
 
         case Organizations.update_organization(organization, organization_params) do
           {:ok, updated_organization} ->
-            {:noreply,
-             socket
-             |> assign(:organization, updated_organization)
-             |> assign(:current_organization, updated_organization)
-             |> assign(
-               :form,
-               to_form(Organizations.build_organization_changeset(updated_organization))
-             )
-             |> put_flash(:info, "Organization updated successfully")}
+            socket
+            |> assign(:organization, updated_organization)
+            |> assign(:current_organization, updated_organization)
+            |> assign(
+              :form,
+              to_form(Organizations.build_organization_changeset(updated_organization))
+            )
+            |> put_flash(:info, "Organization updated successfully")
+            |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign(socket, :form, to_form(changeset))}
+            socket
+            |> assign(:form, to_form(changeset))
+            |> noreply()
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to update this organization.")}
+        socket
+        |> put_flash(:error, "You are not authorized to update this organization.")
+        |> noreply()
     end
   end
 
@@ -164,21 +166,21 @@ defmodule HorionosWeb.OrganizationLive.Index do
 
         case Organizations.delete_organization(organization) do
           {:ok, _deleted_organization} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Organization deleted successfully.")
-             |> push_navigate(to: ~p"/")}
+            socket
+            |> put_flash(:info, "Organization deleted successfully.")
+            |> push_navigate(to: ~p"/")
+            |> noreply()
 
           {:error, _} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to delete organization.")}
+            socket
+            |> put_flash(:error, "Failed to delete organization.")
+            |> noreply()
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to delete this organization.")}
+        socket
+        |> put_flash(:error, "You are not authorized to delete this organization.")
+        |> noreply()
     end
   end
 end

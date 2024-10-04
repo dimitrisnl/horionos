@@ -154,17 +154,15 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
     sessions = Accounts.list_user_sessions(user, user_token)
 
-    socket =
-      socket
-      |> assign(:current_password, nil)
-      |> assign(:current_email, user.email)
-      |> assign(:sessions, sessions)
-      |> assign(:password_form, to_form(password_changeset))
-      |> assign(:clear_sessions_form, to_form(%{}))
-      |> assign(:trigger_submit, false)
-      |> assign(:trigger_clear_sessions, false)
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_password, nil)
+    |> assign(:current_email, user.email)
+    |> assign(:sessions, sessions)
+    |> assign(:password_form, to_form(password_changeset))
+    |> assign(:clear_sessions_form, to_form(%{}))
+    |> assign(:trigger_submit, false)
+    |> assign(:trigger_clear_sessions, false)
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
   def handle_event("update_password", params, socket) do
@@ -178,14 +176,22 @@ defmodule HorionosWeb.UserSettingsLive.Security do
           |> Accounts.build_password_changeset(user_params)
           |> to_form()
 
-        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
+        socket
+        |> assign(password_form: password_form)
+        |> assign(trigger_submit: true)
+        |> noreply()
 
       {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+        socket
+        |> assign(password_form: to_form(changeset))
+        |> noreply()
     end
   end
 
   def handle_event("clear_sessions", _params, socket) do
-    {:noreply, assign(socket, trigger_clear_sessions: true, clear_sessions_form: %{})}
+    socket
+    |> assign(trigger_clear_sessions: true)
+    |> assign(clear_sessions_form: to_form(%{}))
+    |> noreply()
   end
 end

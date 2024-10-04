@@ -1,6 +1,8 @@
 defmodule HorionosWeb.AnnouncementLive.FormComponent do
   use HorionosWeb, :live_component
+
   import HorionosWeb.LiveAuthorization
+  import HorionosWeb.LiveResPipes
 
   alias Horionos.Announcements
 
@@ -31,10 +33,12 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
   def update(%{announcement: announcement} = assigns, socket) do
     changeset = Announcements.build_announcement_changeset(announcement)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign_form(changeset)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_form(changeset)
+
+    ok(socket)
   end
 
   @impl true
@@ -44,7 +48,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
       |> Announcements.build_announcement_changeset(params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+    noreply(assign_form(socket, changeset))
   end
 
   def handle_event("save", %{"announcement" => params}, socket) do
@@ -58,20 +62,20 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Announcement updated successfully")
-             |> push_patch(to: socket.assigns.patch)}
+            socket
+            |> put_flash(:info, "Announcement updated successfully")
+            |> push_patch(to: socket.assigns.patch)
+            |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign_form(socket, changeset)}
+            noreply(assign_form(socket, changeset))
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to update this announcement.")
-         |> push_patch(to: socket.assigns.patch)}
+        socket
+        |> put_flash(:error, "You are not authorized to update this announcement.")
+        |> push_patch(to: socket.assigns.patch)
+        |> noreply()
     end
   end
 
@@ -85,20 +89,22 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Announcement created successfully")
-             |> push_patch(to: socket.assigns.patch)}
+            socket
+            |> put_flash(:info, "Announcement created successfully")
+            |> push_patch(to: socket.assigns.patch)
+            |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign_form(socket, changeset)}
+            socket
+            |> assign_form(changeset)
+            |> noreply()
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to create announcements.")
-         |> push_patch(to: socket.assigns.patch)}
+        socket
+        |> put_flash(:error, "You are not authorized to create announcements.")
+        |> push_patch(to: socket.assigns.patch)
+        |> noreply()
     end
   end
 

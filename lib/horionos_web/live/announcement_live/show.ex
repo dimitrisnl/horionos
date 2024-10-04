@@ -10,11 +10,9 @@ defmodule HorionosWeb.AnnouncementLive.Show do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
-    socket =
-      socket
-      |> assign(:current_email, user.email)
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_email, user.email)
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
   @impl true
@@ -22,22 +20,22 @@ defmodule HorionosWeb.AnnouncementLive.Show do
     with :ok <- authorize_user_action(socket, :announcement_view),
          {:ok, announcement} <-
            Announcements.get_announcement(socket.assigns.current_organization, id) do
-      {:noreply,
-       socket
-       |> assign(:page_title, page_title(socket.assigns.live_action))
-       |> assign(:announcement, announcement)}
+      socket
+      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(:announcement, announcement)
+      |> noreply()
     else
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to view this announcement.")
-         |> push_navigate(to: ~p"/announcements")}
+        socket
+        |> put_flash(:error, "You are not authorized to view this announcement.")
+        |> push_navigate(to: ~p"/announcements")
+        |> noreply()
 
       {:error, :not_found} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Announcement not found.")
-         |> push_navigate(to: ~p"/announcements")}
+        socket
+        |> put_flash(:error, "Announcement not found.")
+        |> push_navigate(to: ~p"/announcements")
+        |> noreply()
     end
   end
 
@@ -47,27 +45,27 @@ defmodule HorionosWeb.AnnouncementLive.Show do
          {:ok, announcement} <-
            Announcements.get_announcement(socket.assigns.current_organization, id),
          {:ok, _deleted_announcement} <- Announcements.delete_announcement(announcement) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Announcement deleted successfully.")
-       |> push_navigate(to: ~p"/announcements")}
+      socket
+      |> put_flash(:info, "Announcement deleted successfully.")
+      |> push_navigate(to: ~p"/announcements")
+      |> noreply()
     else
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to delete this announcement.")
-         |> push_navigate(to: ~p"/announcements")}
+        socket
+        |> put_flash(:error, "You are not authorized to delete this announcement.")
+        |> push_navigate(to: ~p"/announcements")
+        |> noreply()
 
       {:error, :not_found} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Announcement not found.")
-         |> push_navigate(to: ~p"/announcements")}
+        socket
+        |> put_flash(:error, "Announcement not found.")
+        |> push_navigate(to: ~p"/announcements")
+        |> noreply()
 
       {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to delete announcement. Please try again.")}
+        socket
+        |> put_flash(:error, "Failed to delete announcement. Please try again.")
+        |> noreply()
     end
   end
 

@@ -13,25 +13,25 @@ defmodule HorionosWeb.AnnouncementLive.Index do
         organization = socket.assigns.current_organization
         announcements = Announcements.list_announcements(organization)
 
-        socket =
-          socket
-          |> assign(:current_email, user.email)
-          |> assign(:announcements_count, length(announcements))
-          |> stream(:announcements, announcements)
-
-        {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+        socket
+        |> assign(:current_email, user.email)
+        |> assign(:announcements_count, length(announcements))
+        |> stream(:announcements, announcements)
+        |> ok(layout: {HorionosWeb.Layouts, :dashboard})
 
       {:error, :unauthorized} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "You are not authorized to view announcements.")
-         |> push_navigate(to: ~p"/"), layout: {HorionosWeb.Layouts, :dashboard}}
+        socket
+        |> put_flash(:error, "You are not authorized to view announcements.")
+        |> push_navigate(to: ~p"/")
+        |> ok(layout: {HorionosWeb.Layouts, :dashboard})
     end
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    socket
+    |> apply_action(socket.assigns.live_action, params)
+    |> noreply()
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -80,10 +80,10 @@ defmodule HorionosWeb.AnnouncementLive.Index do
 
   @impl true
   def handle_info({HorionosWeb.AnnouncementLive.FormComponent, {:saved, announcement}}, socket) do
-    {:noreply,
-     socket
-     |> stream_insert(:announcements, announcement)
-     |> update(:announcements_count, &(&1 + 1))}
+    socket
+    |> stream_insert(:announcements, announcement)
+    |> update(:announcements_count, &(&1 + 1))
+    |> noreply()
   end
 
   @impl true
@@ -92,26 +92,26 @@ defmodule HorionosWeb.AnnouncementLive.Index do
          {:ok, announcement} <-
            Announcements.get_announcement(socket.assigns.current_organization, id),
          {:ok, _deleted_announcement} <- Announcements.delete_announcement(announcement) do
-      {:noreply,
-       socket
-       |> stream_delete(:announcements, announcement)
-       |> update(:announcements_count, &(&1 - 1))
-       |> put_flash(:info, "Announcement deleted successfully.")}
+      socket
+      |> stream_delete(:announcements, announcement)
+      |> update(:announcements_count, &(&1 - 1))
+      |> put_flash(:info, "Announcement deleted successfully.")
+      |> noreply()
     else
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to delete announcements.")}
+        socket
+        |> put_flash(:error, "You are not authorized to delete announcements.")
+        |> noreply()
 
       {:error, :not_found} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Announcement not found.")}
+        socket
+        |> put_flash(:error, "Announcement not found.")
+        |> noreply()
 
       {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to delete announcement. Please try again.")}
+        socket
+        |> put_flash(:error, "Failed to delete announcement. Please try again.")
+        |> noreply()
     end
   end
 end

@@ -42,24 +42,27 @@ defmodule Horionos.AccountsTest do
     test "requires email and password to be set" do
       {:error, changeset} = Accounts.register_user(%{})
 
-      assert %{
-               password: ["can't be blank"],
-               email: ["can't be blank"]
-             } = errors_on(changeset)
+      errors = errors_on(changeset)
+
+      assert "can't be blank" in errors.email
+      assert "can't be blank" in errors.password
     end
 
     test "validates email and password when given" do
       {:error, changeset} = Accounts.register_user(%{email: "not valid", password: "not valid"})
 
-      assert %{
-               email: ["must have the @ sign and no spaces"],
-               password: ["should be at least 12 character(s)"]
-             } = errors_on(changeset)
+      errors = errors_on(changeset)
+
+      assert "must have the @ sign and no spaces" in errors.email
+      assert "should be at least 12 character(s)" in errors.password
     end
 
     test "validates maximum values for email and password for security" do
-      too_long = String.duplicate("db", 100)
-      {:error, changeset} = Accounts.register_user(%{email: too_long, password: too_long})
+      too_long_string = String.duplicate("db", 100)
+
+      {:error, changeset} =
+        Accounts.register_user(%{email: too_long_string, password: too_long_string})
+
       assert "should be at most 160 character(s)" in errors_on(changeset).email
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
@@ -67,10 +70,12 @@ defmodule Horionos.AccountsTest do
     test "validates email uniqueness" do
       %{email: email} = user_fixture()
       {:error, changeset} = Accounts.register_user(%{email: email})
+
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
       {:error, changeset} = Accounts.register_user(%{email: String.upcase(email)})
+
       assert "has already been taken" in errors_on(changeset).email
     end
 

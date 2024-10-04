@@ -33,8 +33,9 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
           %{}
       end
 
-    {:ok, assign_form(socket, form_source),
-     temporary_assigns: [form: nil], layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: to_form(form_source))
+    |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: nil])
   end
 
   def handle_event("reset_password", %{"user" => user_params}, socket) do
@@ -44,26 +45,29 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
           {:ok, _} ->
             Logger.info("Password reset successful for user: #{socket.assigns.user.id}")
 
-            {:noreply,
-             socket
-             |> put_flash(
-               :info,
-               "Password reset successfully. Please log in with your new password."
-             )
-             |> redirect(to: ~p"/users/log_in")}
+            socket
+            |> put_flash(
+              :info,
+              "Password reset successfully. Please log in with your new password."
+            )
+            |> redirect(to: ~p"/users/log_in")
+            |> noreply()
 
           {:error, changeset} ->
             Logger.warning("Failed password reset attempt for user: #{socket.assigns.user.id}")
-            {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+
+            socket
+            |> assign_form(Map.put(changeset, :action, :insert))
+            |> noreply()
         end
 
       :error ->
         Logger.warning("Rate limit exceeded for password reset: #{socket.assigns.user.id}")
 
-        {:noreply,
-         socket
-         |> put_flash(:error, "Too many password reset attempts. Please try again later.")
-         |> redirect(to: ~p"/")}
+        socket
+        |> put_flash(:error, "Too many password reset attempts. Please try again later.")
+        |> redirect(to: ~p"/")
+        |> noreply()
     end
   end
 

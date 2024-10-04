@@ -40,7 +40,8 @@ defmodule HorionosWeb.AuthLive.UserLoginLive do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
-    {:ok, assign(socket, form: form),
-     temporary_assigns: [form: form], layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: form)
+    |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: form])
   end
 end

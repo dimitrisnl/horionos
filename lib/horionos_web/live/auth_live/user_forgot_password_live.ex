@@ -27,8 +27,9 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
   end
 
   def mount(_params, _session, socket) do
-    socket = assign(socket, form: to_form(%{}, as: "user"))
-    {:ok, socket, layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: to_form(%{}, as: "user"))
+    |> ok(layout: {HorionosWeb.Layouts, :guest})
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
@@ -56,18 +57,18 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
     info =
       "If your email is in our system, you will receive instructions to reset your password shortly."
 
-    {:noreply,
-     socket
-     |> put_flash(:info, info)
-     |> redirect(to: ~p"/")}
+    socket
+    |> put_flash(:info, info)
+    |> redirect(to: ~p"/")
+    |> noreply()
   end
 
   defp handle_rate_limit_exceeded(socket) do
     Logger.warning("Rate limit exceeded for password reset")
 
-    {:noreply,
-     socket
-     |> put_flash(:error, "Too many requests. Please try again later.")
-     |> assign(form: to_form(%{}, as: "user"))}
+    socket
+    |> put_flash(:error, "Too many requests. Please try again later.")
+    |> assign(form: to_form(%{}, as: "user"))
+    |> noreply()
   end
 end

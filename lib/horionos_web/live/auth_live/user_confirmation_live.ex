@@ -27,8 +27,9 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
   def mount(%{"token" => token}, _session, socket) do
     form = to_form(%{"token" => token}, as: "user")
 
-    {:ok, assign(socket, form: form),
-     temporary_assigns: [form: nil], layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: form)
+    |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: nil])
   end
 
   def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
@@ -37,10 +38,10 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
         confirm_account(token, socket)
 
       :error ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Too many attempts. Please try again later.")
-         |> redirect(to: ~p"/")}
+        socket
+        |> put_flash(:error, "Too many attempts. Please try again later.")
+        |> redirect(to: ~p"/")
+        |> noreply()
     end
   end
 
@@ -49,10 +50,10 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
       {:ok, user} ->
         Logger.info("User confirmed: #{user.email}")
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Your account has been confirmed successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+        socket
+        |> put_flash(:info, "Your account has been confirmed successfully.")
+        |> redirect(to: ~p"/users/log_in")
+        |> noreply()
 
       :error ->
         handle_invalid_token(socket)
@@ -62,19 +63,21 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
   defp handle_invalid_token(socket) do
     case socket.assigns do
       %{current_user: %{confirmed_at: confirmed_at}} when not is_nil(confirmed_at) ->
-        {:noreply, redirect(socket, to: ~p"/")}
+        socket
+        |> redirect(to: ~p"/")
+        |> noreply()
 
       %{} ->
         # Log failed confirmation attempt
         Logger.warning("Invalid confirmation attempt with token")
 
-        {:noreply,
-         socket
-         |> put_flash(
-           :error,
-           "The confirmation link is invalid or has expired. Please request a new one."
-         )
-         |> redirect(to: ~p"/")}
+        socket
+        |> put_flash(
+          :error,
+          "The confirmation link is invalid or has expired. Please request a new one."
+        )
+        |> redirect(to: ~p"/")
+        |> noreply()
     end
   end
 end
