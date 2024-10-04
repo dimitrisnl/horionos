@@ -1,6 +1,7 @@
 defmodule HorionosWeb.AuthLive.UserLoginLive do
   use HorionosWeb, :live_view
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view title="Log in to your account" subtitle="Welcome back!">
@@ -36,11 +37,13 @@ defmodule HorionosWeb.AuthLive.UserLoginLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
-    {:ok, assign(socket, form: form),
-     temporary_assigns: [form: form], layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: form)
+    |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: form])
   end
 end

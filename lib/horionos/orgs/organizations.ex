@@ -6,11 +6,9 @@ defmodule Horionos.Organizations do
   organization management, membership management, and invitation management.
   """
 
-  alias Horionos.Organizations.{
-    InvitationManagement,
-    MembershipManagement,
-    OrganizationManagement
-  }
+  alias Horionos.Organizations.InvitationManagement
+  alias Horionos.Organizations.MembershipManagement
+  alias Horionos.Organizations.OrganizationManagement
 
   # Organization management
   defdelegate create_organization(user, attrs), to: OrganizationManagement

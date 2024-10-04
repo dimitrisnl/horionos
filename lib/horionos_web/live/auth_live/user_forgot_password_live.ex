@@ -1,11 +1,12 @@
 defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
   use HorionosWeb, :live_view
 
-  require Logger
-
   alias Horionos.Accounts
   alias Horionos.Services.RateLimiter
 
+  require Logger
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view
@@ -26,11 +27,14 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    socket = assign(socket, form: to_form(%{}, as: "user"))
-    {:ok, socket, layout: {HorionosWeb.Layouts, :guest}}
+    socket
+    |> assign(form: to_form(%{}, as: "user"))
+    |> ok(layout: {HorionosWeb.Layouts, :guest})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
     case RateLimiter.check_rate("reset_password:#{email}", 3, 3_600_000) do
       :ok ->
@@ -56,18 +60,18 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
     info =
       "If your email is in our system, you will receive instructions to reset your password shortly."
 
-    {:noreply,
-     socket
-     |> put_flash(:info, info)
-     |> redirect(to: ~p"/")}
+    socket
+    |> put_flash(:info, info)
+    |> redirect(to: ~p"/")
+    |> noreply()
   end
 
   defp handle_rate_limit_exceeded(socket) do
     Logger.warning("Rate limit exceeded for password reset")
 
-    {:noreply,
-     socket
-     |> put_flash(:error, "Too many requests. Please try again later.")
-     |> assign(form: to_form(%{}, as: "user"))}
+    socket
+    |> put_flash(:error, "Too many requests. Please try again later.")
+    |> assign(form: to_form(%{}, as: "user"))
+    |> noreply()
   end
 end

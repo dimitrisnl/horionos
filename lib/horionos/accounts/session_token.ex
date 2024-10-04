@@ -18,9 +18,10 @@ defmodule Horionos.Accounts.SessionToken do
 
   alias Horionos.Accounts.SessionToken
   alias Horionos.Accounts.User
+  alias Horionos.Constants
 
-  @rand_size 32
-  @session_validity_in_days Application.compile_env(:horionos, :session_validity_in_days)
+  @rand_size Constants.rand_size()
+  @session_validity_in_days Constants.session_validity_in_days()
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),

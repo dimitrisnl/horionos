@@ -1,13 +1,13 @@
 defmodule HorionosWeb.UserAuthTest do
   use HorionosWeb.ConnCase, async: true
 
-  alias Horionos.Accounts
-  alias Horionos.Organizations
-  alias HorionosWeb.UserAuth
-
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+
+  alias Horionos.Accounts
+  alias Horionos.Organizations
   alias Horionos.Repo
+  alias HorionosWeb.UserAuth
 
   @remember_me_cookie "_horionos_web_user_remember_me"
 
@@ -72,7 +72,11 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "redirects to onboarding if user has no organization", %{conn: conn, user: user} do
       # Check redirection to onboarding for users without an organization
-      conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.log_in_user(user)
+
       assert redirected_to(conn) == ~p"/onboarding"
     end
 
@@ -83,7 +87,10 @@ defmodule HorionosWeb.UserAuthTest do
       # Verify redirection to home page for users with an organization
       Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
 
-      conn = conn |> fetch_flash() |> UserAuth.log_in_user(user)
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.log_in_user(user)
 
       assert redirected_to(conn) == ~p"/"
       assert get_session(conn, :current_organization_id)
@@ -136,7 +143,11 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "works even if user is already logged out", %{conn: conn} do
       # Ensure logout function is idempotent
-      conn = conn |> fetch_cookies() |> UserAuth.log_out_user()
+      conn =
+        conn
+        |> fetch_cookies()
+        |> UserAuth.log_out_user()
+
       refute get_session(conn, :user_token)
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
       # No redirect from this method anymore
@@ -147,7 +158,12 @@ defmodule HorionosWeb.UserAuthTest do
     test "authenticates user from session", %{conn: conn, user: user} do
       # Verify user authentication from session token
       user_token = Accounts.create_session_token(user)
-      conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_user([])
+
+      conn =
+        conn
+        |> put_session(:user_token, user_token)
+        |> UserAuth.fetch_current_user([])
+
       assert conn.assigns.current_user.id == user.id
     end
 
@@ -309,7 +325,11 @@ defmodule HorionosWeb.UserAuthTest do
   describe "redirect_if_user_is_authenticated/2" do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
       # Check redirection for authenticated users
-      conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> UserAuth.redirect_if_user_is_authenticated([])
+
       assert conn.halted
       assert redirected_to(conn) == ~p"/"
     end
@@ -325,7 +345,11 @@ defmodule HorionosWeb.UserAuthTest do
   describe "require_authenticated_user/2" do
     test "redirects if user is not authenticated", %{conn: conn} do
       # Ensure unauthenticated users are redirected to login
-      conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.require_authenticated_user([])
+
       assert conn.halted
       assert redirected_to(conn) == ~p"/users/log_in"
     end
@@ -359,7 +383,11 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
       # Check that authenticated users are not redirected
-      conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> UserAuth.require_authenticated_user([])
+
       refute conn.halted
       refute conn.status
     end
@@ -405,7 +433,7 @@ defmodule HorionosWeb.UserAuthTest do
       verified_user =
         Repo.update!(
           Ecto.Changeset.change(user,
-            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+            confirmed_at: NaiveDateTime.utc_now(:second)
           )
         )
 
@@ -439,7 +467,9 @@ defmodule HorionosWeb.UserAuthTest do
         Repo.update!(
           Ecto.Changeset.change(user,
             inserted_at:
-              DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+              DateTime.utc_now()
+              |> DateTime.add(-31, :day)
+              |> DateTime.truncate(:second)
           )
         )
 
@@ -475,9 +505,7 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "logs out and redirects locked users", %{conn: conn, user: user} do
       locked_user =
-        Repo.update!(
-          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
-        )
+        Repo.update!(Ecto.Changeset.change(user, locked_at: DateTime.utc_now(:second)))
 
       conn =
         conn

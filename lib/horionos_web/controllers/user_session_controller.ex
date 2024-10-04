@@ -1,10 +1,11 @@
 defmodule HorionosWeb.UserSessionController do
   use HorionosWeb, :controller
-  require Logger
 
   alias Horionos.Accounts
   alias Horionos.Services.RateLimiter
   alias HorionosWeb.UserAuth
+
+  require Logger
 
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn
@@ -50,7 +51,9 @@ defmodule HorionosWeb.UserSessionController do
   end
 
   def delete(conn, _params) do
-    UserAuth.log_out_user(conn) |> redirect(to: ~p"/users/log_in")
+    conn
+    |> UserAuth.log_out_user()
+    |> redirect(to: ~p"/users/log_in")
   end
 
   def delete_other_sessions(conn, _params) do

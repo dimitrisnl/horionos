@@ -5,7 +5,8 @@ defmodule Horionos.Application do
 
   use Application
 
-  @impl true
+  @impl Application
+  @spec start(any(), any()) :: {:error, any()} | {:ok, pid()}
   def start(_type, _args) do
     children = [
       HorionosWeb.Telemetry,
@@ -26,7 +27,7 @@ defmodule Horionos.Application do
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
-  @impl true
+  @impl Application
   def config_change(changed, _new, removed) do
     HorionosWeb.Endpoint.config_change(changed, removed)
     :ok

@@ -3,10 +3,11 @@ defmodule HorionosWeb.UserSettingsLive.Index do
 
   import HorionosWeb.UserSettingsLive.Components.SettingsNavigation
 
-  require Logger
-
   alias Horionos.Accounts
 
+  require Logger
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.settings_navigation title="Settings" active_tab={:user_profile} />
@@ -68,6 +69,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"token" => token}, _session, socket) do
     socket =
       case Accounts.update_user_email(socket.assigns.current_user, token) do
@@ -78,25 +80,27 @@ defmodule HorionosWeb.UserSettingsLive.Index do
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
+    socket
+    |> push_navigate(to: ~p"/users/settings")
+    |> ok()
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     email_changeset = Accounts.build_email_changeset(user)
     name_changeset = Accounts.build_full_name_changeset(user)
 
-    socket =
-      socket
-      |> assign(:current_full_name, user.full_name)
-      |> assign(:current_email, user.email)
-      |> assign(:email_form_current_password, nil)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:full_name_form, to_form(name_changeset))
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_full_name, user.full_name)
+    |> assign(:current_email, user.email)
+    |> assign(:email_form_current_password, nil)
+    |> assign(:email_form, to_form(email_changeset))
+    |> assign(:full_name_form, to_form(name_changeset))
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
@@ -110,13 +114,20 @@ defmodule HorionosWeb.UserSettingsLive.Index do
         )
 
         info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+
+        socket
+        |> put_flash(:info, info)
+        |> assign(email_form_current_password: nil)
+        |> noreply()
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+        socket
+        |> assign(:email_form, to_form(Map.put(changeset, :action, :update)))
+        |> noreply()
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_full_name", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_user
@@ -128,16 +139,19 @@ defmodule HorionosWeb.UserSettingsLive.Index do
           |> Accounts.build_full_name_changeset(user_params)
           |> to_form()
 
-        {:noreply,
-         socket
-         |> assign(current_user: user)
-         |> assign(full_name_form: full_name_form)
-         |> assign(current_full_name: user.full_name)
-         |> put_flash(:info, "Name updated successfully")}
+        socket
+        |> assign(current_user: user)
+        |> assign(full_name_form: full_name_form)
+        |> assign(current_full_name: user.full_name)
+        |> put_flash(:info, "Name updated successfully")
+        |> noreply()
 
       {:error, changeset} ->
         Logger.error("Failed to update full name")
-        {:noreply, assign(socket, full_name_form: to_form(changeset))}
+
+        socket
+        |> assign(full_name_form: to_form(changeset))
+        |> noreply()
     end
   end
 end

@@ -3,15 +3,18 @@ defmodule Horionos.Organizations.Invitation do
   Invitation schema.
   """
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query
 
   alias Horionos.Accounts.User
-  alias Horionos.Organizations.{MembershipRole, Organization}
+  alias Horionos.Constants
+  alias Horionos.Organizations.MembershipRole
+  alias Horionos.Organizations.Organization
 
-  @hash_algorithm :sha256
-  @rand_size 32
-  @invitation_validity_in_days Application.compile_env(:horionos, :invitation_validity_in_days)
+  @hash_algorithm Constants.hash_algorithm()
+  @rand_size Constants.rand_size()
+  @invitation_validity_in_days Constants.invitation_validity_in_days()
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),
@@ -71,7 +74,8 @@ defmodule Horionos.Organizations.Invitation do
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
     expires_at =
-      DateTime.add(DateTime.utc_now(), @invitation_validity_in_days, :day)
+      DateTime.utc_now()
+      |> DateTime.add(@invitation_validity_in_days, :day)
       |> DateTime.truncate(:second)
 
     {Base.url_encode64(token, padding: false),

@@ -89,7 +89,10 @@ defmodule Horionos.Organizations.Organization do
   end
 
   defp generate_unique_slug(changeset, title) do
-    base_slug = title |> String.downcase() |> String.replace(~r/[^\w-]+/, "-")
+    base_slug =
+      title
+      |> String.downcase()
+      |> String.replace(~r/[^\w-]+/, "-")
 
     case find_unique_slug(base_slug) do
       {:ok, slug} -> put_change(changeset, :slug, slug)

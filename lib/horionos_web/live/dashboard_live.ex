@@ -1,6 +1,7 @@
 defmodule HorionosWeb.DashboardLive do
   use HorionosWeb, :live_view
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.header>
@@ -45,13 +46,12 @@ defmodule HorionosWeb.DashboardLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
-    socket =
-      socket
-      |> assign(:current_email, user.email)
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_email, user.email)
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 end

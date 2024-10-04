@@ -7,7 +7,10 @@ defmodule Horionos.Organizations.OrganizationManagement do
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
   alias Horionos.Announcements.Announcement
-  alias Horionos.Organizations.{Invitation, Membership, Organization}
+  alias Horionos.Organizations.Invitation
+  alias Horionos.Organizations.Membership
+  alias Horionos.Organizations.Organization
+
   alias Horionos.Repo
 
   @spec create_organization(User.t(), map()) ::

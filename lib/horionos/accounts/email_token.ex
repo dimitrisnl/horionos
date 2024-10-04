@@ -17,18 +17,13 @@ defmodule Horionos.Accounts.EmailToken do
 
   alias Horionos.Accounts.EmailToken
   alias Horionos.Accounts.User
+  alias Horionos.Constants
 
-  @hash_algorithm :sha256
-  @rand_size 32
-  @reset_password_validity_in_days Application.compile_env(
-                                     :horionos,
-                                     :reset_password_validity_in_days
-                                   )
-  @confirm_validity_in_days Application.compile_env(:horionos, :confirm_validity_in_days)
-  @change_email_validity_in_days Application.compile_env(
-                                   :horionos,
-                                   :change_email_validity_in_days
-                                 )
+  @hash_algorithm Constants.hash_algorithm()
+  @rand_size Constants.rand_size()
+  @reset_password_validity_in_days Constants.reset_password_validity_in_days()
+  @confirm_validity_in_days Constants.confirm_validity_in_days()
+  @change_email_validity_in_days Constants.change_email_validity_in_days()
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),

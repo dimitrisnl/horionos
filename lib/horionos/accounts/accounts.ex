@@ -11,7 +11,9 @@ defmodule Horionos.Accounts do
   actions without needing to know the underlying implementation details.
   """
 
-  alias Horionos.Accounts.{UserAuthentication, UserEmailManagement, UserManagement}
+  alias Horionos.Accounts.UserAuthentication
+  alias Horionos.Accounts.UserEmailManagement
+  alias Horionos.Accounts.UserManagement
 
   # User retrieval functions
   defdelegate get_user_by_id!(id), to: UserManagement

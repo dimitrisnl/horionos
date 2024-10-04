@@ -1,9 +1,10 @@
 defmodule HorionosWeb.UserSessionControllerTest do
-  require Logger
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
   alias Horionos.Accounts
+
+  require Logger
 
   describe "POST /users/log_in" do
     test "logs the user in", %{conn: conn} do

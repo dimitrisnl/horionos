@@ -4,9 +4,12 @@ defmodule Horionos.Organizations.Membership do
   """
 
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias Horionos.Accounts.User
-  alias Horionos.Organizations.{MembershipRole, Organization}
+  alias Horionos.Organizations.MembershipRole
+  alias Horionos.Organizations.Organization
 
   @type t :: %__MODULE__{
           id: integer() | nil,

@@ -6,7 +6,9 @@ defmodule Horionos.Organizations.MembershipManagement do
 
   alias Horionos.Accounts.User
   alias Horionos.OrganizationRepo
-  alias Horionos.Organizations.{Membership, MembershipRole, Organization}
+  alias Horionos.Organizations.Membership
+  alias Horionos.Organizations.MembershipRole
+  alias Horionos.Organizations.Organization
   alias Horionos.Repo
 
   @doc """

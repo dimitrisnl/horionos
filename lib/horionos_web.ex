@@ -53,6 +53,9 @@ defmodule HorionosWeb do
     quote do
       use Phoenix.LiveView
 
+      import HorionosWeb.LiveResPipes
+      import HorionosWeb.LiveAuthorization
+
       unquote(html_helpers())
     end
   end
@@ -60,6 +63,9 @@ defmodule HorionosWeb do
   def live_component do
     quote do
       use Phoenix.LiveComponent
+
+      import HorionosWeb.LiveAuthorization
+      import HorionosWeb.LiveResPipes
 
       unquote(html_helpers())
     end

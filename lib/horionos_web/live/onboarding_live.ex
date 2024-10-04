@@ -3,6 +3,7 @@ defmodule HorionosWeb.OnboardingLive do
 
   alias Horionos.Organizations
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center py-4 sm:px-6 lg:px-8">
@@ -27,24 +28,33 @@ defmodule HorionosWeb.OnboardingLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     if socket.assigns[:current_organization] do
-      {:ok, push_navigate(socket, to: ~p"/")}
+      socket
+      |> push_navigate(to: ~p"/")
+      |> ok()
     else
       form = to_form(%{"title" => ""})
-      {:ok, assign(socket, form: form), layout: {HorionosWeb.Layouts, :minimal}}
+
+      socket
+      |> assign(form: form)
+      |> ok(layout: {HorionosWeb.Layouts, :minimal})
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("save", %{"title" => title}, socket) do
     case Organizations.create_organization(socket.assigns.current_user, %{title: title}) do
       {:ok, _organization} ->
-        {:noreply,
-         socket
-         |> redirect(to: ~p"/")}
+        socket
+        |> redirect(to: ~p"/")
+        |> noreply()
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        socket
+        |> assign(form: to_form(changeset))
+        |> noreply()
     end
   end
 end

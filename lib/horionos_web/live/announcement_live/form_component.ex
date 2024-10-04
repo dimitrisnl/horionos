@@ -1,10 +1,9 @@
 defmodule HorionosWeb.AnnouncementLive.FormComponent do
   use HorionosWeb, :live_component
-  import HorionosWeb.LiveAuthorization
 
   alias Horionos.Announcements
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
     <div>
@@ -27,82 +26,83 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def update(%{announcement: announcement} = assigns, socket) do
     changeset = Announcements.build_announcement_changeset(announcement)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:organization_id, assigns.current_organization.id)
-     |> assign_form(changeset)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_form(changeset)
+
+    ok(socket)
   end
 
-  @impl true
-  def handle_event("validate", %{"announcement" => announcement_params}, socket) do
+  @impl Phoenix.LiveComponent
+  def handle_event("validate", %{"announcement" => params}, socket) do
     changeset =
       socket.assigns.announcement
-      |> Announcements.build_announcement_changeset(announcement_params)
+      |> Announcements.build_announcement_changeset(params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+    noreply(assign_form(socket, changeset))
   end
 
-  def handle_event("save", %{"announcement" => announcement_params}, socket) do
-    save_announcement(socket, socket.assigns.action, announcement_params)
+  @impl Phoenix.LiveComponent
+  def handle_event("save", %{"announcement" => params}, socket) do
+    save_announcement(socket, socket.assigns.action, params)
   end
 
-  defp save_announcement(socket, :edit, announcement_params) do
+  defp save_announcement(socket, :edit, params) do
     case authorize_user_action(socket, :announcement_edit) do
       :ok ->
-        case Announcements.update_announcement(socket.assigns.announcement, announcement_params) do
+        case Announcements.update_announcement(socket.assigns.announcement, params) do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Announcement updated successfully")
-             |> push_patch(to: socket.assigns.patch)}
+            socket
+            |> put_flash(:info, "Announcement updated successfully")
+            |> push_patch(to: socket.assigns.patch)
+            |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign_form(socket, changeset)}
+            noreply(assign_form(socket, changeset))
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to update this announcement.")
-         |> push_patch(to: socket.assigns.patch)}
+        socket
+        |> put_flash(:error, "You are not authorized to update this announcement.")
+        |> push_patch(to: socket.assigns.patch)
+        |> noreply()
     end
   end
 
-  defp save_announcement(socket, :new, announcement_params) do
+  defp save_announcement(socket, :new, params) do
     case authorize_user_action(socket, :announcement_create) do
       :ok ->
-        params_with_organization_id =
-          Map.put(announcement_params, "organization_id", socket.assigns.organization_id)
-
         case Announcements.create_announcement(
                socket.assigns.current_organization,
-               params_with_organization_id
+               params
              ) do
           {:ok, announcement} ->
             notify_parent({:saved, announcement})
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Announcement created successfully")
-             |> push_patch(to: socket.assigns.patch)}
+            socket
+            |> put_flash(:info, "Announcement created successfully")
+            |> push_patch(to: socket.assigns.patch)
+            |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply, assign_form(socket, changeset)}
+            socket
+            |> assign_form(changeset)
+            |> noreply()
         end
 
       {:error, :unauthorized} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "You are not authorized to create announcements.")
-         |> push_patch(to: socket.assigns.patch)}
+        socket
+        |> put_flash(:error, "You are not authorized to create announcements.")
+        |> push_patch(to: socket.assigns.patch)
+        |> noreply()
     end
   end
 

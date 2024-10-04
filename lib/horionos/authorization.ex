@@ -3,13 +3,13 @@ defmodule Horionos.Authorization do
   Provides authorization functionality
   """
 
-  require Logger
-
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
   alias Horionos.Organizations
   alias Horionos.Organizations.Organization
   alias Horionos.Repo
+
+  require Logger
 
   @type error :: :unauthorized | :invalid_resource | :role_not_found
 

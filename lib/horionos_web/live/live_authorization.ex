@@ -1,6 +1,6 @@
 defmodule HorionosWeb.LiveAuthorization do
   @moduledoc """
-  Liveview authz
+  LiveView authz
   """
   alias Horionos.Authorization
 

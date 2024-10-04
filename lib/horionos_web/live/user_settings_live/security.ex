@@ -3,10 +3,11 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
   import HorionosWeb.UserSettingsLive.Components.SettingsNavigation
 
-  require Logger
-
   alias Horionos.Accounts
 
+  require Logger
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.settings_navigation title="Security" active_tab={:user_security} />
@@ -147,6 +148,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, session, socket) do
     user = socket.assigns.current_user
     password_changeset = Accounts.build_password_changeset(user)
@@ -154,19 +156,18 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
     sessions = Accounts.list_user_sessions(user, user_token)
 
-    socket =
-      socket
-      |> assign(:current_password, nil)
-      |> assign(:current_email, user.email)
-      |> assign(:sessions, sessions)
-      |> assign(:password_form, to_form(password_changeset))
-      |> assign(:clear_sessions_form, to_form(%{}))
-      |> assign(:trigger_submit, false)
-      |> assign(:trigger_clear_sessions, false)
-
-    {:ok, socket, layout: {HorionosWeb.Layouts, :dashboard}}
+    socket
+    |> assign(:current_password, nil)
+    |> assign(:current_email, user.email)
+    |> assign(:sessions, sessions)
+    |> assign(:password_form, to_form(password_changeset))
+    |> assign(:clear_sessions_form, to_form(%{}))
+    |> assign(:trigger_submit, false)
+    |> assign(:trigger_clear_sessions, false)
+    |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
@@ -178,14 +179,23 @@ defmodule HorionosWeb.UserSettingsLive.Security do
           |> Accounts.build_password_changeset(user_params)
           |> to_form()
 
-        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
+        socket
+        |> assign(password_form: password_form)
+        |> assign(trigger_submit: true)
+        |> noreply()
 
       {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+        socket
+        |> assign(password_form: to_form(changeset))
+        |> noreply()
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("clear_sessions", _params, socket) do
-    {:noreply, assign(socket, trigger_clear_sessions: true, clear_sessions_form: %{})}
+    socket
+    |> assign(trigger_clear_sessions: true)
+    |> assign(clear_sessions_form: to_form(%{}))
+    |> noreply()
   end
 end

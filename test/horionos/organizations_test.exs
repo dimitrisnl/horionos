@@ -1,12 +1,14 @@
 defmodule Horionos.OrganizationsTest do
-  use Horionos.DataCase
-
-  alias Horionos.Organizations
-  alias Horionos.Organizations.{Invitation, Membership, Organization}
-  alias Horionos.Repo
+  use Horionos.DataCase, async: true
 
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+
+  alias Horionos.Organizations
+  alias Horionos.Organizations.Invitation
+  alias Horionos.Organizations.Membership
+  alias Horionos.Organizations.Organization
+  alias Horionos.Repo
 
   describe "list_user_memberships/1" do
     test "returns all memberships for a given user" do
@@ -14,7 +16,7 @@ defmodule Horionos.OrganizationsTest do
       organization1 = organization_fixture(%{user: owner})
       organization2 = organization_fixture(%{user: owner})
 
-      {:ok, memberships} = Organizations.list_user_memberships(owner)
+      assert {:ok, memberships} = Organizations.list_user_memberships(owner)
       assert length(memberships) == 2
 
       assert Enum.all?(memberships, fn membership ->
@@ -24,24 +26,32 @@ defmodule Horionos.OrganizationsTest do
 
     test "returns an empty list for a user with no organizations" do
       user = user_fixture()
-      assert Organizations.list_user_memberships(user) == {:ok, []}
+      assert {:ok, []} = Organizations.list_user_memberships(user)
     end
   end
 
   describe "get_organization/1" do
-    test "returns the organization" do
+    setup do
       owner = user_fixture()
-      user = user_fixture()
       organization = organization_fixture(%{user: owner})
-      membership_fixture(%{user_id: user.id, organization_id: organization.id, role: :member})
+      %{owner: owner, organization: organization}
+    end
 
+    test "returns the organization", %{organization: organization} do
       assert {:ok, ^organization} = Organizations.get_organization(organization.id)
+    end
+
+    test "returns error for non-existent organization" do
+      assert {:error, :not_found} = Organizations.get_organization(-1)
     end
   end
 
   describe "create_organization/2" do
-    test "creates an organization and adds the user as an owner" do
-      user = user_fixture()
+    setup do
+      %{user: user_fixture()}
+    end
+
+    test "creates an organization and adds the user as an owner", %{user: user} do
       attrs = %{title: "Test Organization"}
 
       assert {:ok, %Organization{} = organization} =
@@ -49,12 +59,11 @@ defmodule Horionos.OrganizationsTest do
 
       assert organization.title == "Test Organization"
 
-      membership = Repo.get_by(Membership, user_id: user.id, organization_id: organization.id)
-      assert membership.role == :owner
+      assert %Membership{role: :owner} =
+               Repo.get_by(Membership, user_id: user.id, organization_id: organization.id)
     end
 
-    test "returns an error changeset with invalid data" do
-      user = user_fixture()
+    test "returns an error changeset with invalid data", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Organizations.create_organization(user, %{title: nil})
     end
   end
@@ -63,7 +72,7 @@ defmodule Horionos.OrganizationsTest do
     setup do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
-      %{owner: owner, organization: organization}
+      %{organization: organization}
     end
 
     test "updates the organization when user has permissions", %{organization: organization} do
@@ -83,9 +92,8 @@ defmodule Horionos.OrganizationsTest do
 
   describe "delete_organization/1" do
     setup do
-      owner = user_fixture()
-      organization = organization_fixture(%{user: owner})
-      %{owner: owner, organization: organization}
+      organization = organization_fixture(%{user: user_fixture()})
+      %{organization: organization}
     end
 
     test "deletes the organization", %{organization: organization} do
@@ -100,7 +108,7 @@ defmodule Horionos.OrganizationsTest do
       member = user_fixture()
       organization = organization_fixture(%{user: owner})
       membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
-      %{owner: owner, member: member, organization: organization}
+      %{organization: organization}
     end
 
     test "returns memberships", %{organization: organization} do
@@ -113,12 +121,8 @@ defmodule Horionos.OrganizationsTest do
   describe "create_membership/1" do
     setup do
       owner = user_fixture()
-      admin = user_fixture()
-      member = user_fixture()
       organization = organization_fixture(%{user: owner})
-      membership_fixture(%{user_id: admin.id, organization_id: organization.id, role: :admin})
-      membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
-      %{admin: admin, member: member, organization: organization}
+      %{organization: organization}
     end
 
     test "creates a membership", %{organization: organization} do
@@ -135,30 +139,16 @@ defmodule Horionos.OrganizationsTest do
   describe "update_membership/2" do
     setup do
       owner = user_fixture()
-      admin = user_fixture()
-      member = user_fixture()
-      user = user_fixture()
-
       organization = organization_fixture(%{user: owner})
-
-      membership_fixture(%{user_id: admin.id, organization_id: organization.id, role: :admin})
-      membership_fixture(%{user_id: member.id, organization_id: organization.id, role: :member})
+      user = user_fixture()
 
       membership =
         membership_fixture(%{user_id: user.id, organization_id: organization.id, role: :member})
 
-      %{
-        member: member,
-        admin: admin,
-        user: user,
-        organization: organization,
-        membership: membership
-      }
+      %{membership: membership}
     end
 
-    test "updates the membership when user has permissions", %{
-      membership: membership
-    } do
+    test "updates the membership when user has permissions", %{membership: membership} do
       update_attrs = %{role: :admin}
 
       assert {:ok, %Membership{} = updated_membership} =
@@ -166,49 +156,32 @@ defmodule Horionos.OrganizationsTest do
 
       assert updated_membership.role == :admin
     end
+
+    test "returns an error changeset with invalid data", %{membership: membership} do
+      assert {:error, %Ecto.Changeset{}} =
+               Organizations.update_membership(membership, %{role: :invalid_role})
+    end
   end
 
   describe "delete_membership/1" do
     setup do
       owner = user_fixture()
-      member1 = user_fixture()
-      member2 = user_fixture()
-
       organization = organization_fixture(%{user: owner})
-
-      membership_fixture(%{user_id: member1.id, organization_id: organization.id, role: :member})
+      user = user_fixture()
 
       membership =
-        membership_fixture(%{user_id: member2.id, organization_id: organization.id, role: :member})
+        membership_fixture(%{user_id: user.id, organization_id: organization.id, role: :member})
 
-      %{
-        organization: organization,
-        member1: member1,
-        member2: member2,
-        membership: membership
-      }
+      %{membership: membership, user: user}
     end
 
-    test "deletes the membership when user has permissions", %{
-      membership: membership,
-      member1: member1,
-      member2: member2
-    } do
+    test "deletes the membership when user has permissions", %{membership: membership, user: user} do
       assert {:ok, %Membership{}} = Organizations.delete_membership(membership)
 
-      member1_memberships =
-        Membership
-        |> where([m], m.user_id == ^member1.id)
-        |> Repo.all()
-
-      assert length(member1_memberships) == 1
-
-      member2_memberships =
-        Membership
-        |> where([m], m.user_id == ^member2.id)
-        |> Repo.all()
-
-      assert member2_memberships == []
+      assert Membership
+             |> Repo.all()
+             |> Enum.filter(&(&1.user_id == user.id))
+             |> Enum.empty?()
     end
   end
 
@@ -279,6 +252,20 @@ defmodule Horionos.OrganizationsTest do
                  :member
                )
     end
+
+    test "returns an error when user doesn't have permission", %{
+      organization: organization
+    } do
+      non_member = user_fixture()
+
+      assert {:error, :unauthorized} =
+               Organizations.create_invitation(
+                 non_member,
+                 organization,
+                 "test@example.com",
+                 :member
+               )
+    end
   end
 
   describe "list_pending_organization_invitations/1" do
@@ -291,22 +278,21 @@ defmodule Horionos.OrganizationsTest do
       {:ok, _updated_invitation} =
         Repo.update(
           Ecto.Changeset.change(invitation2,
-            accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+            accepted_at: DateTime.utc_now(:second)
           )
         )
 
-      %{owner: owner, organization: organization, invitation: invitation1}
+      %{organization: organization, invitation: invitation1}
     end
 
     test "returns invitations", %{
       organization: organization,
       invitation: invitation
     } do
-      assert {:ok, invitations} =
+      assert {:ok, [returned_invitation]} =
                Organizations.list_pending_organization_invitations(organization)
 
-      assert length(invitations) == 1
-      assert hd(invitations).id == invitation.id
+      assert returned_invitation.id == invitation.id
     end
   end
 
@@ -347,7 +333,10 @@ defmodule Horionos.OrganizationsTest do
     end
 
     test "returns an error when invitation has expired", %{invitation: invitation} do
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
 
       {:ok, expired_invitation} =
         Repo.update(Ecto.Changeset.change(invitation, expires_at: expired_at))
@@ -357,6 +346,19 @@ defmodule Horionos.OrganizationsTest do
                  full_name: "Test User",
                  password: valid_user_password()
                })
+    end
+
+    test "returns an error with invalid user params", %{invitation: invitation} do
+      invalid_user_params = %{full_name: "", password: "short"}
+
+      assert {
+               :error,
+               :user,
+               {:user_creation_failed,
+                %{password: ["should be at least 12 character(s)"], full_name: ["can't be blank"]}},
+               %{}
+             } =
+               Organizations.accept_invitation(invitation, invalid_user_params)
     end
   end
 
@@ -394,9 +396,12 @@ defmodule Horionos.OrganizationsTest do
     end
 
     test "returns error when invitation has expired", %{invitation: invitation, token: token} do
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
-      Repo.update!(Ecto.Changeset.change(invitation, expires_at: expired_at))
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
 
+      {:ok, _} = Repo.update(Ecto.Changeset.change(invitation, expires_at: expired_at))
       assert {:error, :invalid_token} = Organizations.get_pending_invitation_by_token(token)
     end
   end
@@ -406,12 +411,10 @@ defmodule Horionos.OrganizationsTest do
       owner = user_fixture()
       organization = organization_fixture(%{user: owner})
       %{invitation: invitation} = invitation_fixture(owner, organization, "test@example.com")
-      %{owner: owner, organization: organization, invitation: invitation}
+      %{invitation: invitation}
     end
 
-    test "deletes the invitation", %{
-      invitation: invitation
-    } do
+    test "deletes the invitation", %{invitation: invitation} do
       assert {:ok, %Invitation{}} = Organizations.delete_invitation(invitation.id)
       assert is_nil(Repo.get(Invitation, invitation.id))
     end
@@ -447,8 +450,13 @@ defmodule Horionos.OrganizationsTest do
       %{invitation: expired_invitation} =
         invitation_fixture(owner, organization, "expired@example.com")
 
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
-      Repo.update!(Ecto.Changeset.change(expired_invitation, expires_at: expired_at))
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
+
+      {:ok, expired_invitation} =
+        Repo.update(Ecto.Changeset.change(expired_invitation, expires_at: expired_at))
 
       # Create a valid invitation
       %{invitation: valid_invitation} =
@@ -458,11 +466,12 @@ defmodule Horionos.OrganizationsTest do
       %{invitation: accepted_invitation} =
         invitation_fixture(owner, organization, "accepted@example.com")
 
-      Repo.update!(
-        Ecto.Changeset.change(accepted_invitation,
-          accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      {:ok, accepted_invitation} =
+        Repo.update(
+          Ecto.Changeset.change(accepted_invitation,
+            accepted_at: DateTime.utc_now(:second)
+          )
         )
-      )
 
       %{
         expired_invitation: expired_invitation,
@@ -495,8 +504,12 @@ defmodule Horionos.OrganizationsTest do
       accepted_invitation: accepted_invitation
     } do
       # Make the accepted invitation expired
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
-      Repo.update!(Ecto.Changeset.change(accepted_invitation, expires_at: expired_at))
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
+
+      {:ok, _} = Repo.update(Ecto.Changeset.change(accepted_invitation, expires_at: expired_at))
 
       Organizations.delete_expired_invitations()
 

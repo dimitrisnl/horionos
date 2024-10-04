@@ -3,10 +3,11 @@ defmodule Horionos.UserNotifications.Formatters.EmailFormatter do
   Module to format email notifications.
   """
   alias Horionos.Accounts.User
+  alias Horionos.Constants
   alias Horionos.Organizations.Organization
 
-  @from_email Application.compile_env(:horionos, :from_email)
-  @from_name Application.compile_env(:horionos, :from_name)
+  @from_email Constants.from_email()
+  @from_name Constants.from_name()
 
   def format(template_key, assigns) do
     {subject, template, formatted_assigns} = do_format(template_key, assigns)

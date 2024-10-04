@@ -31,8 +31,8 @@ defmodule Horionos.Announcements.Announcement do
   """
   def changeset(announcement, attrs) do
     announcement
-    |> cast(attrs, [:title, :body, :organization_id])
-    |> validate_required([:title, :body, :organization_id])
+    |> cast(attrs, [:title, :body])
+    |> validate_required([:title, :body])
     |> validate_length(:title, max: 255)
     |> validate_length(:body, max: 10_000)
     |> foreign_key_constraint(:organization_id)

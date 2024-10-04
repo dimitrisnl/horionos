@@ -4,14 +4,14 @@ defmodule HorionosWeb.UserAuth do
   """
   use HorionosWeb, :verified_routes
 
-  require Logger
-
   import Plug.Conn
   import Phoenix.Controller
 
   alias Horionos.Accounts
   alias Horionos.Authorization
   alias Horionos.Organizations
+
+  require Logger
 
   # Constants
   # Make the remember me cookie valid for 60 days.

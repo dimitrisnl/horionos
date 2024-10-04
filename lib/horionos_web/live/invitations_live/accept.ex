@@ -3,7 +3,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
 
   alias Horionos.Organizations
 
-  @impl true
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view title="Accept Invitation" subtitle={"Join #{@invitation.organization.title}"}>
@@ -37,14 +37,14 @@ defmodule HorionosWeb.InvitationLive.Accept do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(%{"token" => token}, _session, socket) do
     case Organizations.get_pending_invitation_by_token(token) do
       {:error, :invalid_token} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Invitation not found or already accepted")
-         |> redirect(to: "/users/log_in")}
+        socket
+        |> put_flash(:error, "Invitation not found or already accepted")
+        |> redirect(to: "/users/log_in")
+        |> ok()
 
       {:ok, invitation} ->
         current_user = socket.assigns[:current_user]
@@ -52,53 +52,55 @@ defmodule HorionosWeb.InvitationLive.Accept do
         if can_accept_invitation?(current_user, invitation) do
           form = to_form(invitation_form(invitation, current_user), as: "user")
 
-          {:ok,
-           socket
-           |> assign(:invitation, invitation)
-           |> assign(:form, form)
-           |> assign(:trigger_submit, false),
-           temporary_assigns: [form: form], layout: {HorionosWeb.Layouts, :guest}}
+          socket
+          |> assign(:invitation, invitation)
+          |> assign(:form, form)
+          |> assign(:trigger_submit, false)
+          |> ok(
+            layout: {HorionosWeb.Layouts, :guest},
+            temporary_assigns: [form: form]
+          )
         else
-          {:ok,
-           socket
-           |> put_flash(:error, "Invitation not found or already accepted")
-           |> redirect(to: ~p"/")}
+          socket
+          |> put_flash(:error, "Invitation not found or already accepted")
+          |> redirect(to: ~p"/")
+          |> ok()
         end
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("accept_invitation", %{"user" => user_params}, socket) do
     %{invitation: invitation, current_user: current_user} = socket.assigns
 
     case Organizations.accept_invitation(invitation, user_params) do
       {:ok, %{user: _user, invitation: _invitation, membership: _membership}} ->
-        {:noreply,
-         socket
-         |> assign(trigger_submit: true)
-         |> assign(form: to_form(user_params, as: "user"))}
+        socket
+        |> assign(trigger_submit: true)
+        |> assign(form: to_form(user_params, as: "user"))
+        |> noreply()
 
       {:error, :already_accepted} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "This invitation has already been accepted")
-         |> redirect(to: "/")}
+        socket
+        |> put_flash(:error, "This invitation has already been accepted")
+        |> redirect(to: "/")
+        |> noreply()
 
       {:error, _failed_operation, {:user_creation_failed, error_details}, _changes_so_far} ->
         error_messages = format_error_messages(error_details)
 
-        {:noreply,
-         socket
-         |> put_flash(:error, "Error accepting invitation: #{error_messages}")
-         |> assign(form: to_form(invitation_form(invitation, current_user), as: "user"))}
+        socket
+        |> put_flash(:error, "Error accepting invitation: #{error_messages}")
+        |> assign(form: to_form(invitation_form(invitation, current_user), as: "user"))
+        |> noreply()
 
       {:error, failed_operation, _failed_value, _changes_so_far} ->
         error_message = user_friendly_error_message(failed_operation)
 
-        {:noreply,
-         socket
-         |> put_flash(:error, error_message)
-         |> assign(form: to_form(invitation_form(invitation, current_user), as: "user"))}
+        socket
+        |> put_flash(:error, error_message)
+        |> assign(form: to_form(invitation_form(invitation, current_user), as: "user"))
+        |> noreply()
     end
   end
 
