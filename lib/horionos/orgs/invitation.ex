@@ -8,12 +8,13 @@ defmodule Horionos.Organizations.Invitation do
   import Ecto.Query
 
   alias Horionos.Accounts.User
+  alias Horionos.Constants
   alias Horionos.Organizations.MembershipRole
   alias Horionos.Organizations.Organization
 
-  @hash_algorithm :sha256
-  @rand_size 32
-  @invitation_validity_in_days Application.compile_env(:horionos, :invitation_validity_in_days)
+  @hash_algorithm Constants.hash_algorithm()
+  @rand_size Constants.rand_size()
+  @invitation_validity_in_days Constants.invitation_validity_in_days()
 
   @type t :: %__MODULE__{
           __meta__: Ecto.Schema.Metadata.t(),

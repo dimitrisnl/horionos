@@ -15,13 +15,11 @@ defmodule Horionos.Accounts.UserEmailManagement do
 
   alias Horionos.Accounts.EmailToken
   alias Horionos.Accounts.User
+  alias Horionos.Constants
   alias Horionos.Repo
   alias Horionos.UserNotifications
 
-  @unconfirmed_email_deadline_in_days Application.compile_env(
-                                        :horionos,
-                                        :unconfirmed_email_deadline_in_days
-                                      )
+  @unconfirmed_email_deadline_in_days Constants.unconfirmed_email_deadline_in_days()
 
   @spec build_email_changeset(User.t(), map()) :: Ecto.Changeset.t()
   def build_email_changeset(user, attrs \\ %{}) do

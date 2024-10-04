@@ -15,12 +15,10 @@ defmodule Horionos.Accounts.UserManagement do
 
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
+  alias Horionos.Constants
   alias Horionos.Repo
 
-  @unconfirmed_email_lock_deadline_in_days Application.compile_env(
-                                             :horionos,
-                                             :unconfirmed_email_lock_deadline_in_days
-                                           )
+  @unconfirmed_email_lock_deadline_in_days Constants.unconfirmed_email_lock_deadline_in_days()
 
   @type user_attrs :: %{
           required(:email) => String.t(),
