@@ -8,7 +8,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
   alias Horionos.Organizations.Invitation
   alias Horionos.Organizations.MembershipRole
 
-  @impl true
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.organization_navigation title="Settings" active_tab={:organization_invitations} />
@@ -99,7 +99,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     current_organization = socket.assigns.current_organization
     form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
@@ -121,7 +121,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("send_invitation", %{"invitation" => invitation_params}, socket) do
     case authorize_user_action(socket, :organization_invite_members) do
       :ok ->
@@ -166,7 +166,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("delete_invitation", %{"id" => invitation_id}, socket) do
     case authorize_user_action(socket, :organization_invite_members) do
       :ok ->

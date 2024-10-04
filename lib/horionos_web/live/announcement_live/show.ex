@@ -6,7 +6,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
 
   require Logger
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
@@ -15,7 +15,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
     |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_params(%{"id" => id}, _, socket) do
     with :ok <- authorize_user_action(socket, :announcement_view),
          {:ok, announcement} <-
@@ -39,7 +39,7 @@ defmodule HorionosWeb.AnnouncementLive.Show do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("delete", %{"id" => id}, socket) do
     with :ok <- authorize_user_action(socket, :announcement_delete),
          {:ok, announcement} <-

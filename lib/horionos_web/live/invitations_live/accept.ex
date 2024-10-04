@@ -3,7 +3,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
 
   alias Horionos.Organizations
 
-  @impl true
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view title="Accept Invitation" subtitle={"Join #{@invitation.organization.title}"}>
@@ -37,7 +37,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(%{"token" => token}, _session, socket) do
     case Organizations.get_pending_invitation_by_token(token) do
       {:error, :invalid_token} ->
@@ -69,7 +69,7 @@ defmodule HorionosWeb.InvitationLive.Accept do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("accept_invitation", %{"user" => user_params}, socket) do
     %{invitation: invitation, current_user: current_user} = socket.assigns
 

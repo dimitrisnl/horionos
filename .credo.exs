@@ -69,6 +69,7 @@
           {Credo.Check.Readability.SeparateAliasRequire, []},
           {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
+          {Credo.Check.Readability.ImplTrue, []},
 
           #
           ## Refactoring Opportunities
@@ -118,14 +119,14 @@
           {Credo.Check.Warning.UnusedRegexOperation, []},
           {Credo.Check.Warning.UnusedStringOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
-          {Credo.Check.Warning.WrongTestFileExtension, []}
+          {Credo.Check.Warning.WrongTestFileExtension, []},
+          {Credo.Check.Warning.UnsafeToAtom, []}
         ],
         disabled: [
           #
           # Controversial and experimental checks (opt-in, just move the check to `:enabled`
           #   and be sure to use `mix credo --strict` to see low priority checks)
           #
-          {Credo.Check.Readability.ImplTrue, []},
           {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Refactor.NegatedIsNil, []},
           {Credo.Check.Refactor.VariableRebinding, []},
@@ -145,8 +146,7 @@
           {Credo.Check.Warning.LazyLogging, []},
           {Credo.Check.Warning.LeakyEnvironment, []},
           {Credo.Check.Warning.MapGetUnsafePass, []},
-          {Credo.Check.Warning.MixEnv, []},
-          {Credo.Check.Warning.UnsafeToAtom, []}
+          {Credo.Check.Warning.MixEnv, []}
         ]
       }
     }

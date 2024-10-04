@@ -6,7 +6,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
 
   alias Horionos.Announcements
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
     <div>
@@ -29,7 +29,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def update(%{announcement: announcement} = assigns, socket) do
     changeset = Announcements.build_announcement_changeset(announcement)
 
@@ -41,7 +41,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     ok(socket)
   end
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def handle_event("validate", %{"announcement" => params}, socket) do
     changeset =
       socket.assigns.announcement
@@ -51,6 +51,7 @@ defmodule HorionosWeb.AnnouncementLive.FormComponent do
     noreply(assign_form(socket, changeset))
   end
 
+  @impl Phoenix.LiveComponent
   def handle_event("save", %{"announcement" => params}, socket) do
     save_announcement(socket, socket.assigns.action, params)
   end

@@ -3,6 +3,7 @@ defmodule HorionosWeb.OnboardingLive do
 
   alias Horionos.Organizations
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center py-4 sm:px-6 lg:px-8">
@@ -27,6 +28,7 @@ defmodule HorionosWeb.OnboardingLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     if socket.assigns[:current_organization] do
       socket
@@ -41,6 +43,7 @@ defmodule HorionosWeb.OnboardingLive do
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("save", %{"title" => title}, socket) do
     case Organizations.create_organization(socket.assigns.current_user, %{title: title}) do
       {:ok, _organization} ->

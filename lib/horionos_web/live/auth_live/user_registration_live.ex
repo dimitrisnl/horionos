@@ -7,6 +7,7 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view title="Create your account" subtitle="It's great having you here!">
@@ -39,6 +40,7 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     changeset = Accounts.build_registration_changeset(%User{})
 
@@ -48,6 +50,7 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
     |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: nil])
   end
 
+  @impl Phoenix.LiveView
   def handle_event("save", %{"user" => user_params}, socket) do
     case RateLimiter.check_rate("user_registration", 10, 3_600_000) do
       :ok ->

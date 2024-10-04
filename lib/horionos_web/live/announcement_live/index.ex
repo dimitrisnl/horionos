@@ -5,7 +5,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
   alias Horionos.Announcements
   alias Horionos.Announcements.Announcement
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     case authorize_user_action(socket, :announcement_view) do
       :ok ->
@@ -27,7 +27,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_params(params, _url, socket) do
     socket
     |> apply_action(socket.assigns.live_action, params)
@@ -78,7 +78,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     |> assign(:announcement, nil)
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_info({HorionosWeb.AnnouncementLive.FormComponent, {:saved, announcement}}, socket) do
     socket
     |> stream_insert(:announcements, announcement)
@@ -86,7 +86,7 @@ defmodule HorionosWeb.AnnouncementLive.Index do
     |> noreply()
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("delete", %{"id" => id}, socket) do
     with :ok <- authorize_user_action(socket, :announcement_delete),
          {:ok, announcement} <-

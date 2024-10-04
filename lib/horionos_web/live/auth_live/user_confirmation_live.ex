@@ -6,6 +6,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <.guest_view
@@ -24,6 +25,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"token" => token}, _session, socket) do
     form = to_form(%{"token" => token}, as: "user")
 
@@ -32,6 +34,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationLive do
     |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: nil])
   end
 
+  @impl Phoenix.LiveView
   def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
     case RateLimiter.check_rate("confirm_account:#{token}", 5, 300_000) do
       :ok ->

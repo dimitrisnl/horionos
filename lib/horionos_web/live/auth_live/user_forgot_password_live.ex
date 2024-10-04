@@ -6,6 +6,7 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view
@@ -26,12 +27,14 @@ defmodule HorionosWeb.AuthLive.UserForgotPasswordLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     socket
     |> assign(form: to_form(%{}, as: "user"))
     |> ok(layout: {HorionosWeb.Layouts, :guest})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
     case RateLimiter.check_rate("reset_password:#{email}", 3, 3_600_000) do
       :ok ->

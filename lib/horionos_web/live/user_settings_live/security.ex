@@ -7,6 +7,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.settings_navigation title="Security" active_tab={:user_security} />
@@ -147,6 +148,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, session, socket) do
     user = socket.assigns.current_user
     password_changeset = Accounts.build_password_changeset(user)
@@ -165,6 +167,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
     |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
@@ -188,6 +191,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("clear_sessions", _params, socket) do
     socket
     |> assign(trigger_clear_sessions: true)

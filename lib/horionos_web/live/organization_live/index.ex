@@ -6,7 +6,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
 
   alias Horionos.Organizations
 
-  @impl true
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.organization_navigation title="Settings" active_tab={:organization_details} />
@@ -99,7 +99,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     with :ok <- authorize_user_action(socket, :organization_manage_members),
          {:ok, organization} <-
@@ -127,7 +127,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("save", %{"organization" => organization_params}, socket) do
     case authorize_user_action(socket, :organization_edit) do
       :ok ->
@@ -158,7 +158,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("delete", _params, socket) do
     case authorize_user_action(socket, :organization_delete) do
       :ok ->

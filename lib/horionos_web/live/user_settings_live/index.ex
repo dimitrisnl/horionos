@@ -7,6 +7,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.settings_navigation title="Settings" active_tab={:user_profile} />
@@ -68,6 +69,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"token" => token}, _session, socket) do
     socket =
       case Accounts.update_user_email(socket.assigns.current_user, token) do
@@ -83,6 +85,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     |> ok()
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     email_changeset = Accounts.build_email_changeset(user)
@@ -97,6 +100,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     |> ok(layout: {HorionosWeb.Layouts, :dashboard})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
@@ -123,6 +127,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_event("update_full_name", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_user

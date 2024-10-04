@@ -6,6 +6,7 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view title="Reset password">
@@ -21,6 +22,7 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(params, _session, socket) do
     socket = assign_user_and_token(socket, params)
 
@@ -38,6 +40,7 @@ defmodule HorionosWeb.AuthLive.UserResetPasswordLive do
     |> ok(layout: {HorionosWeb.Layouts, :guest}, temporary_assigns: [form: nil])
   end
 
+  @impl Phoenix.LiveView
   def handle_event("reset_password", %{"user" => user_params}, socket) do
     case RateLimiter.check_rate("reset_password:#{socket.assigns.user.id}", 5, 3_600_000) do
       :ok ->

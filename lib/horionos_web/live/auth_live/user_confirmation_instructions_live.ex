@@ -6,6 +6,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
 
   require Logger
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <.guest_view
@@ -41,6 +42,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     socket
     |> assign(instructions_sent: false)
@@ -48,6 +50,7 @@ defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
     |> ok(layout: {HorionosWeb.Layouts, :guest})
   end
 
+  @impl Phoenix.LiveView
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
     case RateLimiter.check_rate("confirmation_instructions:#{email}", 3, 300_000) do
       :ok ->
