@@ -1,10 +1,11 @@
 defmodule Horionos.AnnouncementsTest do
   use Horionos.DataCase, async: true
 
-  alias Horionos.Announcements
-  alias Horionos.Announcements.Announcement
   import Horionos.AnnouncementsFixtures
   import Horionos.OrganizationsFixtures
+
+  alias Horionos.Announcements
+  alias Horionos.Announcements.Announcement
 
   describe "announcements" do
     setup do

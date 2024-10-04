@@ -1,10 +1,10 @@
 defmodule HorionosWeb.AuthLive.UserConfirmationInstructionsLive do
   use HorionosWeb, :live_view
 
-  require Logger
-
   alias Horionos.Accounts
   alias Horionos.Services.RateLimiter
+
+  require Logger
 
   def render(assigns) do
     ~H"""

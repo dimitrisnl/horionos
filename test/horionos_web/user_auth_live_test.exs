@@ -1,12 +1,12 @@
 defmodule HorionosWeb.UserAuthLiveLiveTest do
   use HorionosWeb.ConnCase, async: true
 
+  import Horionos.AccountsFixtures
+  import Horionos.OrganizationsFixtures
+
   alias Horionos.Accounts
   alias HorionosWeb.UserAuthLive
   alias Phoenix.LiveView
-
-  import Horionos.AccountsFixtures
-  import Horionos.OrganizationsFixtures
 
   setup %{conn: conn} do
     # Set up a test connection with a new session

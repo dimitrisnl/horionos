@@ -68,6 +68,7 @@
           {Credo.Check.Readability.OnePipePerLine, []},
           {Credo.Check.Readability.SeparateAliasRequire, []},
           {Credo.Check.Readability.AliasAs, []},
+          {Credo.Check.Readability.StrictModuleLayout, []},
 
           #
           ## Refactoring Opportunities
@@ -135,7 +136,6 @@
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
           {Credo.Check.Readability.Specs, []},
-          {Credo.Check.Readability.StrictModuleLayout, []},
           {Credo.Check.Refactor.ABCSize, []},
           {Credo.Check.Refactor.AppendSingleItem, []},
           {Credo.Check.Refactor.FilterReject, []},

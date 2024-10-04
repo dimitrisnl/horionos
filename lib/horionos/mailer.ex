@@ -1,10 +1,10 @@
 defmodule Horionos.Mailer do
-  use Swoosh.Mailer, otp_app: :horionos
-
   @moduledoc """
   Mailer module
   Utilizes Swoosh for email delivery.
   """
+
+  use Swoosh.Mailer, otp_app: :horionos
 
   def to_map(email_params), do: email_params
 

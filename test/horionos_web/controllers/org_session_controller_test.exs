@@ -1,9 +1,10 @@
 defmodule HorionosWeb.OrganizationSessionControllerTest do
-  require Logger
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+
+  require Logger
 
   setup %{conn: conn} do
     %{conn: conn, user: user, organization: organization} =

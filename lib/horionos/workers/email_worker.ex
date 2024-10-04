@@ -4,8 +4,9 @@ defmodule Horionos.Workers.EmailWorker do
   """
   use Oban.Worker, queue: :emails
 
-  alias Horionos.Mailer
   import Swoosh.Email
+
+  alias Horionos.Mailer
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"email_params" => email_params}}) do

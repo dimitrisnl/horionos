@@ -4,10 +4,11 @@ defmodule HorionosWeb.FlashComponents do
   """
   use Phoenix.Component
 
-  alias Phoenix.LiveView.JS
   import HorionosWeb.JSHelpers
   import HorionosWeb.CoreComponents
   import HorionosWeb.Gettext
+
+  alias Phoenix.LiveView.JS
 
   @doc """
   Renders flash notices.

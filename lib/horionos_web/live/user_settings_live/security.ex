@@ -3,9 +3,9 @@ defmodule HorionosWeb.UserSettingsLive.Security do
 
   import HorionosWeb.UserSettingsLive.Components.SettingsNavigation
 
-  require Logger
-
   alias Horionos.Accounts
+
+  require Logger
 
   def render(assigns) do
     ~H"""

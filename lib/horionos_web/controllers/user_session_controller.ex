@@ -1,10 +1,11 @@
 defmodule HorionosWeb.UserSessionController do
   use HorionosWeb, :controller
-  require Logger
 
   alias Horionos.Accounts
   alias Horionos.Services.RateLimiter
   alias HorionosWeb.UserAuth
+
+  require Logger
 
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn

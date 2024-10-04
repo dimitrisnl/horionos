@@ -1,10 +1,10 @@
 defmodule Horionos.AuthorizationTest do
   use Horionos.DataCase, async: true
 
-  alias Horionos.Authorization
-
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+
+  alias Horionos.Authorization
 
   describe "authorize/3" do
     setup do
