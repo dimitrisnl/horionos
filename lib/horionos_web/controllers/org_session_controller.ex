@@ -1,9 +1,10 @@
 defmodule HorionosWeb.OrganizationSessionController do
-  alias Horionos.Organizations
   use HorionosWeb, :controller
+
   require Logger
 
   alias Horionos.Authorization
+  alias Horionos.Organizations
 
   def update(conn, %{"organization_id" => organization_id}) do
     current_organization_id = get_session(conn, :current_organization_id)

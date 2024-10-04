@@ -1,5 +1,5 @@
 defmodule Horionos.AuthorizationTest do
-  use Horionos.DataCase
+  use Horionos.DataCase, async: true
 
   alias Horionos.Authorization
 

@@ -13,8 +13,9 @@ defmodule Horionos.Accounts.UserEmailManagement do
   within the system.
   """
 
+  alias Horionos.Accounts.EmailToken
+  alias Horionos.Accounts.User
   alias Horionos.Repo
-  alias Horionos.Accounts.{EmailToken, User}
   alias Horionos.UserNotifications
 
   @unconfirmed_email_deadline_in_days Application.compile_env(

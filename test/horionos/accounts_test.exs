@@ -1,10 +1,12 @@
 defmodule Horionos.AccountsTest do
-  use Horionos.DataCase
-
-  alias Horionos.Accounts
-  alias Horionos.Accounts.{EmailToken, SessionToken, User}
+  use Horionos.DataCase, async: true
 
   import Horionos.AccountsFixtures
+
+  alias Horionos.Accounts
+  alias Horionos.Accounts.EmailToken
+  alias Horionos.Accounts.SessionToken
+  alias Horionos.Accounts.User
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -543,7 +545,7 @@ defmodule Horionos.AccountsTest do
       updated_user =
         Repo.update!(
           Ecto.Changeset.change(user,
-            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+            confirmed_at: NaiveDateTime.utc_now(:second)
           )
         )
 
@@ -566,7 +568,7 @@ defmodule Horionos.AccountsTest do
       updated_user =
         Repo.update!(
           Ecto.Changeset.change(user,
-            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+            confirmed_at: NaiveDateTime.utc_now(:second)
           )
         )
 
@@ -580,7 +582,9 @@ defmodule Horionos.AccountsTest do
         Repo.update!(
           Ecto.Changeset.change(user,
             inserted_at:
-              DateTime.utc_now() |> DateTime.add(-40, :day) |> DateTime.truncate(:second)
+              DateTime.utc_now()
+              |> DateTime.add(-40, :day)
+              |> DateTime.truncate(:second)
           )
         )
 
@@ -593,7 +597,7 @@ defmodule Horionos.AccountsTest do
       updated_user =
         Repo.update!(
           Ecto.Changeset.change(user,
-            confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+            confirmed_at: NaiveDateTime.utc_now(:second)
           )
         )
 
@@ -612,7 +616,9 @@ defmodule Horionos.AccountsTest do
         Repo.update!(
           Ecto.Changeset.change(user,
             inserted_at:
-              DateTime.utc_now() |> DateTime.add(-40, :day) |> DateTime.truncate(:second)
+              DateTime.utc_now()
+              |> DateTime.add(-40, :day)
+              |> DateTime.truncate(:second)
           )
         )
 
@@ -631,9 +637,7 @@ defmodule Horionos.AccountsTest do
       user = user_fixture()
 
       locked_user =
-        Repo.update!(
-          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
-        )
+        Repo.update!(Ecto.Changeset.change(user, locked_at: DateTime.utc_now(:second)))
 
       {:ok, unlocked_user} = Accounts.unlock_user(locked_user)
       refute unlocked_user.locked_at
@@ -643,9 +647,7 @@ defmodule Horionos.AccountsTest do
       user = user_fixture()
 
       locked_user =
-        Repo.update!(
-          Ecto.Changeset.change(user, locked_at: DateTime.utc_now() |> DateTime.truncate(:second))
-        )
+        Repo.update!(Ecto.Changeset.change(user, locked_at: DateTime.utc_now(:second)))
 
       assert Accounts.user_locked?(locked_user)
     end
@@ -658,7 +660,10 @@ defmodule Horionos.AccountsTest do
 
   describe "lock_expired_unverified_accounts/0" do
     test "locks unverified accounts past deadline" do
-      past_deadline = DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+      past_deadline =
+        DateTime.utc_now()
+        |> DateTime.add(-31, :day)
+        |> DateTime.truncate(:second)
 
       user1 =
         user_fixture()
@@ -673,7 +678,7 @@ defmodule Horionos.AccountsTest do
         |> then(
           &Repo.update!(
             Ecto.Changeset.change(&1,
-              confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+              confirmed_at: NaiveDateTime.utc_now(:second)
             )
           )
         )
@@ -684,14 +689,21 @@ defmodule Horionos.AccountsTest do
       {locked_count, locked_users} = Accounts.lock_expired_unverified_accounts()
       assert locked_count == 2
 
-      sorted_locked_ids = Enum.map(locked_users, & &1.id) |> Enum.sort()
+      sorted_locked_ids =
+        locked_users
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
       expected_ids = [user1.id, user2.id] |> Enum.sort()
 
       assert sorted_locked_ids == expected_ids
     end
 
     test "doesn't lock already locked accounts" do
-      past_deadline = DateTime.utc_now() |> DateTime.add(-31, :day) |> DateTime.truncate(:second)
+      past_deadline =
+        DateTime.utc_now()
+        |> DateTime.add(-31, :day)
+        |> DateTime.truncate(:second)
 
       _user1 =
         user_fixture()
@@ -699,7 +711,7 @@ defmodule Horionos.AccountsTest do
           &Repo.update!(
             Ecto.Changeset.change(&1,
               inserted_at: past_deadline,
-              locked_at: DateTime.utc_now() |> DateTime.truncate(:second)
+              locked_at: DateTime.utc_now(:second)
             )
           )
         )

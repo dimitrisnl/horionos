@@ -14,7 +14,9 @@ defmodule Horionos.Accounts.UserAuthentication do
   """
   import Ecto.Query
 
-  alias Horionos.Accounts.{EmailToken, SessionToken, User}
+  alias Horionos.Accounts.EmailToken
+  alias Horionos.Accounts.SessionToken
+  alias Horionos.Accounts.User
   alias Horionos.Repo
   alias Horionos.UserNotifications
 
@@ -114,7 +116,8 @@ defmodule Horionos.Accounts.UserAuthentication do
 
   @spec list_user_sessions(User.t(), String.t()) :: [map()]
   def list_user_sessions(user, current_token) do
-    SessionToken.by_user_query(user)
+    user
+    |> SessionToken.by_user_query()
     |> select([st], %{
       id: st.id,
       device: st.device,
@@ -129,7 +132,8 @@ defmodule Horionos.Accounts.UserAuthentication do
 
   @spec revoke_other_user_sessions(User.t(), String.t()) :: {integer(), nil | [term()]}
   def revoke_other_user_sessions(user, current_token) do
-    SessionToken.by_user_query(user)
+    user
+    |> SessionToken.by_user_query()
     |> where([st], st.token != ^current_token)
     |> Repo.delete_all()
   end

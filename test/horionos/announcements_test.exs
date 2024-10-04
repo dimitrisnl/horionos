@@ -1,5 +1,5 @@
 defmodule Horionos.AnnouncementsTest do
-  use Horionos.DataCase
+  use Horionos.DataCase, async: true
 
   alias Horionos.Announcements
   alias Horionos.Announcements.Announcement

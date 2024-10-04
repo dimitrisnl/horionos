@@ -7,8 +7,11 @@ defmodule Horionos.Organizations.InvitationManagement do
   alias Horionos.Accounts
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
-  alias Horionos.Organizations.{Invitation, Membership, MembershipRole, Organization}
+  alias Horionos.Organizations.Invitation
+  alias Horionos.Organizations.Membership
   alias Horionos.Organizations.MembershipManagement
+  alias Horionos.Organizations.MembershipRole
+  alias Horionos.Organizations.Organization
   alias Horionos.Repo
   alias Horionos.UserNotifications
 
@@ -97,7 +100,10 @@ defmodule Horionos.Organizations.InvitationManagement do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:user, fn repo, _changes ->
       with {:ok, user} <- get_or_create_user(invitation.email, user_params),
-           {:ok, updated_user} <- User.confirm_changeset(user) |> repo.update() do
+           {:ok, updated_user} <-
+             user
+             |> User.confirm_changeset()
+             |> repo.update() do
         {:ok, updated_user}
       else
         {:error, reason} -> {:error, reason}

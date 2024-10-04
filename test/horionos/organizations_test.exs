@@ -1,12 +1,14 @@
 defmodule Horionos.OrganizationsTest do
-  use Horionos.DataCase
-
-  alias Horionos.Organizations
-  alias Horionos.Organizations.{Invitation, Membership, Organization}
-  alias Horionos.Repo
+  use Horionos.DataCase, async: true
 
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+
+  alias Horionos.Organizations
+  alias Horionos.Organizations.Invitation
+  alias Horionos.Organizations.Membership
+  alias Horionos.Organizations.Organization
+  alias Horionos.Repo
 
   describe "list_user_memberships/1" do
     test "returns all memberships for a given user" do
@@ -176,7 +178,8 @@ defmodule Horionos.OrganizationsTest do
     test "deletes the membership when user has permissions", %{membership: membership, user: user} do
       assert {:ok, %Membership{}} = Organizations.delete_membership(membership)
 
-      assert Repo.all(Membership)
+      assert Membership
+             |> Repo.all()
              |> Enum.filter(&(&1.user_id == user.id))
              |> Enum.empty?()
     end
@@ -275,7 +278,7 @@ defmodule Horionos.OrganizationsTest do
       {:ok, _updated_invitation} =
         Repo.update(
           Ecto.Changeset.change(invitation2,
-            accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+            accepted_at: DateTime.utc_now(:second)
           )
         )
 
@@ -330,7 +333,10 @@ defmodule Horionos.OrganizationsTest do
     end
 
     test "returns an error when invitation has expired", %{invitation: invitation} do
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
 
       {:ok, expired_invitation} =
         Repo.update(Ecto.Changeset.change(invitation, expires_at: expired_at))
@@ -390,7 +396,11 @@ defmodule Horionos.OrganizationsTest do
     end
 
     test "returns error when invitation has expired", %{invitation: invitation, token: token} do
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
+
       {:ok, _} = Repo.update(Ecto.Changeset.change(invitation, expires_at: expired_at))
       assert {:error, :invalid_token} = Organizations.get_pending_invitation_by_token(token)
     end
@@ -440,7 +450,10 @@ defmodule Horionos.OrganizationsTest do
       %{invitation: expired_invitation} =
         invitation_fixture(owner, organization, "expired@example.com")
 
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
 
       {:ok, expired_invitation} =
         Repo.update(Ecto.Changeset.change(expired_invitation, expires_at: expired_at))
@@ -456,7 +469,7 @@ defmodule Horionos.OrganizationsTest do
       {:ok, accepted_invitation} =
         Repo.update(
           Ecto.Changeset.change(accepted_invitation,
-            accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+            accepted_at: DateTime.utc_now(:second)
           )
         )
 
@@ -491,7 +504,11 @@ defmodule Horionos.OrganizationsTest do
       accepted_invitation: accepted_invitation
     } do
       # Make the accepted invitation expired
-      expired_at = DateTime.utc_now() |> DateTime.add(-8, :day) |> DateTime.truncate(:second)
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-8, :day)
+        |> DateTime.truncate(:second)
+
       {:ok, _} = Repo.update(Ecto.Changeset.change(accepted_invitation, expires_at: expired_at))
 
       Organizations.delete_expired_invitations()

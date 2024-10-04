@@ -63,7 +63,11 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
               )
 
             changeset = Accounts.build_registration_changeset(user)
-            {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
+
+            {:noreply,
+             socket
+             |> assign(trigger_submit: true)
+             |> assign_form(changeset)}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply, socket |> assign_form(changeset)}

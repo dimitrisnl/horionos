@@ -45,7 +45,9 @@ defmodule HorionosWeb.AnnouncementLiveTest do
     } do
       {:ok, lv, _html} = live(conn, ~p"/announcements")
 
-      assert lv |> element("a", "New Announcement") |> render_click() =~
+      assert lv
+             |> element("a", "New Announcement")
+             |> render_click() =~
                "New Announcement"
 
       assert_patch(lv, ~p"/announcements/new")
@@ -166,7 +168,9 @@ defmodule HorionosWeb.AnnouncementLiveTest do
 
       {:ok, show_live, _html} = live(conn, ~p"/announcements/#{announcement}")
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
+      assert show_live
+             |> element("a", "Edit")
+             |> render_click() =~
                "Edit Announcement"
 
       assert_patch(show_live, ~p"/announcements/#{announcement}/show/edit")

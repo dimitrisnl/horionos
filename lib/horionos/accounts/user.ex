@@ -139,7 +139,7 @@ defmodule Horionos.Accounts.User do
   @spec confirm_changeset(t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
   #
   def confirm_changeset(user_or_changeset) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    now = NaiveDateTime.utc_now(:second)
     change(user_or_changeset, confirmed_at: now)
   end
 

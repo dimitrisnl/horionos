@@ -16,7 +16,6 @@ Hooks.AutoHideFlash = {
 
 Hooks.LocalTime = {
   mounted() {
-    console.log("foo");
     this.updated();
   },
   updated() {
