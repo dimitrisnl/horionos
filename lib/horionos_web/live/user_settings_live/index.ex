@@ -10,7 +10,7 @@ defmodule HorionosWeb.UserSettingsLive.Index do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <.settings_navigation title="Settings" active_tab={:user_profile} />
+    <.settings_navigation title="Account settings" active_tab={:user_profile} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">

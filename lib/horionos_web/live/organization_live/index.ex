@@ -8,7 +8,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <.organization_navigation title="Settings" active_tab={:organization_details} />
+    <.organization_navigation title="Organization settings" active_tab={:organization_details} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">

@@ -9,13 +9,13 @@ defmodule Horionos.Announcements.Announcement do
   alias Horionos.Organizations.Organization
 
   @type t :: %__MODULE__{
-          id: integer() | nil,
+          id: integer(),
           title: String.t(),
           body: String.t(),
           organization: Organization.t() | Ecto.Association.NotLoaded.t(),
-          organization_id: integer() | nil,
-          inserted_at: DateTime.t() | nil,
-          updated_at: DateTime.t() | nil
+          organization_id: integer(),
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
         }
 
   schema "announcements" do

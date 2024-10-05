@@ -10,7 +10,7 @@ config :horionos,
   # Token and grace periods
   reset_password_validity_in_days: 1,
   confirm_validity_in_days: 7,
-  change_email_validity_in_days: 7,
+  change_email_validity_in_days: 1,
   unconfirmed_email_deadline_in_days: 7,
   invitation_validity_in_days: 7,
   unconfirmed_email_lock_deadline_in_days: 30,

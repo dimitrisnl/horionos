@@ -10,7 +10,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <.organization_navigation title="Settings" active_tab={:organization_invitations} />
+    <.organization_navigation title="Organization invitations" active_tab={:organization_invitations} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
