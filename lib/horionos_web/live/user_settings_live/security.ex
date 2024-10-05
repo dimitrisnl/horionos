@@ -10,7 +10,7 @@ defmodule HorionosWeb.UserSettingsLive.Security do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <.settings_navigation title="Security" active_tab={:user_security} />
+    <.settings_navigation title="Account security" active_tab={:user_security} />
 
     <div class="space-y-12">
       <div class="grid gap-x-12 gap-y-6 sm:grid-cols-2">
