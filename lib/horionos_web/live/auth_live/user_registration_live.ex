@@ -20,12 +20,24 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
           action={~p"/users/log_in?_action=registered"}
           method="post"
         >
-          <.input field={@form[:full_name]} type="text" label="Name" required />
-          <.input field={@form[:email]} type="email" label="Email" required />
-          <.input field={@form[:password]} type="password" label="Password" required />
+          <div class="space-y-1 rounded-lg bg-blue-50 px-2.5 py-2 text-xs leading-snug">
+            <div>Registrations are temporarily disabled</div>
+            <div>
+              If you want to get in touch,
+              <.link href="mailto:jim@horionos.com" class="text-blue-600 underline">
+                you can send me an email
+              </.link>
+            </div>
+            <div>Thank you for your understanding</div>
+          </div>
+          <.input field={@form[:full_name]} type="text" label="Name" required disabled />
+          <.input field={@form[:email]} type="email" label="Email" required disabled />
+          <.input field={@form[:password]} type="password" label="Password" required disabled />
 
           <:actions>
-            <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
+            <.button phx-disable-with="Creating account..." class="w-full" disabled>
+              Create an account
+            </.button>
           </:actions>
         </.simple_form>
       </.card>
@@ -51,7 +63,14 @@ defmodule HorionosWeb.AuthLive.UserRegistrationLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("save", %{"user" => user_params}, socket) do
+  def handle_event("save", _, socket) do
+    socket
+    |> put_flash(:error, "Registrations are temporarily disabled")
+    |> noreply()
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("nosave", %{"user" => user_params}, socket) do
     case RateLimiter.check_rate("user_registration", 10, 3_600_000) do
       :ok ->
         case Accounts.register_user(user_params) do
