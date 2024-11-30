@@ -33,7 +33,6 @@ defmodule Horionos.Accounts.User do
   end
 
   @type t :: %__MODULE__{
-          __meta__: Ecto.Schema.Metadata.t(),
           confirmed_at: NaiveDateTime.t() | nil,
           full_name: String.t() | nil,
           email: String.t() | nil,

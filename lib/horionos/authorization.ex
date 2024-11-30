@@ -1,4 +1,7 @@
 defmodule Horionos.Authorization do
+  @deprecated """
+  This module is deprecated. Moving to standalone Policies per Domain
+  """
   @moduledoc """
   Provides authorization functionality
   """
@@ -19,13 +22,7 @@ defmodule Horionos.Authorization do
     organization_edit: [:admin, :owner],
     organization_delete: [:owner],
     organization_invite_members: [:admin, :owner],
-    organization_manage_members: [:admin, :owner],
-
-    # Announcement permissions
-    announcement_view: [:member, :admin, :owner],
-    announcement_create: [:member, :admin, :owner],
-    announcement_edit: [:member, :admin, :owner],
-    announcement_delete: [:member, :admin, :owner]
+    organization_manage_members: [:admin, :owner]
   }
 
   @type permission ::
@@ -34,10 +31,6 @@ defmodule Horionos.Authorization do
           | :organization_delete
           | :organization_invite_members
           | :organization_manage_members
-          | :announcement_view
-          | :announcement_create
-          | :announcement_edit
-          | :announcement_delete
 
   @doc """
   Authorizes a user for a specific action on a resource.
@@ -54,7 +47,7 @@ defmodule Horionos.Authorization do
         log_authorization_failure(user, resource, permission, error)
         error
 
-      {:error, :not_found} ->
+      {:error, :role_not_found} ->
         error = {:error, :unauthorized}
         log_authorization_failure(user, resource, permission, error)
         error

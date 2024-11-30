@@ -24,7 +24,6 @@ defmodule Horionos.Accounts.SessionToken do
   @session_validity_in_days Constants.session_validity_in_days()
 
   @type t :: %__MODULE__{
-          __meta__: Ecto.Schema.Metadata.t(),
           id: integer() | nil,
           token: binary(),
           user: User.t() | Ecto.Association.NotLoaded.t(),

@@ -205,7 +205,7 @@ defmodule Horionos.OrganizationsTest do
 
     test "returns error for a user not in the organization", %{organization: organization} do
       non_member = user_fixture()
-      assert {:error, :not_found} = Organizations.get_user_role(non_member, organization)
+      assert {:error, :role_not_found} = Organizations.get_user_role(non_member, organization)
     end
   end
 

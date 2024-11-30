@@ -26,7 +26,6 @@ defmodule Horionos.Accounts.EmailToken do
   @change_email_validity_in_days Constants.change_email_validity_in_days()
 
   @type t :: %__MODULE__{
-          __meta__: Ecto.Schema.Metadata.t(),
           id: integer() | nil,
           token: binary(),
           context: String.t(),

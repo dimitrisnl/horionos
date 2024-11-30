@@ -1,8 +1,8 @@
 defmodule HorionosWeb.OrganizationSessionController do
   use HorionosWeb, :controller
 
-  alias Horionos.Authorization
   alias Horionos.Organizations
+  alias Horionos.Organizations.OrganizationPolicy
 
   require Logger
 
@@ -13,7 +13,8 @@ defmodule HorionosWeb.OrganizationSessionController do
     with {:ok, next_organization_id} <- validate_organization_id(organization_id),
          :ok <- organization_changed?(current_organization_id, next_organization_id),
          {:ok, organization} <- Organizations.get_organization(to_string(next_organization_id)),
-         :ok <- Authorization.authorize(current_user, organization, :organization_view) do
+         {:ok, role} <- Organizations.get_user_role(current_user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :view) do
       conn
       |> configure_session(renew: true)
       |> put_session(:current_organization_id, next_organization_id)
@@ -31,6 +32,15 @@ defmodule HorionosWeb.OrganizationSessionController do
         |> redirect(to: "/")
 
       {:error, :not_found} ->
+        conn
+        |> put_flash(:error, "Organization not found")
+        |> redirect(to: "/")
+
+      {:error, :role_not_found} ->
+        Logger.error(
+          "User #{current_user.id} tried to switch to organization #{organization_id} without access"
+        )
+
         conn
         |> put_flash(:error, "Organization not found")
         |> redirect(to: "/")

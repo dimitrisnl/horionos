@@ -88,13 +88,6 @@ defmodule HorionosWeb.Router do
       # live "/organizations/new", OrganizationLive.Index, :new
       live "/organization/invitations", OrganizationLive.Invitations, :index
 
-      # Announcements
-      live "/announcements", AnnouncementLive.Index, :index
-      live "/announcements/new", AnnouncementLive.Index, :new
-      live "/announcements/:id/edit", AnnouncementLive.Index, :edit
-      live "/announcements/:id", AnnouncementLive.Show, :show
-      live "/announcements/:id/show/edit", AnnouncementLive.Show, :edit
-
       # Invitations
       live "/invitations/new", InvitationLive.New, :new
     end

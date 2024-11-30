@@ -1,4 +1,4 @@
-defmodule Horionos.Admin.Formatters.SlackFormatter do
+defmodule Horionos.Admin.MessageFormatter do
   @moduledoc """
   Module to format Slack notifications.
   """
