@@ -4,6 +4,7 @@ defmodule HorionosWeb.OrganizationLive.Index do
   import HorionosWeb.OrganizationLive.Components.OrganizationNavigation
 
   alias Horionos.Organizations
+  alias Horionos.Organizations.OrganizationPolicy
 
   @impl Phoenix.LiveView
   def render(assigns) do
@@ -100,9 +101,11 @@ defmodule HorionosWeb.OrganizationLive.Index do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    with :ok <- authorize_user_action(socket, :organization_manage_members),
-         {:ok, organization} <-
-           Organizations.get_organization(socket.assigns.current_organization.id),
+    organization = socket.assigns.current_organization
+    user = socket.assigns.current_user
+
+    with {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :view_members),
          {:ok, memberships} <- Organizations.list_organization_memberships(organization) do
       changeset = Organizations.build_organization_changeset(organization)
 
@@ -118,9 +121,9 @@ defmodule HorionosWeb.OrganizationLive.Index do
         |> push_navigate(to: ~p"/")
         |> ok(layout: {HorionosWeb.Layouts, :dashboard})
 
-      {:error, _} ->
+      {:error, :role_not_found} ->
         socket
-        |> put_flash(:error, "Unable to load organization details.")
+        |> put_flash(:error, "You are not authorized to access this page.")
         |> push_navigate(to: ~p"/")
         |> ok(layout: {HorionosWeb.Layouts, :dashboard})
     end
@@ -128,57 +131,67 @@ defmodule HorionosWeb.OrganizationLive.Index do
 
   @impl Phoenix.LiveView
   def handle_event("save", %{"organization" => organization_params}, socket) do
-    case authorize_user_action(socket, :organization_edit) do
-      :ok ->
-        organization = socket.assigns.organization
+    organization = socket.assigns.current_organization
+    user = socket.assigns.current_user
 
-        case Organizations.update_organization(organization, organization_params) do
-          {:ok, updated_organization} ->
-            socket
-            |> assign(:organization, updated_organization)
-            |> assign(:current_organization, updated_organization)
-            |> assign(
-              :form,
-              to_form(Organizations.build_organization_changeset(updated_organization))
-            )
-            |> put_flash(:info, "Organization updated successfully")
-            |> noreply()
-
-          {:error, %Ecto.Changeset{} = changeset} ->
-            socket
-            |> assign(:form, to_form(changeset))
-            |> noreply()
-        end
+    with {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :edit),
+         {:ok, updated_organization} <-
+           Organizations.update_organization(organization, organization_params) do
+      socket
+      |> assign(:organization, updated_organization)
+      |> assign(:current_organization, updated_organization)
+      |> assign(
+        :form,
+        to_form(Organizations.build_organization_changeset(updated_organization))
+      )
+      |> put_flash(:info, "Organization updated successfully")
+      |> noreply()
+    else
+      {:error, :role_not_found} ->
+        socket
+        |> put_flash(:error, "You are not authorized to access this page.")
+        |> push_navigate(to: ~p"/")
+        |> ok(layout: {HorionosWeb.Layouts, :dashboard})
 
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to update this organization.")
+        |> noreply()
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        socket
+        |> assign(:form, to_form(changeset))
         |> noreply()
     end
   end
 
   @impl Phoenix.LiveView
   def handle_event("delete", _params, socket) do
-    case authorize_user_action(socket, :organization_delete) do
-      :ok ->
-        organization = socket.assigns.organization
+    user = socket.assigns.current_user
+    organization = socket.assigns.current_organization
 
-        case Organizations.delete_organization(organization) do
-          {:ok, _deleted_organization} ->
-            socket
-            |> put_flash(:info, "Organization deleted successfully.")
-            |> push_navigate(to: ~p"/")
-            |> noreply()
-
-          {:error, _} ->
-            socket
-            |> put_flash(:error, "Failed to delete organization.")
-            |> noreply()
-        end
-
+    with {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :delete),
+         {:ok, _} <- Organizations.delete_organization(organization) do
+      socket
+      |> put_flash(:info, "Organization deleted successfully.")
+      |> push_navigate(to: ~p"/")
+      |> noreply()
+    else
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to delete this organization.")
+        |> noreply()
+
+      {:error, :role_not_found} ->
+        socket
+        |> put_flash(:error, "You are not authorized to delete this organization.")
+        |> noreply()
+
+      {:error, _} ->
+        socket
+        |> put_flash(:error, "An error occurred while deleting the organization.")
         |> noreply()
     end
   end

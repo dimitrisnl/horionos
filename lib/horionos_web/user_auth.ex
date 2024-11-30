@@ -8,8 +8,8 @@ defmodule HorionosWeb.UserAuth do
   import Phoenix.Controller
 
   alias Horionos.Accounts
-  alias Horionos.Authorization
   alias Horionos.Organizations
+  alias Horionos.Organizations.OrganizationPolicy
 
   require Logger
 
@@ -82,7 +82,8 @@ defmodule HorionosWeb.UserAuth do
          organization_id when not is_nil(organization_id) <-
            get_session(conn, :current_organization_id),
          {:ok, organization} <- Organizations.get_organization(organization_id),
-         :ok <- Authorization.authorize(user, organization, :organization_view) do
+         {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :view) do
       assign_current_organization(conn, organization)
     else
       %{assigns: %{current_user: nil}} -> conn

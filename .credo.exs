@@ -67,7 +67,6 @@
           {Credo.Check.Readability.OneArityFunctionInPipe, []},
           {Credo.Check.Readability.OnePipePerLine, []},
           {Credo.Check.Readability.SeparateAliasRequire, []},
-          {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
           {Credo.Check.Readability.ImplTrue, []},
 
@@ -123,6 +122,7 @@
           {Credo.Check.Warning.UnsafeToAtom, []}
         ],
         disabled: [
+          {Credo.Check.Readability.AliasAs, []},
           #
           # Controversial and experimental checks (opt-in, just move the check to `:enabled`
           #   and be sure to use `mix credo --strict` to see low priority checks)

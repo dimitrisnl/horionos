@@ -3,12 +3,12 @@ defmodule Horionos.AdminNotifications do
   Module to send admin notifications.
   """
   alias Horionos.Admin.Channels.Slack
-  alias Horionos.Admin.Formatters.SlackFormatter
+  alias Horionos.Admin.MessageFormatter
 
   require Logger
 
   def notify(event, details) do
-    message = SlackFormatter.format(event, details)
+    message = MessageFormatter.format(event, details)
 
     case Application.get_env(:horionos, :admin_notification_method) do
       :slack -> Slack.send(message)

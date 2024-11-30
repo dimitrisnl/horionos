@@ -6,7 +6,6 @@ defmodule Horionos.Organizations.OrganizationManagement do
 
   alias Horionos.Accounts.User
   alias Horionos.AdminNotifications
-  alias Horionos.Announcements.Announcement
   alias Horionos.Organizations.Invitation
   alias Horionos.Organizations.Membership
   alias Horionos.Organizations.Organization
@@ -46,7 +45,6 @@ defmodule Horionos.Organizations.OrganizationManagement do
       Repo.transaction(fn ->
         # Delete associated records
         Repo.delete_all(from(m in Membership, where: m.organization_id == ^organization_id))
-        Repo.delete_all(from(a in Announcement, where: a.organization_id == ^organization_id))
         Repo.delete_all(from(i in Invitation, where: i.organization_id == ^organization_id))
 
         # Finally, delete the organization

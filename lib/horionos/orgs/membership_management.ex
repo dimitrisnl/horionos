@@ -5,7 +5,6 @@ defmodule Horionos.Organizations.MembershipManagement do
   import Ecto.Query
 
   alias Horionos.Accounts.User
-  alias Horionos.OrganizationRepo
   alias Horionos.Organizations.Membership
   alias Horionos.Organizations.MembershipRole
   alias Horionos.Organizations.Organization
@@ -47,7 +46,8 @@ defmodule Horionos.Organizations.MembershipManagement do
     if MembershipRole.valid?(attrs.role) && attrs.role in MembershipRole.assignable() do
       %Membership{}
       |> Membership.changeset(attrs)
-      |> OrganizationRepo.insert(attrs.organization_id)
+      |> Ecto.Changeset.put_change(:organization_id, attrs.organization_id)
+      |> Repo.insert()
     else
       {:error, :invalid_role}
     end
@@ -61,7 +61,8 @@ defmodule Horionos.Organizations.MembershipManagement do
   def update_membership(%Membership{organization_id: organization_id} = membership, attrs) do
     membership
     |> Membership.changeset(attrs)
-    |> OrganizationRepo.update(organization_id)
+    |> Ecto.Changeset.put_change(:organization_id, organization_id)
+    |> Repo.update()
   end
 
   @doc """
@@ -69,8 +70,8 @@ defmodule Horionos.Organizations.MembershipManagement do
   """
   @spec delete_membership(Membership.t()) ::
           {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
-  def delete_membership(%Membership{organization_id: organization_id} = membership) do
-    OrganizationRepo.delete(membership, organization_id)
+  def delete_membership(%Membership{} = membership) do
+    Repo.delete(membership)
   end
 
   @doc """
@@ -105,14 +106,14 @@ defmodule Horionos.Organizations.MembershipManagement do
   Gets the user's role in an organization.
   """
   @spec get_user_role(User.t(), Organization.t()) ::
-          {:ok, MembershipRole.t()} | {:error, :not_found}
+          {:ok, MembershipRole.t()} | {:error, :role_not_found}
   def get_user_role(%User{id: user_id}, %Organization{id: organization_id}) do
     case Repo.one(
            from m in Membership,
              where: m.user_id == ^user_id and m.organization_id == ^organization_id,
              select: m.role
          ) do
-      nil -> {:error, :not_found}
+      nil -> {:error, :role_not_found}
       role -> {:ok, role}
     end
   end

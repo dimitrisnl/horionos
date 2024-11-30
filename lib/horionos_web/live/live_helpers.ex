@@ -18,8 +18,6 @@ defmodule HorionosWeb.LiveHelpers do
   defp get_active_tab(socket) do
     case socket.view do
       HorionosWeb.DashboardLive -> :home
-      HorionosWeb.AnnouncementLive.Index -> :announcements
-      HorionosWeb.AnnouncementLive.Show -> :announcements
       HorionosWeb.OrganizationLive.Index -> :organization_details
       HorionosWeb.OrganizationLive.Invitations -> :organization_invitations
       HorionosWeb.UserSettingsLive.Index -> :user_profile

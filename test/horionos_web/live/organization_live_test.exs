@@ -32,13 +32,14 @@ defmodule HorionosWeb.OrganizationLiveTest do
       %{organization: organization, owner: owner, admin: admin, member: member}
     end
 
-    test "displays current organization details for admin and owners", %{
+    test "displays current organization details for member, admin, owners", %{
       conn: conn,
       organization: organization,
       admin: admin,
-      owner: owner
+      owner: owner,
+      member: member
     } do
-      for user <- [admin, owner] do
+      for user <- [admin, owner, member] do
         conn = log_in_user(conn, user)
         {:ok, _index_live, html} = live(conn, ~p"/organization")
 
@@ -46,15 +47,6 @@ defmodule HorionosWeb.OrganizationLiveTest do
         assert html =~ "Edit Organization"
         assert html =~ organization.title
       end
-    end
-
-    test "cannot visit the page as member", %{conn: conn, member: member} do
-      conn = log_in_user(conn, member)
-
-      {:error,
-       {:live_redirect,
-        %{to: "/", flash: %{"error" => "You are not authorized to access this page."}}}} =
-        live(conn, ~p"/organization")
     end
 
     test "updates organization", %{conn: conn, admin: admin, owner: owner} do

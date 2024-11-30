@@ -6,6 +6,7 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
   alias Horionos.Organizations
   alias Horionos.Organizations.Invitation
   alias Horionos.Organizations.MembershipRole
+  alias Horionos.Organizations.OrganizationPolicy
 
   @impl Phoenix.LiveView
   def render(assigns) do
@@ -100,18 +101,25 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    current_organization = socket.assigns.current_organization
+    organization = socket.assigns.current_organization
     form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
 
-    with :ok <- authorize_user_action(socket, :organization_invite_members),
+    with {:ok, role} <- Organizations.get_user_role(socket.assigns.current_user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :view_invitations),
          {:ok, invitations} <-
-           Organizations.list_pending_organization_invitations(current_organization) do
+           Organizations.list_pending_organization_invitations(organization) do
       socket
-      |> assign(:current_organization, current_organization)
+      |> assign(:current_organization, organization)
       |> assign(:form, form)
       |> stream(:invitations, invitations)
       |> ok(layout: {HorionosWeb.Layouts, :dashboard})
     else
+      {:error, :role_not_found} ->
+        socket
+        |> put_flash(:error, "You are not authorized to view this page")
+        |> push_navigate(to: ~p"/")
+        |> ok()
+
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to view this page")
@@ -122,40 +130,47 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
 
   @impl Phoenix.LiveView
   def handle_event("send_invitation", %{"invitation" => invitation_params}, socket) do
-    case authorize_user_action(socket, :organization_invite_members) do
-      :ok ->
-        organization = socket.assigns.current_organization
-        inviter = socket.assigns.current_user
-        email = invitation_params["email"]
-        role = String.to_existing_atom(invitation_params["role"])
+    organization = socket.assigns.current_organization
+    inviter = socket.assigns.current_user
+    email = invitation_params["email"]
+    invitee_role = String.to_existing_atom(invitation_params["role"])
 
-        case Organizations.create_invitation(inviter, organization, email, role) do
-          {:ok, %{invitation: invitation, token: token}} ->
-            accept_url = url(socket, ~p"/invitations/#{token}/accept")
-            Organizations.send_invitation_email(invitation, accept_url)
+    with {:ok, inviter_role} <- Organizations.get_user_role(inviter, organization),
+         {:ok} <- OrganizationPolicy.authorize(inviter_role, :invite_members),
+         {:ok, %{invitation: invitation, token: token}} <-
+           Organizations.create_invitation(inviter, organization, email, invitee_role) do
+      accept_url = url(socket, ~p"/invitations/#{token}/accept")
+      Organizations.send_invitation_email(invitation, accept_url)
 
-            socket
-            |> put_flash(:info, "Invitation sent")
-            |> push_navigate(to: ~p"/organization/invitations")
-            |> noreply()
+      socket
+      |> put_flash(:info, "Invitation sent")
+      |> push_navigate(to: ~p"/organization/invitations")
+      |> noreply()
+    else
+      {:error, :already_member} ->
+        socket
+        |> put_flash(:error, "User is already a member of this organization")
+        |> noreply()
 
-          {:error, :already_member} ->
-            socket
-            |> put_flash(:error, "User is already a member of this organization")
-            |> noreply()
+      {:error, :invalid_role} ->
+        socket
+        |> put_flash(:error, "Invalid role selected")
+        |> noreply()
 
-          {:error, :invalid_role} ->
-            socket
-            |> put_flash(:error, "Invalid role selected")
-            |> noreply()
-
-          {:error, %Ecto.Changeset{} = changeset} ->
-            socket
-            |> assign(:form, to_form(changeset))
-            |> noreply()
-        end
+      {:error, %Ecto.Changeset{} = changeset} ->
+        socket
+        |> assign(:form, to_form(changeset))
+        |> noreply()
 
       {:error, :unauthorized} ->
+        form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
+
+        socket
+        |> assign(:form, form)
+        |> put_flash(:error, "You are not authorized to invite users to this organization")
+        |> noreply()
+
+      {:error, :role_not_found} ->
         form = to_form(Organizations.build_invitation_changeset(%Invitation{role: :member}))
 
         socket
@@ -167,24 +182,30 @@ defmodule HorionosWeb.OrganizationLive.Invitations do
 
   @impl Phoenix.LiveView
   def handle_event("delete_invitation", %{"id" => invitation_id}, socket) do
-    case authorize_user_action(socket, :organization_invite_members) do
-      :ok ->
-        case Organizations.delete_invitation(invitation_id) do
-          {:ok, cancelled_invitation} ->
-            socket
-            |> put_flash(:info, "Invitation cancelled successfully")
-            |> stream_delete(:invitations, cancelled_invitation)
-            |> noreply()
+    user = socket.assigns.current_user
+    organization = socket.assigns.current_organization
 
-          {:error, _changeset} ->
-            socket
-            |> put_flash(:error, "Failed to cancel invitation")
-            |> noreply()
-        end
-
+    with {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok} <- OrganizationPolicy.authorize(role, :invite_members),
+         {:ok, cancelled_invitation} <- Organizations.delete_invitation(invitation_id) do
+      socket
+      |> put_flash(:info, "Invitation cancelled successfully")
+      |> stream_delete(:invitations, cancelled_invitation)
+      |> noreply()
+    else
       {:error, :unauthorized} ->
         socket
         |> put_flash(:error, "You are not authorized to cancel this invitation")
+        |> noreply()
+
+      {:error, :role_not_found} ->
+        socket
+        |> put_flash(:error, "You are not authorized to cancel this invitation")
+        |> noreply()
+
+      {:error, _changeset} ->
+        socket
+        |> put_flash(:error, "Failed to cancel invitation")
         |> noreply()
     end
   end

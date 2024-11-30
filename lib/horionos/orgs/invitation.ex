@@ -17,7 +17,6 @@ defmodule Horionos.Organizations.Invitation do
   @invitation_validity_in_days Constants.invitation_validity_in_days()
 
   @type t :: %__MODULE__{
-          __meta__: Ecto.Schema.Metadata.t(),
           id: integer() | nil,
           email: String.t() | nil,
           token: String.t() | nil,
