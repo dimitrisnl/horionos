@@ -1,6 +1,6 @@
 # Horionos
 
-Trying out Phoenix & Liview by creating a dashboard.
+Trying out Phoenix & Liveview by creating a dashboard.
 
 As it stands, I have implemented the following:
 
