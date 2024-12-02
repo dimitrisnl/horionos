@@ -5,7 +5,8 @@ defmodule HorionosWeb.OrganizationLiveTest do
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
 
-  alias Horionos.Organizations
+  alias Horionos.Memberships.Memberships
+  alias Horionos.Organizations.Organizations
 
   @update_attrs %{title: "Updated Organization Name"}
   @invalid_attrs %{title: nil}
@@ -17,13 +18,13 @@ defmodule HorionosWeb.OrganizationLiveTest do
       admin = user_fixture()
       member = user_fixture()
 
-      Organizations.create_membership(%{
+      Memberships.create_membership(%{
         user_id: admin.id,
         organization_id: organization.id,
         role: :admin
       })
 
-      Organizations.create_membership(%{
+      Memberships.create_membership(%{
         user_id: member.id,
         organization_id: organization.id,
         role: :member

@@ -1,12 +1,13 @@
-defmodule HorionosWeb.InvitationLive.AcceptTest do
+defmodule HorionosWeb.InvitationLive.AcceptInvitationLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+  import Horionos.InvitationsFixtures
 
-  alias Horionos.Accounts.User
-  alias Horionos.Organizations
+  alias Horionos.Accounts.Schemas.User
+  alias Horionos.Invitations.Invitations
   alias Horionos.Repo
 
   describe "Accept Invitation" do
@@ -107,7 +108,7 @@ defmodule HorionosWeb.InvitationLive.AcceptTest do
       invitation: invitation,
       token: token
     } do
-      Organizations.accept_invitation(invitation, %{
+      Invitations.accept_invitation(invitation, %{
         full_name: "Test User",
         password: valid_user_password()
       })

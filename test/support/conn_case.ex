@@ -17,6 +17,14 @@ defmodule HorionosWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  import Plug.Conn
+  import Phoenix.ConnTest
+
+  alias Horionos.Accounts.Sessions
+  alias Horionos.AccountsFixtures
+  alias Horionos.OrganizationsFixtures
+  alias Horionos.Repo
+
   using do
     quote do
       # The default endpoint for testing
@@ -36,77 +44,81 @@ defmodule HorionosWeb.ConnCase do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 
-  import Plug.Conn
-
   @doc """
-  Setup helper that registers and logs in users, and optionally creates an organization for them.
-
-      setup :register_and_log_in_user
-
-  It stores an updated connection, a registered user, and optionally the user's organization in the
-  test context. Use the `create_organization` tag to control whether an organization is created.
+  Setup-helper
   """
-  def register_and_log_in_user(context) do
-    %{conn: conn} = context
-    create_organization = Map.get(context, :create_organization, false)
-    user_attrs = Map.get(context, :user_attrs, %{})
-
-    user = Horionos.AccountsFixtures.user_fixture(user_attrs)
-
-    conn = log_in_user(conn, user)
-
-    result = %{conn: conn, user: user}
-
-    if create_organization do
-      organization = Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
-
-      conn =
-        conn
-        |> put_session(:current_organization_id, organization.id)
-        |> assign(:current_organization, organization)
-
-      result
-      |> Map.put(:organization, organization)
-      |> Map.put(:conn, conn)
-    else
-      result
-    end
+  def setup_user_pipeline(context) do
+    context
+    |> create_user()
+    |> maybe_create_organization()
+    |> maybe_confirm_email()
+    |> maybe_log_in_user()
+    |> maybe_assign_organization()
   end
 
-  @doc """
-  Logs the given `user` into the `conn`.
-
-  It returns an updated `conn`.
-  """
-  def log_in_user(conn, user) do
-    token = Horionos.Accounts.create_session_token(user)
-
-    conn
-    |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_token, token)
+  defp create_user(%{user_attrs: user_attrs} = context) do
+    user = AccountsFixtures.user_fixture(user_attrs)
+    Map.put(context, :user, user)
   end
 
-  def log_in_and_onboard_user(conn, user) do
-    conn = log_in_user(conn, user)
-    organization = Horionos.OrganizationsFixtures.organization_fixture(%{user: user})
+  defp create_user(context) do
+    user = AccountsFixtures.user_fixture(%{})
+    Map.put(context, :user, user)
+  end
 
+  defp maybe_confirm_email(%{confirm_user_email: true, user: user} = context) do
+    updated_user =
+      Repo.update!(Ecto.Changeset.change(user, confirmed_at: NaiveDateTime.utc_now(:second)))
+
+    Map.put(context, :user, updated_user)
+  end
+
+  defp maybe_confirm_email(context), do: context
+
+  defp maybe_log_in_user(%{conn: conn, user: user, log_in_user: true} = context) do
+    conn = log_in_user(conn, user)
+    Map.put(context, :conn, conn)
+  end
+
+  defp maybe_log_in_user(context), do: context
+
+  defp maybe_create_organization(%{create_organization: true, user: user} = context) do
+    organization = OrganizationsFixtures.organization_fixture(%{user: user})
+    Map.put(context, :organization, organization)
+  end
+
+  defp maybe_create_organization(context), do: context
+
+  defp maybe_assign_organization(
+         %{create_organization: true, conn: conn, organization: organization, log_in_user: true} =
+           context
+       ) do
     conn =
       conn
       |> put_session(:current_organization_id, organization.id)
       |> assign(:current_organization, organization)
 
+    context
+    |> Map.put(:conn, conn)
+  end
+
+  defp maybe_assign_organization(context), do: context
+
+  @doc """
+  Logs the given `user` into the `conn` by creating a session token.
+  """
+  def log_in_user(conn, user) do
+    token = Sessions.create_session(user)
+
     conn
+    |> init_test_session(%{})
+    |> put_session(:user_token, token)
   end
 
   def extract_user_token(fun) do
-    {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    {:ok, captured_emails} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    captured_email = captured_emails[Horionos.Accounts.Notifications.Channels.Email]
     [_, token | _] = String.split(captured_email.assigns.url, "[TOKEN]")
     token
-  end
-
-  def assign_organization(conn, organization) do
-    conn
-    |> Plug.Conn.assign(:current_organization, organization)
-    |> Plug.Conn.put_session(:current_organization_id, organization.id)
   end
 end

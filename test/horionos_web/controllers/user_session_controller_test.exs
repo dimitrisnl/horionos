@@ -2,17 +2,17 @@ defmodule HorionosWeb.UserSessionControllerTest do
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
-  alias Horionos.Accounts
+
+  alias Horionos.Accounts.Sessions
 
   require Logger
 
   describe "POST /users/log_in" do
-    test "logs the user in", %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
+    setup :setup_user_pipeline
 
-      conn = delete(conn, ~p"/users/log_out")
-
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    test "logs the user in", %{conn: conn, user: user} do
       conn =
         post(conn, ~p"/users/log_in", %{
           "user" => %{"email" => user.email, "password" => valid_user_password()}
@@ -29,12 +29,9 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert response =~ ~p"/users/log_out"
     end
 
-    test "logs the user in with remember me", %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
-      conn = delete(conn, ~p"/users/log_out")
-
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    test "logs the user in with remember me", %{conn: conn, user: user} do
       conn =
         post(conn, ~p"/users/log_in", %{
           "user" => %{
@@ -48,12 +45,9 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
     end
 
-    test "logs the user in with return to", %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
-      delete(conn, ~p"/users/log_out")
-
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    test "logs the user in with return to", %{user: user} do
       conn =
         Phoenix.ConnTest.build_conn()
         |> init_test_session(user_return_to: "/foo/bar")
@@ -67,12 +61,9 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert redirected_to(conn) == "/foo/bar"
     end
 
-    test "login following registration", %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
-      conn = delete(conn, ~p"/users/log_out")
-
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    test "login following registration", %{conn: conn, user: user} do
       conn =
         conn
         |> post(~p"/users/log_in", %{
@@ -86,12 +77,9 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
     end
 
-    test "login following password update", %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
-      conn = delete(conn, ~p"/users/log_out")
-
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    test "login following password update", %{conn: conn, user: user} do
       conn =
         conn
         |> post(~p"/users/log_in", %{
@@ -106,6 +94,8 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password updated successfully"
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
     test "redirects to login page with invalid credentials", %{conn: conn} do
       conn =
         post(conn, ~p"/users/log_in", %{
@@ -118,10 +108,12 @@ defmodule HorionosWeb.UserSessionControllerTest do
   end
 
   describe "DELETE /users/log_out" do
-    test "logs the user out", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
+    setup :setup_user_pipeline
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
+    test "logs the user out", %{conn: conn} do
       conn = conn |> delete(~p"/users/log_out")
       assert redirected_to(conn) == ~p"/users/log_in"
       refute get_session(conn, :user_token)
@@ -135,12 +127,14 @@ defmodule HorionosWeb.UserSessionControllerTest do
   end
 
   describe "DELETE /users/clear_sessions" do
-    setup %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
+    setup :setup_user_pipeline
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
+    setup %{conn: conn, user: user} do
       # Create an additional session
-      Accounts.create_session_token(user, %{
+      Sessions.create_session(user, %{
         device: "Test Device",
         os: "Test OS",
         browser: "Test Browser",
@@ -150,9 +144,12 @@ defmodule HorionosWeb.UserSessionControllerTest do
       %{conn: conn, user: user}
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "clears other sessions", %{conn: conn, user: user} do
       # Ensure we have two sessions
-      assert length(Accounts.list_user_sessions(user, get_session(conn, :user_token))) == 2
+      assert length(Sessions.list_sessions(user, get_session(conn, :user_token))) == 2
 
       conn =
         conn
@@ -165,9 +162,12 @@ defmodule HorionosWeb.UserSessionControllerTest do
                "All other sessions have been logged out"
 
       # Verify that only one session remains
-      assert length(Accounts.list_user_sessions(user, get_session(conn, :user_token))) == 1
+      assert length(Sessions.list_sessions(user, get_session(conn, :user_token))) == 1
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "does not clear the current session", %{conn: conn} do
       original_token = get_session(conn, :user_token)
 
@@ -176,9 +176,12 @@ defmodule HorionosWeb.UserSessionControllerTest do
       assert get_session(conn, :user_token) == original_token
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "fails gracefully if no other sessions exist", %{conn: conn, user: user} do
       # Clear other sessions manually
-      Accounts.revoke_other_user_sessions(user, get_session(conn, :user_token))
+      Sessions.revoke_other_sessions(user, get_session(conn, :user_token))
 
       conn =
         conn

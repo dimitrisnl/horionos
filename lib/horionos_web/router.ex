@@ -37,10 +37,10 @@ defmodule HorionosWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{UserAuthLive, :redirect_if_user_is_authenticated}] do
-      live "/users/register", AuthLive.UserRegistrationLive, :new
-      live "/users/log_in", AuthLive.UserLoginLive, :new
-      live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", AuthLive.UserResetPasswordLive, :edit
+      live "/users/register", Auth.UserRegistrationLive, :new
+      live "/users/log_in", Auth.UserLoginLive, :new
+      live "/users/reset_password", Auth.UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", Auth.UserResetPasswordLive, :edit
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -73,23 +73,20 @@ defmodule HorionosWeb.Router do
       on_mount: [
         {UserAuthLive, :ensure_authenticated},
         {UserAuthLive, :ensure_current_organization},
+        {UserAuthLive, :ensure_email_verified},
         {UserAuthLive, :redirect_if_locked},
         {LiveHelpers, :default}
       ] do
       live "/", DashboardLive, :home
 
       # User settings
-      live "/users/settings", UserSettingsLive.Index, :edit
-      live "/users/settings/security", UserSettingsLive.Security, :security
-      live "/users/settings/confirm_email/:token", UserSettingsLive.Index, :confirm_email
+      live "/users/settings", UserSettings.IndexLive, :edit
+      live "/users/settings/security", UserSettings.SecurityLive, :security
+      live "/users/settings/confirm_email/:token", UserSettings.IndexLive, :confirm_email
 
       # Organization management
-      live "/organization", OrganizationLive.Index, :index
-      # live "/organizations/new", OrganizationLive.Index, :new
-      live "/organization/invitations", OrganizationLive.Invitations, :index
-
-      # Invitations
-      live "/invitations/new", InvitationLive.New, :new
+      live "/organization", Organization.IndexLive, :index
+      live "/organization/invitations", Organization.InvitationsLive, :index
     end
   end
 
@@ -101,14 +98,14 @@ defmodule HorionosWeb.Router do
 
     live_session :email_confirmation,
       on_mount: [{UserAuthLive, :mount_current_user}] do
-      live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
-      live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", Auth.UserConfirmationLive, :edit
+      live "/users/confirm", Auth.UserConfirmationInstructionsLive, :new
     end
 
     # New live session for invitation acceptance (both authenticated and unauthenticated users)
     live_session :invitation_acceptance,
       on_mount: [{UserAuthLive, :mount_current_user}] do
-      live "/invitations/:token/accept", InvitationLive.Accept, :accept
+      live "/invitations/:token/accept", Invitations.AcceptLive, :accept
     end
   end
 end

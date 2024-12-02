@@ -1,4 +1,4 @@
-defmodule HorionosWeb.OrganizationLive.Components.OrganizationNavigation do
+defmodule HorionosWeb.Organization.Components.OrganizationNavigation do
   @moduledoc """
   A component to render the organization navigation.
   """
@@ -10,7 +10,7 @@ defmodule HorionosWeb.OrganizationLive.Components.OrganizationNavigation do
   def organization_navigation(assigns) do
     ~H"""
     <.header>
-      <%= @title %>
+      {@title}
       <:nav>
         <.nav
           active_tab={@active_tab}

@@ -11,7 +11,6 @@ config :horionos,
   reset_password_validity_in_days: 1,
   confirm_validity_in_days: 7,
   change_email_validity_in_days: 1,
-  unconfirmed_email_deadline_in_days: 7,
   invitation_validity_in_days: 7,
   unconfirmed_email_lock_deadline_in_days: 30,
   session_validity_in_days: 60
@@ -41,7 +40,7 @@ config :horionos, HorionosWeb.Endpoint,
   pubsub_server: Horionos.PubSub,
   live_view: [signing_salt: "S6Z3/glq"]
 
-# Local adapter for mailer, overriden in runtime.exs
+# Local adapter for mailer, overridden in runtime.exs
 config :horionos, Horionos.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)

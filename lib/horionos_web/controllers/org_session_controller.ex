@@ -1,8 +1,9 @@
 defmodule HorionosWeb.OrganizationSessionController do
   use HorionosWeb, :controller
 
-  alias Horionos.Organizations
-  alias Horionos.Organizations.OrganizationPolicy
+  alias Horionos.Memberships.Memberships
+  alias Horionos.Organizations.Organizations
+  alias Horionos.Organizations.Policies.OrganizationPolicy
 
   require Logger
 
@@ -13,7 +14,7 @@ defmodule HorionosWeb.OrganizationSessionController do
     with {:ok, next_organization_id} <- validate_organization_id(organization_id),
          :ok <- organization_changed?(current_organization_id, next_organization_id),
          {:ok, organization} <- Organizations.get_organization(to_string(next_organization_id)),
-         {:ok, role} <- Organizations.get_user_role(current_user, organization),
+         {:ok, role} <- Memberships.get_user_role(current_user, organization),
          {:ok} <- OrganizationPolicy.authorize(role, :view) do
       conn
       |> configure_session(renew: true)

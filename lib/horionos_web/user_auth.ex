@@ -7,9 +7,11 @@ defmodule HorionosWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Horionos.Accounts
-  alias Horionos.Organizations
-  alias Horionos.Organizations.OrganizationPolicy
+  alias Horionos.Accounts.Sessions
+  alias Horionos.Accounts.Users
+  alias Horionos.Memberships.Memberships
+  alias Horionos.Organizations.Organizations
+  alias Horionos.Organizations.Policies.OrganizationPolicy
 
   require Logger
 
@@ -35,7 +37,7 @@ defmodule HorionosWeb.UserAuth do
   if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}, device_info \\ %{}) do
-    token = Accounts.create_session_token(user, device_info)
+    token = Sessions.create_session(user, device_info)
     user_return_to = get_session(conn, :user_return_to)
 
     conn
@@ -52,7 +54,7 @@ defmodule HorionosWeb.UserAuth do
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Accounts.revoke_session_token(user_token)
+    user_token && Sessions.revoke_session(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       HorionosWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -70,7 +72,7 @@ defmodule HorionosWeb.UserAuth do
   """
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_from_session_token(user_token)
+    user = user_token && Sessions.get_session_user(user_token)
     assign(conn, :current_user, user)
   end
 
@@ -82,7 +84,7 @@ defmodule HorionosWeb.UserAuth do
          organization_id when not is_nil(organization_id) <-
            get_session(conn, :current_organization_id),
          {:ok, organization} <- Organizations.get_organization(organization_id),
-         {:ok, role} <- Organizations.get_user_role(user, organization),
+         {:ok, role} <- Memberships.get_user_role(user, organization),
          {:ok} <- OrganizationPolicy.authorize(role, :view) do
       assign_current_organization(conn, organization)
     else
@@ -137,7 +139,7 @@ defmodule HorionosWeb.UserAuth do
 
   # Private Helper Functions
   defp redirect_based_on_user_state(conn, user, user_return_to) do
-    case Organizations.get_user_primary_organization(user) do
+    case Memberships.get_user_primary_organization(user) do
       nil ->
         conn
         |> redirect(to: ~p"/onboarding")
@@ -172,7 +174,7 @@ defmodule HorionosWeb.UserAuth do
   end
 
   defp handle_organization_not_found(conn, user) do
-    case Organizations.get_user_primary_organization(user) do
+    case Memberships.get_user_primary_organization(user) do
       nil ->
         conn
         |> assign(:current_organization, nil)
@@ -198,7 +200,7 @@ defmodule HorionosWeb.UserAuth do
   end
 
   def require_email_verified(conn, _opts) do
-    if Accounts.email_verified_or_pending?(conn.assigns.current_user) do
+    if Users.email_verified?(conn.assigns.current_user) do
       conn
     else
       conn
@@ -213,7 +215,7 @@ defmodule HorionosWeb.UserAuth do
   end
 
   def require_unlocked_account(conn, _opts) do
-    if Accounts.user_locked?(conn.assigns.current_user) do
+    if Users.user_locked?(conn.assigns.current_user) do
       conn
       |> clear_session()
       |> put_flash(

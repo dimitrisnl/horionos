@@ -7,10 +7,12 @@ defmodule HorionosWeb.OrganizationSessionControllerTest do
   require Logger
 
   setup %{conn: conn} do
-    %{conn: conn, user: user, organization: organization} =
-      HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
-    %{conn: conn, user: user, organization: organization}
+    setup_user_pipeline(%{
+      conn: conn,
+      create_organization: true,
+      confirm_user_email: true,
+      log_in_user: true
+    })
   end
 
   describe "POST /organization/select" do

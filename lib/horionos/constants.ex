@@ -10,10 +10,6 @@ defmodule Horionos.Constants do
   @confirm_validity_in_days Application.compile_env(@app, :confirm_validity_in_days)
   @change_email_validity_in_days Application.compile_env(@app, :change_email_validity_in_days)
   @session_validity_in_days Application.compile_env(@app, :session_validity_in_days)
-  @unconfirmed_email_deadline_in_days Application.compile_env(
-                                        @app,
-                                        :unconfirmed_email_deadline_in_days
-                                      )
   @unconfirmed_email_lock_deadline_in_days Application.compile_env(
                                              @app,
                                              :unconfirmed_email_lock_deadline_in_days
@@ -26,7 +22,6 @@ defmodule Horionos.Constants do
   def confirm_validity_in_days, do: @confirm_validity_in_days
   def change_email_validity_in_days, do: @change_email_validity_in_days
   def session_validity_in_days, do: @session_validity_in_days
-  def unconfirmed_email_deadline_in_days, do: @unconfirmed_email_deadline_in_days
   def unconfirmed_email_lock_deadline_in_days, do: @unconfirmed_email_lock_deadline_in_days
   def invitation_validity_in_days, do: @invitation_validity_in_days
   def from_email, do: @from_email

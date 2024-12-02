@@ -34,7 +34,7 @@
           {Credo.Check.Consistency.TabsOrSpaces, []},
           {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
           {Credo.Check.Design.AliasUsage,
-           [priority: :low, if_nested_deeper_than: 2, if_called_more_often_than: 0]},
+           [excluded_namespaces: ["Ecto", "Plug", "Phoenix"], if_called_more_often_than: 1]},
           {Credo.Check.Design.TagFIXME, []},
           {Credo.Check.Design.TagTODO, [exit_status: 2]},
           {Credo.Check.Design.SkipTestWithoutComment, []},
@@ -69,6 +69,7 @@
           {Credo.Check.Readability.SeparateAliasRequire, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
           {Credo.Check.Readability.ImplTrue, []},
+          {Credo.Check.Readability.WithCustomTaggedTuple},
 
           #
           ## Refactoring Opportunities
@@ -119,7 +120,8 @@
           {Credo.Check.Warning.UnusedStringOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
           {Credo.Check.Warning.WrongTestFileExtension, []},
-          {Credo.Check.Warning.UnsafeToAtom, []}
+          {Credo.Check.Warning.UnsafeToAtom, []},
+          {Credo.Check.Warning.MixEnv, []}
         ],
         disabled: [
           {Credo.Check.Readability.AliasAs, []},
