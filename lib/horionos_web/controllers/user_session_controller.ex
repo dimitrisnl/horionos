@@ -19,10 +19,6 @@ defmodule HorionosWeb.UserSessionController do
     do_create(conn, params, "Invitation accepted successfully!")
   end
 
-  def create(conn, %{"_action" => "registered"} = params) do
-    do_create(conn, params)
-  end
-
   def create(conn, params) do
     do_create(conn, params)
   end
@@ -32,7 +28,8 @@ defmodule HorionosWeb.UserSessionController do
 
     with {:ok} <- RateLimiter.check_rate("login:#{email}", 5, 300_000),
          {:ok, user} <-
-           Users.get_user_by_email_and_password(email, password) do
+           Users.get_user_by_email_and_password(email, password),
+         true <- Users.email_verified?(user) do
       Logger.info("Successful login for user: #{user.id}")
       SystemAdminNotifications.notify(:successful_login, %{email: email})
       conn = maybe_put_flash(conn, info)
@@ -41,6 +38,10 @@ defmodule HorionosWeb.UserSessionController do
 
       UserAuth.log_in_user(conn, user, user_params, device_info)
     else
+      false ->
+        SystemAdminNotifications.notify(:failed_login_without_verification, %{email: email})
+        handle_unverified_email(conn, email)
+
       {:error, :rate_limit_exceeded} ->
         SystemAdminNotifications.notify(:failed_login_rate_limit_exceeded, %{email: email})
         Logger.warning("Rate limit exceeded for login attempts: #{email}")
@@ -86,6 +87,13 @@ defmodule HorionosWeb.UserSessionController do
     do: put_flash(conn, :info, info)
 
   defp maybe_put_flash(conn, _), do: conn
+
+  defp handle_unverified_email(conn, email) do
+    conn
+    |> put_flash(:error, "Please verify your email address before logging in.")
+    |> put_flash(:email, String.slice(email, 0, 160))
+    |> redirect(to: ~p"/users/log_in")
+  end
 
   defp handle_failed_login(conn, email) do
     conn

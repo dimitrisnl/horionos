@@ -42,10 +42,10 @@ defmodule HorionosWeb.UserRegistrationLiveTest do
 
       email = unique_user_email()
       form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
-      render_submit(form)
-      conn = follow_trigger_action(form, conn)
 
-      assert redirected_to(conn) == ~p"/onboarding"
+      {:error, {:redirect, %{to: path}}} = render_submit(form)
+
+      assert path == ~p"/users/log_in"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

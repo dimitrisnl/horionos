@@ -12,6 +12,10 @@ defmodule Horionos.SystemAdmin.MessageFormatter do
     "⁉️ Failed login: #{email}"
   end
 
+  def format(:failed_login_without_verification, %{email: email}) do
+    "🔒 Failed login without verification: #{email}"
+  end
+
   def format(:failed_login_rate_limit_exceeded, %{email: email}) do
     "🚫 Rate limit exceeded: #{email}"
   end

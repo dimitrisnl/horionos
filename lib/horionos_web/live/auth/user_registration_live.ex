@@ -13,14 +13,7 @@ defmodule HorionosWeb.Auth.UserRegistrationLive do
     ~H"""
     <.guest_view title="Create your account" subtitle="It's great having you here!">
       <.card>
-        <.simple_form
-          for={@form}
-          id="registration_form"
-          phx-submit="save"
-          phx-trigger-action={@trigger_submit}
-          action={~p"/users/log_in?_action=registered"}
-          method="post"
-        >
+        <.simple_form for={@form} id="registration_form" phx-submit="save">
           <.input field={@form[:full_name]} type="text" label="Name" required />
           <.input field={@form[:email]} type="email" label="Email" required />
           <.input field={@form[:password]} type="password" label="Password" required />
@@ -63,11 +56,9 @@ defmodule HorionosWeb.Auth.UserRegistrationLive do
                 &url(~p"/users/confirm/#{&1}")
               )
 
-            changeset = Users.build_registration_changeset(user)
-
             socket
-            |> assign(trigger_submit: true)
-            |> assign_form(changeset)
+            |> redirect(to: ~p"/users/log_in")
+            |> put_flash(:info, "Please check your email inbox for a confirmation link.")
             |> noreply()
 
           {:error, %Ecto.Changeset{} = changeset} ->
