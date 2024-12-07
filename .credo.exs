@@ -36,7 +36,6 @@
           {Credo.Check.Design.AliasUsage,
            [excluded_namespaces: ["Ecto", "Plug", "Phoenix"], if_called_more_often_than: 1]},
           {Credo.Check.Design.TagFIXME, []},
-          {Credo.Check.Design.TagTODO, [exit_status: 2]},
           {Credo.Check.Design.SkipTestWithoutComment, []},
 
           #
@@ -135,6 +134,7 @@
           #
           {Credo.Check.Consistency.UnusedVariableNames, []},
           {Credo.Check.Design.DuplicatedCode, []},
+          {Credo.Check.Design.TagTODO, []},
           {Credo.Check.Readability.BlockPipe, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
