@@ -4,14 +4,15 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
 
-  alias Horionos.Accounts
+  alias Horionos.Accounts.PasswordReset
+  alias Horionos.Accounts.Users
 
   setup do
     user = user_fixture()
 
     token =
       extract_user_token(fn url ->
-        Accounts.send_reset_password_instructions(user, url)
+        PasswordReset.initiate_reset(user, url)
       end)
 
     %{token: token, user: user}
@@ -61,7 +62,7 @@ defmodule HorionosWeb.UserResetPasswordLiveTest do
 
       refute get_session(conn, :user_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert {:ok, _} = Users.get_user_by_email_and_password(user.email, "new valid password")
     end
 
     test "does not reset password on invalid data", %{conn: conn, token: token} do

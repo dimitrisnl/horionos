@@ -4,7 +4,7 @@ defmodule HorionosWeb.UserForgotPasswordLiveTest do
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
 
-  alias Horionos.Accounts
+  alias Horionos.Accounts.Schemas.EmailToken
   alias Horionos.Repo
 
   describe "Forgot password page" do
@@ -43,7 +43,7 @@ defmodule HorionosWeb.UserForgotPasswordLiveTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
 
-      assert Repo.get_by!(Accounts.EmailToken, user_id: user.id).context ==
+      assert Repo.get_by!(EmailToken, user_id: user.id).context ==
                "reset_password"
     end
 
@@ -57,7 +57,7 @@ defmodule HorionosWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-      assert Repo.all(Accounts.EmailToken) == []
+      assert Repo.all(EmailToken) == []
     end
   end
 end

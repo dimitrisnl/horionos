@@ -42,14 +42,6 @@ defmodule Horionos.DataCase do
     on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 
-  @doc """
-  A helper that transforms changeset errors into a map of messages.
-
-      assert {:error, changeset} = Accounts.create_user(%{password: "short"})
-      assert "password is too short" in errors_on(changeset).password
-      assert %{password: ["password is too short"]} = errors_on(changeset)
-
-  """
   def errors_on(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
       Regex.replace(~r"%{(\w+)}", message, fn _, key ->
@@ -61,7 +53,8 @@ defmodule Horionos.DataCase do
   end
 
   def extract_user_token(fun) do
-    {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    {:ok, captured_emails} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    captured_email = captured_emails[Horionos.Accounts.Notifications.Channels.Email]
     [_, token | _] = String.split(captured_email.assigns.url, "[TOKEN]")
     token
   end

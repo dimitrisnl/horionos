@@ -1,8 +1,10 @@
 defmodule HorionosWeb.UserSessionController do
   use HorionosWeb, :controller
 
-  alias Horionos.Accounts
+  alias Horionos.Accounts.Sessions
+  alias Horionos.Accounts.Users
   alias Horionos.Services.RateLimiter
+  alias Horionos.SystemAdmin.Notifier, as: SystemAdminNotifications
   alias HorionosWeb.UserAuth
 
   require Logger
@@ -17,10 +19,6 @@ defmodule HorionosWeb.UserSessionController do
     do_create(conn, params, "Invitation accepted successfully!")
   end
 
-  def create(conn, %{"_action" => "registered"} = params) do
-    do_create(conn, params)
-  end
-
   def create(conn, params) do
     do_create(conn, params)
   end
@@ -28,24 +26,34 @@ defmodule HorionosWeb.UserSessionController do
   defp do_create(conn, %{"user" => user_params}, info \\ "") do
     %{"email" => email, "password" => password} = user_params
 
-    with :ok <- RateLimiter.check_rate("login:#{email}", 5, 300_000),
-         user when not is_nil(user) <- Accounts.get_user_by_email_and_password(email, password) do
+    with {:ok} <- RateLimiter.check_rate("login:#{email}", 5, 300_000),
+         {:ok, user} <-
+           Users.get_user_by_email_and_password(email, password),
+         true <- Users.email_verified?(user) do
       Logger.info("Successful login for user: #{user.id}")
+      SystemAdminNotifications.notify(:successful_login, %{email: email})
       conn = maybe_put_flash(conn, info)
 
       device_info = extract_user_agent_info(conn)
 
       UserAuth.log_in_user(conn, user, user_params, device_info)
     else
-      :error ->
+      false ->
+        SystemAdminNotifications.notify(:failed_login_without_verification, %{email: email})
+        handle_unverified_email(conn, email)
+
+      {:error, :rate_limit_exceeded} ->
+        SystemAdminNotifications.notify(:failed_login_rate_limit_exceeded, %{email: email})
         Logger.warning("Rate limit exceeded for login attempts: #{email}")
 
         conn
         |> put_flash(:error, "Too many login attempts. Please try again later.")
         |> redirect(to: ~p"/users/log_in")
 
-      nil ->
+      {:error, _} ->
+        SystemAdminNotifications.notify(:failed_login_attempt, %{email: email})
         Logger.warning("Failed login attempt for email: #{email}")
+
         handle_failed_login(conn, email)
     end
   end
@@ -60,7 +68,7 @@ defmodule HorionosWeb.UserSessionController do
     user = conn.assigns.current_user
     user_token = get_session(conn, :user_token)
 
-    case Accounts.revoke_other_user_sessions(user, user_token) do
+    case Sessions.revoke_other_sessions(user, user_token) do
       {deleted_count, nil} when deleted_count > 0 ->
         conn
         |> put_flash(:info, "All other sessions have been logged out.")
@@ -79,6 +87,13 @@ defmodule HorionosWeb.UserSessionController do
     do: put_flash(conn, :info, info)
 
   defp maybe_put_flash(conn, _), do: conn
+
+  defp handle_unverified_email(conn, email) do
+    conn
+    |> put_flash(:error, "Please verify your email address before logging in.")
+    |> put_flash(:email, String.slice(email, 0, 160))
+    |> redirect(to: ~p"/users/log_in")
+  end
 
   defp handle_failed_login(conn, email) do
     conn

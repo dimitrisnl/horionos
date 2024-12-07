@@ -3,7 +3,7 @@ defmodule Horionos.OrganizationsFixtures do
   Fixtures for organizations.
   """
   alias Horionos.AccountsFixtures
-  alias Horionos.Organizations
+  alias Horionos.Organizations.Organizations
 
   require Logger
 
@@ -28,20 +28,5 @@ defmodule Horionos.OrganizationsFixtures do
       {:ok, organization} -> organization
       {:error, reason} -> raise "Failed to create organization: #{inspect(reason)}"
     end
-  end
-
-  def membership_fixture(attrs \\ %{}) do
-    case Organizations.create_membership(attrs) do
-      {:ok, membership} ->
-        membership
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        raise "Failed to create membership: #{inspect(changeset.errors)}"
-    end
-  end
-
-  def invitation_fixture(inviter, organization, email, role \\ :member) do
-    {:ok, invitation} = Organizations.create_invitation(inviter, organization, email, role)
-    invitation
   end
 end

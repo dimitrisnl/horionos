@@ -1,12 +1,15 @@
-defmodule HorionosWeb.OrganizationLive.InvitationsTest do
+defmodule HorionosWeb.Organization.InvitationsLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
+  import Horionos.InvitationsFixtures
+  import Horionos.MembershipsFixtures
 
-  alias Horionos.Organizations
-  alias Horionos.Organizations.Membership
+  alias Horionos.Invitations.Invitations
+  alias Horionos.Memberships.Memberships
+  alias Horionos.Memberships.Schemas.Membership
   alias Horionos.Repo
 
   describe "Invitations page" do
@@ -54,7 +57,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       assert_redirect(view, ~p"/organization/invitations")
 
       # Verify the invitation was created
-      {:ok, invitations} = Organizations.list_pending_organization_invitations(organization)
+      {:ok, invitations} = Invitations.list_pending_organization_invitations(organization)
       assert [invitation] = invitations
       assert invitation.email == "newinvite@example.com"
       assert invitation.role == :member
@@ -86,7 +89,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       refute render(view) =~ "cancel@example.com"
 
       assert {:error, :invalid_token} =
-               Organizations.get_pending_invitation_by_token(invitation.token)
+               Invitations.get_pending_invitation_by_token(invitation.token)
     end
 
     test "non-admin users cannot access invitations page", %{
@@ -95,7 +98,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
     } do
       non_admin = user_fixture()
 
-      Organizations.create_membership(%{
+      Memberships.create_membership(%{
         user_id: non_admin.id,
         organization_id: organization.id,
         role: :member
@@ -116,7 +119,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
 
       # Remove admin rights
       membership = Repo.get_by(Membership, user_id: owner.id)
-      Organizations.update_membership(membership, %{role: :member})
+      Memberships.update_membership_role(membership, %{role: :member})
 
       assert view
              |> form("#invitation_form",
@@ -138,7 +141,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       # Remove admin rights
       membership = Repo.get_by(Membership, user_id: owner.id)
 
-      Organizations.update_membership(membership, %{role: :member})
+      Memberships.update_membership_role(membership, %{role: :member})
 
       assert view
              |> element("a", "Cancel")
@@ -157,7 +160,7 @@ defmodule HorionosWeb.OrganizationLive.InvitationsTest do
       {:ok, _view, html} = live(conn, ~p"/organization/invitations")
 
       # Show who created the invitation
-      assert html =~ admin.email
+      assert html =~ admin.full_name
       refute html =~ "Deleted user"
 
       # Delete/kick the admin user

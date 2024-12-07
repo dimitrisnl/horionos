@@ -1,16 +1,19 @@
-defmodule HorionosWeb.UserSettingsLive.SecurityTest do
+defmodule HorionosWeb.UserSettingsSecurityLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Horionos.AccountsFixtures
 
-  alias Horionos.Accounts
+  alias Horionos.Accounts.Sessions
+  alias Horionos.Accounts.Users
 
   describe "Settings page" do
-    test "renders settings page", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
+    setup :setup_user_pipeline
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
+    test "renders settings page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/settings/security")
 
       assert html =~ "Security"
@@ -24,26 +27,21 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
   end
 
   describe "update password form" do
+    setup :setup_user_pipeline
+
+    @tag user_attrs: %{password: "old_password!", email: "some@email.com"}
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "updates the user password", %{conn: conn} do
-      email = unique_user_email()
-      current_password = "old_password!"
-
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{
-          conn: conn,
-          create_organization: true,
-          user_attrs: %{password: current_password, email: email}
-        })
-
       new_password = valid_user_password()
-
       {:ok, lv, _html} = live(conn, ~p"/users/settings/security")
 
       form =
         form(lv, "#password_form", %{
-          "current_password" => current_password,
+          "current_password" => "old_password!",
           "user" => %{
-            "email" => email,
+            "email" => "some@email.com",
             "password" => new_password
           }
         })
@@ -59,13 +57,13 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
                "Password updated successfully"
 
-      assert Accounts.get_user_by_email_and_password(email, new_password)
+      assert {:ok, _} = Users.get_user_by_email_and_password("some@email.com", new_password)
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "renders errors with invalid data", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
       {:ok, lv, _html} = live(conn, ~p"/users/settings/security")
 
       result =
@@ -82,10 +80,10 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       assert result =~ "should be at least 12 character(s)"
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "renders errors with invalid data (phx-submit)", %{conn: conn} do
-      %{conn: conn} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
-
       {:ok, lv, _html} = live(conn, ~p"/users/settings/security")
 
       result =
@@ -105,12 +103,11 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
   end
 
   describe "active sessions" do
-    setup %{conn: conn} do
-      %{conn: conn, user: user} =
-        HorionosWeb.ConnCase.register_and_log_in_user(%{conn: conn, create_organization: true})
+    setup :setup_user_pipeline
 
+    setup %{conn: conn, user: user} do
       # Create an additional session
-      Accounts.create_session_token(user, %{
+      Sessions.create_session(user, %{
         device: "Test Device",
         os: "Test OS",
         browser: "Test Browser",
@@ -120,6 +117,9 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       %{conn: conn, user: user}
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "renders active sessions", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/settings/security")
 
@@ -131,6 +131,9 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
       assert html =~ "Log out of all other sessions"
     end
 
+    @tag create_organization: true
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "deletes other sessions", %{user: user, conn: conn} do
       {:ok, lv, html} = live(conn, ~p"/users/settings/security")
 
@@ -147,7 +150,7 @@ defmodule HorionosWeb.UserSettingsLive.SecurityTest do
                "All other sessions have been logged out."
 
       # Verify that other sessions are deleted
-      sessions = Accounts.list_user_sessions(user, get_session(new_conn, :user_token))
+      sessions = Sessions.list_sessions(user, get_session(new_conn, :user_token))
       assert length(sessions) == 1
       assert Enum.any?(sessions, fn session -> session.is_current end)
     end

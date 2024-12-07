@@ -1,10 +1,11 @@
-defmodule HorionosWeb.UserAuthLiveLiveTest do
+defmodule HorionosWeb.UserAuthLiveTest do
   use HorionosWeb.ConnCase, async: true
 
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
 
-  alias Horionos.Accounts
+  alias Horionos.Accounts.Sessions
+  alias Horionos.Accounts.Users
   alias HorionosWeb.UserAuthLive
   alias Phoenix.LiveView
 
@@ -21,7 +22,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :mount_current_user" do
     test "assigns current_user based on a valid user_token", %{conn: conn, user: user} do
       # Test that a valid user token results in the correct current_user assignment
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -63,7 +64,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :ensure_authenticated" do
     test "authenticates current_user based on a valid user_token", %{conn: conn, user: user} do
       # Test successful authentication with a valid token
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -115,7 +116,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
     } do
       # Test correct organization assignment with a valid organization_id
       organization = organization_fixture(%{user: user})
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -138,7 +139,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
       # Verify correct organization assignment when user has multiple organizations
       organization_fixture(%{user: user})
       organization2 = organization_fixture(%{user: user})
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -162,7 +163,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
       user: user
     } do
       # Check redirection to onboarding when no valid organization_id is present
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -184,7 +185,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
   describe "on_mount :redirect_if_user_is_authenticated" do
     test "redirects if there is an authenticated user", %{conn: conn, user: user} do
       # Verify redirection for authenticated users
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn
@@ -216,8 +217,8 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
 
   describe "on_mount :redirect_if_locked" do
     test "redirects if the user is locked", %{conn: conn, user: user} do
-      user_token = Accounts.create_session_token(user)
-      {:ok, user} = Accounts.lock_user(user)
+      user_token = Sessions.create_session(user)
+      {:ok, user} = Users.lock_user(user)
 
       session =
         conn
@@ -239,7 +240,7 @@ defmodule HorionosWeb.UserAuthLiveLiveTest do
     end
 
     test "doesn't redirect an valid user", %{conn: conn, user: user} do
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       session =
         conn

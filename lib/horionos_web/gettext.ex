@@ -20,5 +20,5 @@ defmodule HorionosWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :horionos
+  use Gettext.Backend, otp_app: :horionos
 end

@@ -36,9 +36,9 @@ defmodule HorionosWeb.FormComponents do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="space-y-8">
-        <%= render_slot(@inner_block, f) %>
+        {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-          <%= render_slot(action, f) %>
+          {render_slot(action, f)}
         </div>
       </div>
     </.form>
@@ -59,8 +59,8 @@ defmodule HorionosWeb.FormComponents do
   attr :variant, :string, default: nil, doc: "the variant of the button"
 
   slot :inner_block, required: true
-  slot :left_icon, default: nil
-  slot :right_icon, default: nil
+  slot :left_icon
+  slot :right_icon
 
   def button(%{variant: "destructive"} = assigns) do
     ~H"""
@@ -74,11 +74,11 @@ defmodule HorionosWeb.FormComponents do
       {@rest}
     >
       <%= if @left_icon != [] do %>
-        <div><%= render_slot(@left_icon) %></div>
+        <div>{render_slot(@left_icon)}</div>
       <% end %>
-      <div><%= render_slot(@inner_block) %></div>
+      <div>{render_slot(@inner_block)}</div>
       <%= if @right_icon != [] do %>
-        <div><%= render_slot(@right_icon) %></div>
+        <div>{render_slot(@right_icon)}</div>
       <% end %>
     </button>
     """
@@ -96,11 +96,11 @@ defmodule HorionosWeb.FormComponents do
       {@rest}
     >
       <%= if @left_icon != [] do %>
-        <div><%= render_slot(@left_icon) %></div>
+        <div>{render_slot(@left_icon)}</div>
       <% end %>
-      <div><%= render_slot(@inner_block) %></div>
+      <div>{render_slot(@inner_block)}</div>
       <%= if @right_icon != [] do %>
-        <div><%= render_slot(@right_icon) %></div>
+        <div>{render_slot(@right_icon)}</div>
       <% end %>
     </button>
     """
@@ -118,11 +118,11 @@ defmodule HorionosWeb.FormComponents do
       {@rest}
     >
       <%= if @left_icon != [] do %>
-        <div><%= render_slot(@left_icon) %></div>
+        <div>{render_slot(@left_icon)}</div>
       <% end %>
-      <div><%= render_slot(@inner_block) %></div>
+      <div>{render_slot(@inner_block)}</div>
       <%= if @right_icon != [] do %>
-        <div><%= render_slot(@right_icon) %></div>
+        <div>{render_slot(@right_icon)}</div>
       <% end %>
     </button>
     """
@@ -208,9 +208,9 @@ defmodule HorionosWeb.FormComponents do
           class="rounded border-gray-300 text-gray-900"
           {@rest}
         />
-        <%= @label %>
+        {@label}
       </label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -218,7 +218,7 @@ defmodule HorionosWeb.FormComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
-      <.label for={@id}><%= @label %></.label>
+      <.label for={@id}>{@label}</.label>
       <select
         id={@id}
         name={@name}
@@ -226,10 +226,10 @@ defmodule HorionosWeb.FormComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value=""><%= @prompt %></option>
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+        <option :if={@prompt} value="">{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -238,9 +238,9 @@ defmodule HorionosWeb.FormComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <div class="flex justify-between">
-        <.label for={@id}><%= @label %></.label>
+        <.label for={@id}>{@label}</.label>
 
-        <.error :for={msg <- @errors}><%= msg %></.error>
+        <.error :for={msg <- @errors}>{msg}</.error>
       </div>
       <textarea
         id={@id}
@@ -261,9 +261,9 @@ defmodule HorionosWeb.FormComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <div class="flex justify-between">
-        <.label for={@id}><%= @label %></.label>
+        <.label for={@id}>{@label}</.label>
 
-        <.error :for={msg <- @errors}><%= msg %></.error>
+        <.error :for={msg <- @errors}>{msg}</.error>
       </div>
       <div class="relative mt-2">
         <input
@@ -302,9 +302,9 @@ defmodule HorionosWeb.FormComponents do
     ~H"""
     <div phx-feedback-for={@name} class={[@hidden && "hidden"]}>
       <div class="flex justify-between">
-        <.label for={@id}><%= @label %></.label>
+        <.label for={@id}>{@label}</.label>
 
-        <.error :for={msg <- @errors}><%= msg %></.error>
+        <.error :for={msg <- @errors}>{msg}</.error>
       </div>
       <input
         type={@type}
@@ -332,7 +332,7 @@ defmodule HorionosWeb.FormComponents do
   def label(assigns) do
     ~H"""
     <label for={@for} class="block text-sm font-semibold leading-6 text-gray-800">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </label>
     """
   end
@@ -346,7 +346,7 @@ defmodule HorionosWeb.FormComponents do
     ~H"""
     <div class="flex gap-1.5 text-xs leading-6 text-rose-600 phx-no-feedback:hidden">
       <.icon name="hero-exclamation-circle" class="mt-0.5 h-5 w-5 flex-none" />
-      <div class="first-letter:uppercase"><%= render_slot(@inner_block) %></div>
+      <div class="first-letter:uppercase">{render_slot(@inner_block)}</div>
     </div>
     """
   end

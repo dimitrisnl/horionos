@@ -1,7 +1,7 @@
 defmodule HorionosWeb.OnboardingLive do
   use HorionosWeb, :live_view
 
-  alias Horionos.Organizations
+  alias Horionos.Organizations.Organizations
 
   @impl Phoenix.LiveView
   def render(assigns) do

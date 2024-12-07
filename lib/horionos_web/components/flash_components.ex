@@ -3,10 +3,10 @@ defmodule HorionosWeb.FlashComponents do
   Flash messages components
   """
   use Phoenix.Component
+  use Gettext, backend: HorionosWeb.Gettext
 
   import HorionosWeb.JSHelpers
   import HorionosWeb.CoreComponents
-  import HorionosWeb.Gettext
 
   alias Phoenix.LiveView.JS
 
@@ -56,9 +56,9 @@ defmodule HorionosWeb.FlashComponents do
         />
         <div class="space-y-1">
           <div :if={@title} class="text-md font-semibold">
-            <%= @title %>
+            {@title}
           </div>
-          <div class="text-sm leading-5"><%= msg %></div>
+          <div class="text-sm leading-5">{msg}</div>
         </div>
       </div>
       <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
@@ -91,7 +91,7 @@ defmodule HorionosWeb.FlashComponents do
         phx-connected={hide("#client-error")}
         hidden
       >
-        <%= gettext("Attempting to reconnect") %>
+        {gettext("Attempting to reconnect")}
         <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
 
@@ -103,7 +103,7 @@ defmodule HorionosWeb.FlashComponents do
         phx-connected={hide("#server-error")}
         hidden
       >
-        <%= gettext("Hang in there while we get back on track") %>
+        {gettext("Hang in there while we get back on track")}
         <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
     </div>

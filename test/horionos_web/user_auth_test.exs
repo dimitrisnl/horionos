@@ -4,9 +4,11 @@ defmodule HorionosWeb.UserAuthTest do
   import Horionos.AccountsFixtures
   import Horionos.OrganizationsFixtures
 
-  alias Horionos.Accounts
-  alias Horionos.Organizations
+  alias Horionos.Accounts.Sessions
+  alias Horionos.Memberships.Memberships
+  alias Horionos.Organizations.Organizations
   alias Horionos.Repo
+  alias HorionosWeb.Endpoint
   alias HorionosWeb.UserAuth
 
   @remember_me_cookie "_horionos_web_user_remember_me"
@@ -14,7 +16,7 @@ defmodule HorionosWeb.UserAuthTest do
   setup %{conn: conn} do
     conn =
       conn
-      |> Map.replace!(:secret_key_base, HorionosWeb.Endpoint.config(:secret_key_base))
+      |> Map.replace!(:secret_key_base, Endpoint.config(:secret_key_base))
       |> init_test_session(%{})
 
     %{user: user_fixture(), conn: conn}
@@ -30,7 +32,7 @@ defmodule HorionosWeb.UserAuthTest do
 
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
-      assert Accounts.get_user_from_session_token(token)
+      assert Sessions.get_session_user(token)
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do
@@ -104,17 +106,17 @@ defmodule HorionosWeb.UserAuthTest do
         |> UserAuth.log_in_user(user)
 
       token = get_session(conn, :user_token)
-      Accounts.revoke_session_token(token)
+      Sessions.revoke_session(token)
 
       assert get_session(conn, :user_token)
-      refute Accounts.get_user_from_session_token(token)
+      refute Sessions.get_session_user(token)
     end
   end
 
   describe "logout_user/1" do
     test "erases session and cookies", %{conn: conn, user: user} do
       # Ensure logout properly clears session and cookies
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       conn =
         conn
@@ -126,13 +128,13 @@ defmodule HorionosWeb.UserAuthTest do
       refute get_session(conn, :user_token)
       refute conn.cookies[@remember_me_cookie]
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      refute Accounts.get_user_from_session_token(user_token)
+      refute Sessions.get_session_user(user_token)
     end
 
     test "broadcasts to the given live_socket_id", %{conn: conn} do
       # Verify logout broadcasts disconnect event
       live_socket_id = "users_sessions:abcdef-token"
-      HorionosWeb.Endpoint.subscribe(live_socket_id)
+      Endpoint.subscribe(live_socket_id)
 
       conn
       |> put_session(:live_socket_id, live_socket_id)
@@ -157,7 +159,7 @@ defmodule HorionosWeb.UserAuthTest do
   describe "fetch_current_user/2" do
     test "authenticates user from session", %{conn: conn, user: user} do
       # Verify user authentication from session token
-      user_token = Accounts.create_session_token(user)
+      user_token = Sessions.create_session(user)
 
       conn =
         conn
@@ -192,7 +194,7 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
       # Ensure no authentication occurs with missing data
-      _ = Accounts.create_session_token(user)
+      _ = Sessions.create_session(user)
       conn = UserAuth.fetch_current_user(conn, [])
       refute get_session(conn, :user_token)
       refute conn.assigns.current_user
@@ -240,7 +242,7 @@ defmodule HorionosWeb.UserAuthTest do
 
     test "assigns nil if user has no organizations", %{conn: conn, user: user} do
       # Ensure nil is assigned when user has no organizations
-      Organizations.delete_organization(Organizations.get_user_primary_organization(user))
+      Organizations.delete_organization(Memberships.get_user_primary_organization(user))
 
       conn =
         conn
@@ -446,46 +448,18 @@ defmodule HorionosWeb.UserAuthTest do
       refute conn.status
     end
 
-    test "allows access for unverified users within verification deadline", %{
-      conn: conn,
-      user: user
-    } do
+    test "does not allow access for unverified users", %{conn: conn} do
+      user = unconfirmed_user_fixture()
+
       conn =
         conn
         |> assign(:current_user, user)
-        |> UserAuth.require_email_verified([])
-
-      refute conn.halted
-      refute conn.status
-    end
-
-    test "logs out and redirects unverified users past verification deadline", %{
-      conn: conn,
-      user: user
-    } do
-      expired_user =
-        Repo.update!(
-          Ecto.Changeset.change(user,
-            inserted_at:
-              DateTime.utc_now()
-              |> DateTime.add(-31, :day)
-              |> DateTime.truncate(:second)
-          )
-        )
-
-      conn =
-        conn
-        |> assign(:current_user, expired_user)
         |> fetch_flash()
         |> fetch_cookies()
         |> UserAuth.require_email_verified([])
 
-      assert redirected_to(conn) == ~p"/users/log_in"
-
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "Your email address needs to be verified. Please check your inbox for the verification email."
-
       assert conn.halted
+      assert redirected_to(conn) == ~p"/users/log_in"
 
       refute get_session(conn, :user_token)
       refute conn.cookies[@remember_me_cookie]

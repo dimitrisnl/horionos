@@ -34,9 +34,8 @@
           {Credo.Check.Consistency.TabsOrSpaces, []},
           {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
           {Credo.Check.Design.AliasUsage,
-           [priority: :low, if_nested_deeper_than: 2, if_called_more_often_than: 0]},
+           [excluded_namespaces: ["Ecto", "Plug", "Phoenix"], if_called_more_often_than: 1]},
           {Credo.Check.Design.TagFIXME, []},
-          {Credo.Check.Design.TagTODO, [exit_status: 2]},
           {Credo.Check.Design.SkipTestWithoutComment, []},
 
           #
@@ -67,9 +66,9 @@
           {Credo.Check.Readability.OneArityFunctionInPipe, []},
           {Credo.Check.Readability.OnePipePerLine, []},
           {Credo.Check.Readability.SeparateAliasRequire, []},
-          {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
           {Credo.Check.Readability.ImplTrue, []},
+          {Credo.Check.Readability.WithCustomTaggedTuple},
 
           #
           ## Refactoring Opportunities
@@ -120,9 +119,11 @@
           {Credo.Check.Warning.UnusedStringOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
           {Credo.Check.Warning.WrongTestFileExtension, []},
-          {Credo.Check.Warning.UnsafeToAtom, []}
+          {Credo.Check.Warning.UnsafeToAtom, []},
+          {Credo.Check.Warning.MixEnv, []}
         ],
         disabled: [
+          {Credo.Check.Readability.AliasAs, []},
           #
           # Controversial and experimental checks (opt-in, just move the check to `:enabled`
           #   and be sure to use `mix credo --strict` to see low priority checks)
@@ -133,6 +134,7 @@
           #
           {Credo.Check.Consistency.UnusedVariableNames, []},
           {Credo.Check.Design.DuplicatedCode, []},
+          {Credo.Check.Design.TagTODO, []},
           {Credo.Check.Readability.BlockPipe, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.SingleFunctionToBlockPipe, []},

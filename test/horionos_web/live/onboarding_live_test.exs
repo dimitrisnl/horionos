@@ -3,12 +3,14 @@ defmodule HorionosWeb.OnboardingLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Horionos.Organizations
+  alias Horionos.Memberships.Memberships
 
   describe "Onboarding" do
-    setup :register_and_log_in_user
+    setup :setup_user_pipeline
 
     @tag create_organization: false
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "renders onboarding page for user without organization", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/onboarding")
 
@@ -17,6 +19,8 @@ defmodule HorionosWeb.OnboardingLiveTest do
     end
 
     @tag create_organization: false
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "creates organization with valid data", %{conn: conn, user: user} do
       {:ok, lv, _html} = live(conn, ~p"/onboarding")
 
@@ -29,11 +33,13 @@ defmodule HorionosWeb.OnboardingLiveTest do
       # Check that we're redirected to the root path
       assert conn.request_path == "/"
 
-      assert {:ok, memberships} = Organizations.list_user_memberships(user)
+      assert {:ok, memberships} = Memberships.list_user_memberships(user)
       assert hd(memberships).organization.title == "Test Organization"
     end
 
     @tag create_organization: false
+    @tag confirm_user_email: true
+    @tag log_in_user: true
     test "renders errors for invalid data", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/onboarding")
 

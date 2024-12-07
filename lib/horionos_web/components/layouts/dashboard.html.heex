@@ -1,5 +1,5 @@
 <div class="min-h-svh relative isolate flex w-full max-lg:flex-col">
-  <div class="fixed inset-y-0 left-0 w-64 max-lg:hidden">
+  <div class="w- fixed inset-y-0 left-0 max-lg:hidden">
     <nav class="flex h-full min-h-0 flex-col">
       <div class="border-gray-950/5 flex flex-col border-b p-4 dark:border-white/5">
         <div class="relative">
@@ -13,9 +13,9 @@
             class="text-base/6 flex w-full items-center gap-3 rounded-xl bg-white px-2 py-2.5 text-left font-medium text-gray-950 ring-1 ring-black ring-opacity-5 hover:bg-gray-950/5 active:bg-gray-950/5 dark:text-white dark:hover:bg-white/5 dark:active:bg-white/5 sm:text-sm/5 sm:py-2"
           >
             <span class="text-[0.625rem] flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 font-bold text-gray-500 group-hover:border-blue-600 group-hover:text-blue-600">
-              <%= @current_organization |> Map.get(:title) |> String.first() |> String.upcase() %>
+              {@current_organization |> Map.get(:title) |> String.first() |> String.upcase()}
             </span>
-            <span class="truncate"><%= @current_organization |> Map.get(:title) %></span>
+            <span class="truncate">{@current_organization |> Map.get(:title)}</span>
             <.icon
               name="hero-chevron-down-solid"
               class="size-4 shrink-0 text-gray-500 group-hover:text-gray-950 group-active:text-gray-950 dark:text-gray-400 dark:group-hover:text-white dark:group-active:text-white ml-auto"
@@ -39,12 +39,6 @@
       <div class="flex flex-1 flex-col overflow-y-auto p-4">
         <div class="flex flex-col gap-0.5">
           <.nav_link href="/" icon="hero-home" text="Home" active={@active_tab == :home} />
-          <.nav_link
-            href="/announcements"
-            icon="hero-megaphone"
-            text="Announcements"
-            active={@active_tab == :announcements}
-          />
         </div>
 
         <div aria-hidden="true" class="mt-8 flex-1"></div>
@@ -64,14 +58,14 @@
             </span>
             <span class="flex min-w-0 items-center gap-3">
               <span class="size-9 from-brand flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-r to-blue-400 text-white">
-                <%= String.first(@current_user.email) |> String.upcase() %>
+                {String.first(@current_user.email) |> String.upcase()}
               </span>
               <span class="min-w-0">
                 <span class="text-sm/5 block truncate font-medium text-gray-950 dark:text-white">
-                  <%= @current_user.full_name %>
+                  {@current_user.full_name}
                 </span>
                 <span class="text-xs/5 block truncate font-normal text-gray-600 dark:text-gray-400">
-                  <%= @current_user.email %>
+                  {@current_user.email}
                 </span>
               </span>
             </span>
@@ -126,7 +120,7 @@
     <div class="grow bg-white p-6 lg:ring-gray-950/5 lg:rounded-lg lg:p-10 lg:shadow-sm lg:ring-1 lg:dark:ring-white/10 lg:dark:bg-gray-900">
       <div class="mx-auto max-w-6xl">
         <.flash_group flash={@flash} />
-        <%= @inner_content %>
+        {@inner_content}
       </div>
     </div>
   </main>

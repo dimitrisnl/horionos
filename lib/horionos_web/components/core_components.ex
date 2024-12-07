@@ -3,9 +3,9 @@ defmodule HorionosWeb.CoreComponents do
   Provides core UI components.
   """
   use Phoenix.Component
+  use Gettext, backend: HorionosWeb.Gettext
 
   import HorionosWeb.JSHelpers
-  import HorionosWeb.Gettext
 
   alias Phoenix.LiveView.JS
 
@@ -69,7 +69,7 @@ defmodule HorionosWeb.CoreComponents do
                 </button>
               </div>
               <div id={"#{@id}-content"}>
-                <%= render_slot(@inner_block) %>
+                {render_slot(@inner_block)}
               </div>
             </.focus_wrap>
           </div>
@@ -95,21 +95,21 @@ defmodule HorionosWeb.CoreComponents do
       <div class="flex items-start justify-between">
         <div class="space-y-4">
           <h1 class="text-2xl/8 font-semibold text-gray-950 dark:text-white sm:text-xl/8">
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </h1>
           <h2 :if={@subtitle != []} class="text-base/6 text-gray-600 dark:text-zinc-400 sm:text-md/6">
-            <%= render_slot(@subtitle) %>
+            {render_slot(@subtitle)}
           </h2>
         </div>
         <div :if={@subtitle == []}></div>
 
         <div :if={@actions != []}>
-          <%= render_slot(@actions) %>
+          {render_slot(@actions)}
         </div>
       </div>
 
       <div :if={@nav != []}>
-        <%= render_slot(@nav) %>
+        {render_slot(@nav)}
       </div>
     </header>
     """
@@ -118,7 +118,7 @@ defmodule HorionosWeb.CoreComponents do
   def body(assigns) do
     ~H"""
     <div class="mx-auto mt-4 max-w-6xl">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -159,9 +159,9 @@ defmodule HorionosWeb.CoreComponents do
       <table class="w-full">
         <thead class="text-left text-sm leading-6 text-gray-500">
           <tr>
-            <th :for={col <- @col} class="px-4 py-0 pb-4 font-normal"><%= col[:label] %></th>
+            <th :for={col <- @col} class="px-4 py-0 pb-4 font-normal">{col[:label]}</th>
             <th :if={@action != []} class="relative px-4 py-0 pb-4">
-              <span class="sr-only"><%= gettext("Actions") %></span>
+              <span class="sr-only">{gettext("Actions")}</span>
             </th>
           </tr>
         </thead>
@@ -179,7 +179,7 @@ defmodule HorionosWeb.CoreComponents do
               <div class="relative block truncate py-4">
                 <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
                 <span class={["relative", i == 0 && "font-semibold text-gray-900"]}>
-                  <%= render_slot(col, @row_item.(row)) %>
+                  {render_slot(col, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -190,7 +190,7 @@ defmodule HorionosWeb.CoreComponents do
                   :for={action <- @action}
                   class="relative ml-4 font-medium leading-6 text-gray-800 hover:text-gray-700"
                 >
-                  <%= render_slot(action, @row_item.(row)) %>
+                  {render_slot(action, @row_item.(row))}
                 </span>
               </div>
             </td>
@@ -220,9 +220,9 @@ defmodule HorionosWeb.CoreComponents do
     <div class="mt-14">
       <dl class="divide-y divide-gray-100">
         <div :for={item <- @item} class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-          <dt class="truncate text-sm font-medium leading-6 text-gray-900"><%= item.title %></dt>
+          <dt class="truncate text-sm font-medium leading-6 text-gray-900">{item.title}</dt>
           <dd class="mt-1 break-words text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-            <%= render_slot(item) %>
+            {render_slot(item)}
           </dd>
         </div>
       </dl>
@@ -249,7 +249,7 @@ defmodule HorionosWeb.CoreComponents do
       >
         <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
         <div>
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         </div>
       </.link>
     </div>
@@ -371,7 +371,7 @@ defmodule HorionosWeb.CoreComponents do
            end
          }
       />
-      <span class="truncate"><%= @text %></span>
+      <span class="truncate">{@text}</span>
     </.link>
     """
   end
@@ -411,15 +411,15 @@ defmodule HorionosWeb.CoreComponents do
     <div class="flex flex-col justify-center py-4 sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          <%= @title %>
+          {@title}
         </h2>
         <p class="mt-1 text-center text-base text-gray-600">
-          <%= @subtitle %>
+          {@subtitle}
         </p>
       </div>
 
       <div class="mt-10 sm:max-w-[480px] sm:mx-auto sm:w-full">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """
@@ -434,7 +434,7 @@ defmodule HorionosWeb.CoreComponents do
   def card(assigns) do
     ~H"""
     <div class="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -468,7 +468,7 @@ defmodule HorionosWeb.CoreComponents do
       ]}
     >
       <.icon name={@icon} class="size-5" />
-      <div><%= @label %></div>
+      <div>{@label}</div>
     </a>
     """
   end
@@ -481,7 +481,7 @@ defmodule HorionosWeb.CoreComponents do
 
   def local_time(assigns) do
     ~H"""
-    <time phx-hook="LocalTime" id={@id} class="invisible"><%= @date %></time>
+    <time phx-hook="LocalTime" id={@id} class="invisible">{@date}</time>
     """
   end
 end
